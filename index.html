@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>わが家のアプリ</title>
+<style>
+@font-face{font-family:"Azuki";src:url("azukiP.ttf") format("truetype");font-display:swap;}
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    font-family:"Azuki","Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(170deg,#fdf6f0,#f4e8dc); color:#4a3f35;
+    max-width:480px; margin:0 auto; min-height:100vh; padding:26px 18px 40px;
+  }
+  h1{font-size:22px; text-align:center; letter-spacing:3px}
+  .sub{font-size:12px; color:#a89a8c; text-align:center; margin:6px 0 22px}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  a.card{
+    background:#fff; border-radius:20px; box-shadow:0 3px 12px rgba(160,120,90,.14);
+    padding:18px 10px 14px; text-align:center; text-decoration:none; color:#4a3f35;
+    transition:.15s;
+  }
+  a.card:active{transform:scale(.96)}
+  .card svg{width:44px; height:44px; margin-bottom:8px}
+  .card .name{font-size:13.5px; font-weight:bold}
+  .card .desc{font-size:10px; color:#a89a8c; margin-top:3px}
+  footer{font-size:10.5px; color:#b8a99a; text-align:center; margin-top:26px; line-height:1.9}
+</style>
+</head>
+<body>
+<h1>🏠 わが家のアプリ</h1>
+<div class="sub">つかうアプリをえらんでね</div>
+<div class="grid">
+  <a class="card" href="osouji/">
+    <svg viewBox="0 0 48 48" fill="none" stroke="#5b4636" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(12 24 24)"><path d="M27 5 L21.5 25" stroke-width="3.5"/><path d="M17 25 L28 25 L33 41 H12 Z" fill="#f6c771"/><rect x="16" y="22.5" width="14" height="6" rx="3" fill="#f48580"/><path d="M19 31 L17.5 40 M24 31 V40 M29 31 L30.5 40" stroke-width="2"/></g></svg>
+    <div class="name">お掃除ログ</div><div class="desc">おうちピカピカ記録</div>
+  </a>
+  <a class="card" href="sesshu/">
+    <svg viewBox="0 0 48 48" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-35 24 24)"><rect x="13" y="19" width="17" height="10" rx="2" fill="#cfe8f5"/><path d="M30 24 H39"/><path d="M39 24 H45" stroke-width="2"/><path d="M8 24 H13 M8 19 V29"/></g></svg>
+    <div class="name">予防接種手帳</div><div class="desc">子どもたちのワクチン記録</div>
+  </a>
+  <a class="card" href="sakuao/">
+    <svg viewBox="0 0 72 22"><path d="M5 3 H67 Q70 3 70 6 V16 Q70 19 67 19 H5 Q2 19 2 16 V6 Q2 3 5 3 Z" fill="#4f86cf" stroke="#36659f" stroke-width="1.2"/><rect x="2.5" y="12.8" width="67" height="3.4" fill="#fff"/><rect x="10" y="6.4" width="12" height="5" rx="1" fill="#dbe9f5"/><rect x="30" y="6.4" width="12" height="5" rx="1" fill="#dbe9f5"/><rect x="50" y="6.4" width="12" height="5" rx="1" fill="#dbe9f5"/></svg>
+    <div class="name">宿題＆お手伝い</div><div class="desc">SakuとAoのがんばり記録</div>
+  </a>
+  <a class="card" href="oiwai/">
+    <svg viewBox="0 0 48 48" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="11" y="6" width="26" height="36" rx="3" fill="#fdfaf2"/><path d="M11 6 L18 13 M37 6 L30 13" stroke-width="2.5"/><path d="M24 20 Q17 24 24 28 Q31 24 24 20 Z" fill="#e88a8a" stroke-width="2.5"/><path d="M24 24 V33" stroke="#e88a8a" stroke-width="2.5"/><path d="M19 30 Q24 34 29 30" stroke="#e88a8a" stroke-width="2.5"/></svg>
+    <div class="name">おつきあい帳</div><div class="desc">お祝い・お年玉・お返し</div>
+  </a>
+  <a class="card" href="furikomi/">
+    <svg viewBox="0 0 48 48" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="24" cy="27" rx="16" ry="12.5" fill="#f4b8b0"/><circle cx="38" cy="25" r="4.5" fill="#f4b8b0"/><path d="M14 15 Q12 9 18 10 Q21 11 20 14" fill="#f4b8b0" stroke-width="2.5"/><path d="M20 36 V41 M30 36 V41" stroke-width="3.4"/><path d="M20 22 H28" stroke-width="2.5"/><circle cx="33" cy="24" r="1.5" fill="#6b584a" stroke="none"/></svg>
+    <div class="name">振込メモ</div><div class="desc">じいじ＆うちからの振込</div>
+  </a>
+  <a class="card" href="subsuku/">
+    <svg viewBox="0 0 48 48" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 20 L37 12 L40 19 L11 27 Z" fill="#7d8ca0"/><path d="M14 18.3 L18 17.1 L19.5 20.8 L15.5 22 Z M23 15.8 L27 14.6 L28.5 18.3 L24.5 19.5 Z M32 13.3 L36 12.1 L37.5 15.8 L33.5 17 Z" fill="#fff" stroke="none"/><rect x="9" y="25" width="31" height="14" rx="2.5" fill="#a8bcd0"/></svg>
+    <div class="name">サブスク管理</div><div class="desc">毎月の固定費チェック</div>
+  </a>
+  <a class="card" href="iryohi/">
+    <svg viewBox="0 0 48 48" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="10" y="11" width="28" height="29" rx="2" fill="#f4f6f8"/><path d="M24 17 V27 M19 22 H29" stroke="#e8837e" stroke-width="4"/><rect x="20" y="32" width="8" height="8" fill="#ccd8e0" stroke-width="2"/><path d="M6 40 H42" stroke-width="2.5"/></svg>
+    <div class="name">医療費記録</div><div class="desc">確定申告もこれで安心</div>
+  </a>
+  <a class="card" href="tokubetsuhi/">
+    <svg viewBox="0 0 48 48" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="18" width="30" height="21" rx="3" fill="#d8a7a0"/><rect x="7" y="12" width="34" height="8" rx="2.5" fill="#e6bdb6"/><path d="M24 12 V39"/><path d="M24 12 Q17 12 17 7.5 Q20 4 24 12 Q28 4 31 7.5 Q31 12 24 12 Z" fill="#c98b84" stroke-width="2.5"/></svg>
+    <div class="name">特別費記録</div><div class="desc">大きな出費のメモ</div>
+  </a>
+</div>
+<footer>
+  それぞれのアプリを開いて、Chromeの「インストールしてショートカットを作成」で<br>ホーム画面に追加できるよ
+</footer>
+</body>
+</html>

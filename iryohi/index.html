@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="医療費">
+<meta name="theme-color" content="#f7f2ea">
+<title>医療費記録</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&family=Yomogi&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:"Azuki";src:url("../azukiP.ttf") format("truetype");font-display:swap;}
+
+  :root{
+    --cream:#f7f2ea;--paper:#fffdf8;--ink:#5a5048;--ink-soft:#938678;
+    --rose:#d8a7a0;--rose-deep:#c98b84;--sage:#a8b89a;--sage-deep:#8fa37f;
+    --mustard:#e0bd7a;--mustard-deep:#cda254;--sky:#94b8c4;--sky-deep:#6f9aa8;
+    --line:#e8dfd2;--shadow:rgba(120,100,80,.14);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{font-family:"Azuki","Zen Maru Gothic",sans-serif;
+    background:radial-gradient(circle at 12% 8%,rgba(216,167,160,.10),transparent 42%),
+      radial-gradient(circle at 88% 92%,rgba(168,184,154,.12),transparent 42%),var(--cream);
+    color:var(--ink);min-height:100dvh;padding:16px 14px 40px;display:flex;justify-content:center;}
+  .app{width:100%;max-width:440px;}
+  .head{text-align:center;margin:4px 0 12px;}
+  .head .deco{font-family:"Yomogi",cursive;font-size:13px;color:var(--rose-deep);letter-spacing:.1em;}
+  .head h1{font-weight:700;font-size:22px;letter-spacing:.04em;margin-top:4px;color:var(--rose-deep);}
+  .date{font-size:12px;color:var(--ink-soft);margin-top:4px;}
+
+  .tabs{display:flex;gap:6px;background:var(--line);padding:5px;border-radius:18px;margin-bottom:16px;}
+  .tab{flex:1;text-align:center;font-family:inherit;font-weight:700;font-size:14px;color:var(--ink-soft);
+    background:transparent;border:none;padding:11px 0;border-radius:14px;cursor:pointer;transition:.2s;}
+  .tab.active{background:var(--paper);color:var(--ink);box-shadow:0 2px 8px var(--shadow);}
+  .page{display:none;animation:fade .3s ease;}
+  .page.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:18px 16px;
+    box-shadow:0 8px 22px var(--shadow);margin-bottom:14px;}
+  .f-label{font-size:12px;font-weight:700;color:var(--ink-soft);margin:12px 2px 6px;}
+  .f-label:first-child{margin-top:0;}
+  input[type=date],input[type=text],input[type=number]{width:100%;font-family:inherit;font-size:15px;color:var(--ink);
+    background:var(--cream);border:1.5px solid var(--line);border-radius:13px;padding:12px 13px;outline:none;-webkit-appearance:none;}
+  input:focus{border-color:var(--rose);}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;}
+  .chip{font-family:inherit;font-size:13.5px;font-weight:700;color:var(--ink-soft);background:var(--cream);
+    border:1.5px solid var(--line);border-radius:99px;padding:9px 15px;cursor:pointer;transition:.15s;}
+  .chip.sel{background:var(--rose-deep);border-color:var(--rose-deep);color:#fff;}
+  .chip.cat.sel{background:var(--sage-deep);border-color:var(--sage-deep);}
+  .chip:active{transform:scale(.95);}
+  .yen-row{position:relative;}
+  .yen-row::after{content:"円";position:absolute;right:14px;top:50%;transform:translateY(-50%);
+    font-size:14px;font-weight:700;color:var(--ink-soft);}
+  .yen-row input{padding-right:42px;font-variant-numeric:tabular-nums;}
+  .save-btn{display:block;width:100%;margin-top:16px;font-family:inherit;font-weight:700;font-size:16px;color:#fff;
+    background:var(--rose-deep);border:none;border-radius:16px;padding:15px;cursor:pointer;}
+  .save-btn:active{transform:scale(.98);}
+  .gear-row{display:flex;justify-content:flex-end;margin-bottom:10px;}
+  .gear{width:42px;height:42px;border-radius:14px;border:2px solid var(--line);background:var(--paper);
+    font-size:18px;cursor:pointer;color:var(--ink-soft);}
+  .gear:active{background:var(--line);}
+  .settings{display:none;background:var(--paper);border:1px solid var(--line);border-radius:18px;
+    padding:14px;margin-bottom:14px;box-shadow:0 4px 12px var(--shadow);}
+  .settings.show{display:block;}
+  .settings h3{font-size:13px;color:var(--ink-soft);margin-bottom:10px;text-align:center;}
+  .set-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .set-row input{flex:1;}
+
+  .m-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .m-nav button{width:38px;height:38px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);
+    font-size:17px;color:var(--ink-soft);cursor:pointer;}
+  .m-nav button:active{background:var(--line);}
+  .m-title{font-weight:700;font-size:17px;color:var(--rose-deep);}
+  .m-sum{text-align:center;font-size:13px;color:var(--ink-soft);margin-bottom:12px;}
+  .m-sum b{font-size:20px;color:var(--sage-deep);font-variant-numeric:tabular-nums;}
+
+  .rec{display:flex;align-items:center;gap:10px;background:var(--paper);border:1px solid var(--line);
+    border-radius:16px;padding:12px 13px;box-shadow:0 3px 10px var(--shadow);margin-bottom:8px;}
+  .rec .r-who{flex:0 0 auto;font-size:11px;font-weight:700;color:#fff;background:var(--sky-deep);
+    border-radius:99px;padding:4px 9px;white-space:nowrap;}
+  .rec .r-who.w1{background:var(--rose-deep);} .rec .r-who.w2{background:var(--sky-deep);}
+  .rec .r-who.w3{background:var(--sage-deep);} .rec .r-who.w4{background:var(--mustard-deep);}
+  .rec .r-mid{flex:1;min-width:0;}
+  .rec .r-place{font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .rec .r-meta{font-size:11px;color:var(--ink-soft);margin-top:2px;}
+  .rec .r-amt{flex:0 0 auto;font-weight:700;font-size:15px;color:var(--ink);font-variant-numeric:tabular-nums;}
+  .rec .del{flex:0 0 auto;width:26px;height:26px;border:none;background:transparent;color:var(--ink-soft);
+    font-size:18px;cursor:pointer;border-radius:50%;opacity:.45;}
+  .rec .del:active{opacity:1;background:var(--line);}
+  .empty{text-align:center;color:var(--ink-soft);font-size:14px;padding:24px 0;font-family:"Yomogi",cursive;}
+
+  .year-card{background:linear-gradient(160deg,#fbf3e0,#fff);border:1px solid var(--line);border-radius:24px;
+    padding:22px 18px;text-align:center;box-shadow:0 8px 22px var(--shadow);margin-bottom:14px;}
+  .year-card .yc-label{font-size:12px;color:var(--ink-soft);letter-spacing:.1em;}
+  .year-card .yc-amt{font-weight:700;font-size:40px;color:var(--mustard-deep);line-height:1.2;font-variant-numeric:tabular-nums;}
+  .year-card .yc-amt small{font-size:18px;}
+  .year-card .yc-sub{font-family:"Yomogi",cursive;font-size:13px;color:var(--rose-deep);margin-top:6px;}
+  .ded-bar{height:18px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:14px;}
+  .ded-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--sage),var(--mustard));border-radius:99px;transition:width .55s cubic-bezier(.34,1.56,.64,1);}
+  .ded-cap{display:flex;justify-content:space-between;font-size:10.5px;color:var(--ink-soft);margin-top:5px;}
+  .who-sum{display:flex;flex-direction:column;gap:8px;}
+  .ws{display:flex;align-items:center;gap:10px;background:var(--paper);border:1px solid var(--line);
+    border-radius:16px;padding:12px 14px;box-shadow:0 3px 10px var(--shadow);}
+  .ws .w-name{flex:1;font-size:14px;font-weight:700;}
+  .ws .w-amt{font-weight:700;font-size:15px;color:var(--sage-deep);font-variant-numeric:tabular-nums;}
+  .ws .w-cnt{font-size:11px;color:var(--ink-soft);}
+  .csv-btn{display:block;width:100%;margin-top:14px;font-family:inherit;font-weight:700;font-size:15px;color:#fff;
+    background:var(--sky-deep);border:none;border-radius:16px;padding:14px;cursor:pointer;}
+  .csv-btn:active{transform:scale(.98);}
+  .tip{font-size:11.5px;color:var(--ink-soft);text-align:center;margin-top:14px;line-height:1.7;}
+  .y-nav{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:12px;}
+  .y-nav button{width:34px;height:34px;border-radius:11px;border:1.5px solid var(--line);background:var(--paper);
+    font-size:15px;color:var(--ink-soft);cursor:pointer;}
+  .y-nav .y-title{font-weight:700;font-size:16px;color:var(--rose-deep);}
+
+  .toast{position:fixed;left:50%;bottom:32px;transform:translateX(-50%) translateY(80px);background:var(--ink);
+    color:#fff;font-size:14px;font-weight:500;padding:12px 22px;border-radius:99px;box-shadow:0 6px 20px var(--shadow);
+    z-index:60;opacity:0;transition:.35s cubic-bezier(.34,1.56,.64,1);max-width:90vw;text-align:center;}
+  .toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+
+  .bkx{margin:18px 14px 100px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:18px;
+    padding:14px 16px;box-shadow:0 4px 12px rgba(0,0,0,.06);font-size:12px;color:#8a8073;line-height:1.7}
+  .bkx h3{font-size:13.5px;color:#5b4636;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+  .bkx h3 svg{width:18px;height:18px}
+  .bkx .bkx-btn{border:none;border-radius:12px;padding:9px 16px;font-family:inherit;font-weight:700;
+    font-size:12.5px;color:#fff;background:#a8b89a;margin:8px 8px 0 0;cursor:pointer}
+  .bkx .bkx-btn.sub{background:#c9bfae}
+</style>
+<link rel="apple-touch-icon" href="data:image/png;base64,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">
+<link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjogIuWMu+eZguiyu+iomOmMsiIsICJzaG9ydF9uYW1lIjogIuWMu+eZguiyuyIsICJzdGFydF91cmwiOiAiLi8iLCAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwgImJhY2tncm91bmRfY29sb3IiOiAiI2Y3ZjJlYSIsICJ0aGVtZV9jb2xvciI6ICIjZjdmMmVhIiwgImljb25zIjogW3sic3JjIjogImRhdGE6aW1hZ2UvcG5nO2Jhc2U2NCxpVkJPUncwS0dnb0FBQUFOU1VoRVVnQUFBZ0FBQUFJQUNBWUFBQUQwZU5UNkFBQU9mVWxFUVZSNDJ1M2RyMU5VYXhqQThiTm5MQllOemloSm1qUWp3NWdvVmpRd1l6TkNkL2d6R0xwR0dqTUdwZElOUkNNTkVqQkRnRUxrQm9jN0tNdXl1K2ZYKzc3UDV4UDFYbHdPN0htKzV6bTdNS3FZNlBycS9NWlJBTWpUMDJjdlI0N0NlQTZNSVE4Z0RnU0FnUStBSUJBQUJqNEFna0FBR1BvQWlBRUJZT2dESUFZRWdNRVBnQkFRQUFZL0FFSkFBQmo4QUFnQkFXRHdBeUFFQklEQkQ0QVFFQUFHUHdCQ29GTzE0UThBOGViWnlJRUNnSGpiZ0tRMkFJWS9BTFlCZ1RZQUJqOEF0Z0hCTmdDR1B3QzJBY0VDd1BBSFFBUU1ZeFR0RXdhQUZQVjlTNkQzRFlEaER3RER6OGU2NUU4T0FFVEF3QUZnK0FOQU92T3lMdW1UQVFBUmtFZ0FHUDRBa043OHJITis4QUFnQWhJTEFNTWZBTktkcDNWT0R4WUFSRUNpQVdENEEwRDZFVkNuL09BQWdHN21iSjNpZ3dJQXVwMjN0VU1KQVBHMEVnQ3UvZ0VncnkxQW5jS0RBQUQ2bmIvMWtQODRBRERNSFBZYUFBQUlhTzRBY1BVUEFQbHVBZW8rL3pFQUlJMEljQXNBQUFLYU9RQmMvUU5BL2x1QXVzc1BEZ0NrR1FGdUFRQkFRRk1IZ0t0L0FDaG5DMkFEQUFBMkFLNytBU0RDRnNBR0FBQnNBRno5QTBDRUxZQU5BQURZQUxqNkI0QUlXd0FiQUFDd0FYRDFEd0FSdGdBMkFBQmdBK0RxSHdBaWJBRnNBQURBQmdBQUNCa0ExdjhBVUo1LzU3c05BQURZQUFBQTRRTEEraDhBeW5WM3p0c0FBRUQwRFFBQUlBQUFnTklEd1AxL0FDamY3YnkzQVFDQXlCc0FBRUFBQUFBRkcxV1YrLzhBWUFNQUFBZ0FBRUFBQUFBQ0FBQVFBQUNBQUFBQUVnMEFid0VFQUJzQUFFQUFBQUFDQUFBUUFBQ0FBQUFBQkFBQUlBQUFBQUVBQUFnQUFFQUFBQUFDQUFBUUFBQ0FBQUFBQkFBQUlBQUFBQUVBQUFnQUFCQUFBSUFBQUFBRUFBQWdBQUFBQVFBQUNBQUFRQUFBQUFJQUFCQUFBSUFBQUFBRUFBQWdBQUFBQVFBQUNBQUFRQUFBQUFJQUFLaXFxcXFlT0FUUXI5OWZ2emtJRDNpN3VlRWdRRTlHMTFmbk53NERHUGlDQUFRQVlQQUxBUkFBZ01FdkJFQUFBQWEvRUlEc2VSY0FHUDZPTndnQXdEQnkzQ0VDdHdEQUFNcWVXd0pnQXdDR3Y2OEhJQURBc1BGMUFjYnhrd0RKenVYRnFZTkFrdDhiejE4cytDS1FEYThCd01sOEJzZmY5MzFoRXJlNHZwYmNZeElHQ0FESStNcmU4QmNCZ2dBQkFFR0d2dUV2QXNRQXBmSWFBQXg5U09UNUlBYXdBY0RnZC9WUG9DMkFyUUEyQUJqNlUzajErazIvQWVETG1LMit2MWZPVG81c0JiQUJ3T0RQN2VROXp1SE90aTltNXBhL2JBMytHTm9JQXlHQURRQkZELzhVaGo2MDdlNzM5Ynd4Y0hseEtnS3dBYUNjd1oveXdIZjFid3VRNm5aQUNHQURnTUVQaFd3SFpnbUIyK2VjRUVBQWtNM3dOL2loM1JBUUFRZ0FraDcrQmo5MEV3SWlnSGw1RFFBRy94anUvNWNuNWRjQlRETExSa0FJWUFQQTRNUGZGVC8wdnhHd0RVQUFNTmp3Ti9oaDJCQVFBVXlyZGdndy9DRy9FR2o2ZkFVQmdPRVBJb0NBM0FMQTRJZU1JMkRTTFFFL0x3QWJBQXgvc0EwQUFVQS9KeDNBOHhFQlFFRlgvMDQya0Y4RTJBSWdBREQ4UVFTQUFNRHdCeEdBQU1Ed04veEJCQ0FBTVB3TmZ4QUJDQUNjUkFEUFh3UUFwVi85TzNsQTJSRmdDeUFBTVB3TmZ4QUJDQUNpRDMvQStRQUJnS3NGd1BNYUFVRHB0ZThrQVRFandCWkFBT0RrQUhpZUl3Q0lkUFVQT0Q4Z0FBajI1SFpWQUxZQUlrQUFBQUFDQUZmL2dDMEFBZ0FBRUFDVWV4VUFlUDRqQU1pWWRSN2d2SUVBUVAwRHpnTUlBQlVQNFB3aEFGRDlnUE1CQWdBQUVBQms1cUgxbmRvSHBqMHZ1QTBnQUFBQUFRQUFDQUNTWTIwSE9KOGdBUGlmKy8rQTh3TUNBQUFFQUFBZ0FNaVd0LzhCOC9KMlFBRUFBQWdBQUVBQUFBQUNBQUFRQUFDQUFLQlAzZ0VBTk9XZEFBSUFBQkFBQUlBQUFBQUVBQUFnQUFBQUFRQUFDQUFBUUFBQUFBSUFBQkFBQUlBQUFBQUVBQUFnQUFBQUFRQUFDQUFBUUFBQWdBQUFBQVFBQUNBQUFBQUJBQUFJQUFCQUFBQUFBZ0FBRUFBQXdOQ2VPQVFjN213N0NQZytEMmo1eTVhRElBQndJZ1NpbndzRWdRREE0QWNDbnlPRVFBeWo2NnZ6RzRlaEhKY1hwL2YrN1BqN3ZnTUR6R3h4ZmUzZW56MS9zZURBQ0FCU0R3Q0RIMmc3QkFSQU9id0xvRkNHUCtCOGdnRHdaQVZ3WHVFdmJnRVU1UGZYYnc0QzBMbTNteHNPZ2cwQWhqL2dmSU1Bd0pNUmNONUJBQUFBQWdBVkRqai9JQUR3NUFPY2h4QUFlTklCemtjSUFBQkFBS0MyQWVjbEJBQUFJQUJVTm9EekV3SUFBQkFBNmhyQWVRb0JBQUFJQUFBUUFBQ0FBQ0FaN3FzQnpsY0lBQUJBQUFBQUFnQUFFQUFBZ0FBQUFBUUFBQWdBQUVBQUFBQUNBQUFRQUFDQUFBQUFCQUFBSUFBQUFBRUFBQWdBQUVBQUFBQUNBQUFRQUFDQUFBQUFCQUFBSUFBQUFBRUFBQWdBQUJBQUFJQUFBQUFFQUFBZ0FBQUFBUUFBQ0FBQVFBQUFBQUlBQUJBQUFJQUFBQUFFQUFBZ0FBQUFBUUFBQ0FBQVFBQUFBQUlBQUJBQUFDQUFBQUFCQUFBSUFBQkFBQUFBQWdBQUVBQUFnQUFBQUFRQUFDQUFBQUFCQUFBSUFBQkFBQUFBQWdBQUVBQUFnQUFBQUFRQUFDQUFBRUFBQUFBQ0FBQVFBQUNBQUFBQUJBQUFJQUFBQUFFQUFBZ0FBRUFBQUFBQ0FBQVFBQUNBQUFBQUJBQUFJQUNLOTNaencwRUFuSzhRQUFDQUFBQUFCQUFBSUFBSzRiNGE0RHlGQUFBQUJJQzZCbkIrUWdBQUFBSkFaUU00THlFQUFFQUFvTFlCbkk4RUFKNTBBTTVEQWdCUFBnRG5Id0VBQUFnQVZEamd2SU1Bd0pNUmNMNGhDNlBycS9NYmg2RWNseGVuMWZIM2ZRY0NhTjNpK2xyMS9NV0NBMkVEUU1wUFVnRG5GUVNBSnl1QTh3bC9jUXVnTUpjWHAvZit6QzBCb0szQjd4YUFBQ0NqQUtpcXFucjErazExdUxQdEFBR1BXdjZ5VloyZEhJMzlPd0ZRamljT1Fhd25kVlZWUWdDWWVJNUFBQkRrU1M0SXdMa0FBWUNUQUtMSTl6a0U0RjBBQUNBQUFBQUJBQUFJQUFCQUFBQUFBZ0FBRUFBQWdBQUFBQVFBQUNBQUFBQUJBQUFJQUFCQUFBQUFBZ0FBbUpWZkJ3d3dvTDJEM2FuLzIwL3ZQenRnQ0FDQTBnZitZLyt2SUVBQUFCUTgrQi83bUVJQUFRQVFZUEFMQVFRQVFPREJMd1Jvd3JzQUFBb1kvaW45K3dnQUFNTmZCSkFvdHdBQUNoMjRiZ2xnQXdBUStHcmJOZ0FCQUJCMHVJb0FCRURobnI5WUdQdm5aeWRIRGc0d2xZZk9GdytkWHhBQUFLNytQVjRFQUlEaDczRWpBQUFNZjQrZlpIZ2JJRUFDUHJ6NytPRGYvZnoxd3dGQ0FBQ1VjdlU4YWVnLzlOKzFGUU43Qjd0K1BrQndiZ0VVeURzQklPOHIvaTcrdjJsNUI0QUFBS0NEcS84UDd6NDJIdUp0Zkl5MlBoOEVBQUE5WDcxM3ZRMUFBRkFRdHdGZ21Ldmxyb1oxMDQ5NzkvTnlmaEFBRk1EOU9zRDVCQUVBTUtDdVYvVnVCU0FBQUlJTmZ4R0FBT0FlYndlRWRwVCthdm05ZzExdi94TUFBSUFBb0ZpMkFOQzl2dGZ5YmdNZ0FQaWY5UjNnL0lFQXdCWUFBQUdnNGdHY053UUF0Z0FBQ0FBQVFBQ1F1VW5yUEZzQVlOcnpCUUlBZ0VmOC9QV2o2SDhQQVlBdEFPRHFId0dBSnplVTVkUDd6MFYvZnF0TEs4NFBBb0RJYkFHZ2ZYMnQ1YTMvRVFBMDJnS0lBTWh2T0xmeDhWMzlDd0FRQVFBQ2dJaGJBT0MrcHE4RDZHb0wwUFRqcmk2dE9COElBRVNBTFFCMHFlMElzUHBIQUNBQ0lJTXR3TzNRYmpxNDIvZ1lWZVhYQndzQW1FQUVRRnJiQUsvMnB5Mmo2NnZ6RzRlQnk0dlRpWC8vNnZXYlVNZmpjR2ZiTjBWaGxyOXN0ZmF4OWc1MlczOThrNjdHdXhqNnJ2NTU0aEJRVlg5dUJVeUtnTE9UbzNBUkFEbHNCR0JlYmdId1Z3Uk00bllBL0pIN1R3WjA5WThBUUFSQXNBZ3cvQkVBaUFBSUZnR0dQd0tBeGtRQWdBQWc0QlpBQkVCZVd3Qlgvd2dBWm9xQWFXNEhDQUZFUU5vUllQZ3pqcmNCTWxVSVBQWnpBcnhORUJId0p3SzYrQmtCQmo4MkFBd2FBWSt4Q1lCMHRnR0dQd0tBM2lOQUNDQUNobzBBdzU5cHVBWEF6Qkh3Mk8yQXU5c0F0d1dJSGdGOTNoSXcrSm1GM3dYQTNLWUpnVnM1aG9EZkIxQ09ObjhQd0x5NkRBR0RIeHNBa3R3RzJBaEFOeHVCMWFXVnFXN05nUUJnMEFnUUFuRC85UUd6Qk1IcTBzcTk1eDhJQUFhTmdLcXFoQURNZVJVLzczTU9tdkFhQUZvM1N3ajhLN1VnOERxQS9LVncvMzljL0RhSmJiQUJJTm1Od0x3UmNQZmthRHRBS2RwNGE2emhqdzBBWWJZQnFXd0piQUZjL2ZjNTZBMStiQUFvWmh2UWRnejRRVU9VL3IxaTZHTURnSzFBSW82LzcvdkNaV1p4ZmMzZ0J4c0FTdDhLUUFuUEI3QUJ3R2JBRm9DQ3IvNE5mUVFBWkJZRUlzRHdOL0FSQUJBMERFU0E0Vy9RVXdLdkFTQTdUckw0M29EbWFvY0Fadk4yYzhOQjhIVUJBUUNHRGI0ZWtCK3ZBWUNHZm4vOTVpQVkvR0FEQUlZUWpqc0lBRENNY0x3aFFXNEJRTXZjRWpENFFRQ0FFTURnQndFQVFnQ0RId1FBQ0FJTWZCQUFBRUJmdkFzQUFBUUFBQ0FBQUFBQkFBQUlBQUJBQUFBQUFnQUFFQUFBZ0FBQUFBUUFBQ0FBQUFBQkFBQUlBQUJBQUFBQUFnQUFFQUFBZ0FBQUFBUUFBQWdBQUVBQUFBQUNBQUFRQUFDQUFBQUFCQUFBSUFBQUFBRUFBQWdBQUVBQUFBQUNBQUFRQUFDQUFBQUFCQUFBSUFBQWdQRUI4UFRaeTVIREFBQTJBQUNBQUFBQUJBQUFJQUFBQUFFQUFBZ0FBQ0RaQVBCV1FBQ0k0K216bHlNYkFBQ0l1Z0VBQUFRQUFCQWxBTHdPQUFES2R6dnZiUUFBSVBJR0FBQVFBQUJBbEFEd09nQUFLTmZkT1c4REFBRFJOd0FBUU5BQWNCc0FBTXJ6NzN5M0FRQUFHd0FBSUd3QXVBMEFBT1VZTjlkdEFBREFCc0FXQUFCS3YvcTNBUUFBR3dCYkFBQ0ljUFZ2QXdBQU5nQzJBQUFRNGVyZkJnQUFiQUJzQVFBZ3d0Vy9EUUFBMkFEWUFnQkFoS3QvR3dBQXNBR3dCUUNBQ0ZmL2MyMEFSQUFBNUQzODV3b0FBQ0IvY3dXQUxRQUE1SHYxMzJnRElBSUFJTS9oM3lnQUFJQjhOUW9BV3dBQXlPL3F2NVVOZ0FnQWdMeUdmeXNCSUFJQUlLL2gzMW9BQUFCNWFTMEFiQUVBSUkrci85WTNBQ0lBQU5JZi9xMEhnQWdBZ1BTSGZ5Y0JJQUlBSVAyNVd1ZjBZQUhBOEU4OEFFUUFBS1E3Uit1Y0h6d0FHUDZKQm9BSUFJRDA1bVpkMGljREFJWi9ZZ0VnQWdBZ25UbFpsL3pKQVlEaFA5Nmd3L2o2NnZ6R2x4d0FnNzkvZGNSUEdnQWlELy9CQTBBRUFHRDREeU9wNGV1V0FBQUdmNUFOZ0cwQUFJWi84QTJBYlFBQUJuL0FEWUJ0QUFDR2YvQU5nRzBBQUFaLzhBQVFBZ0FZL0lFRFFBZ0FZUEFIRGdBaEFJREJIemdBaEFBQUJuL2dBQkFDQUJqOGdRTkFEQUJnNkFjUEFERUFnS0VmUEFBRUFRRFJCNzRBRUFRQVZIN2k3SCtuYkNlakc3bGFMQUFBQUFCSlJVNUVya0pnZ2c9PSIsICJzaXplcyI6ICI1MTJ4NTEyIiwgInR5cGUiOiAiaW1hZ2UvcG5nIiwgInB1cnBvc2UiOiAiYW55IG1hc2thYmxlIn1dfQ==">
+</head>
+<body>
+<div class="app">
+  <div class="head">
+    <div class="deco">(｡•ᴗ•｡) 家族の健康記録</div>
+    <h1>医療費記録</h1>
+    <div class="date" id="date"></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="input">記録</button>
+    <button class="tab" data-tab="list">一覧</button>
+    <button class="tab" data-tab="summary">集計</button>
+  </div>
+
+  <!-- ============ input ============ -->
+  <div class="page active" id="page-input">
+    <div class="gear-row"><button class="gear" id="gearBtn"><svg viewBox="0 0 48 48" width="20" height="20" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-4px"><path d="M24 7 V13 M24 35 V41 M7 24 H13 M35 24 H41 M12 12 L16.2 16.2 M31.8 31.8 L36 36 M36 12 L31.8 16.2 M16.2 31.8 L12 36" stroke-width="3.6"/><circle cx="24" cy="24" r="9" fill="#c9ccd4"/><circle cx="24" cy="24" r="3.5" fill="#fdfaf2"/></svg></button></div>
+    <div class="settings" id="settings">
+      <h3><svg viewBox="0 0 48 48" width="18" height="18" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><circle cx="14.5" cy="14" r="6" fill="#f2d4a8"/><path d="M5.5 37 Q5.5 24 14.5 24 Q23.5 24 23.5 37 Z" fill="#94b8c4"/><circle cx="33.5" cy="14" r="6" fill="#f2d4a8"/><path d="M24.5 37 Q24.5 24 33.5 24 Q42.5 24 42.5 37 Z" fill="#f4a09c"/><circle cx="24" cy="27" r="4.5" fill="#f2d4a8"/><path d="M17.5 41 Q17.5 33 24 33 Q30.5 33 30.5 41 Z" fill="#a8d8c8"/></svg> 家族の名前</h3>
+      <div id="setRows"></div>
+    </div>
+    <div class="card">
+      <div class="f-label"><svg viewBox="0 0 48 48" width="15" height="15" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="8" y="11" width="32" height="29" rx="4" fill="#f7ead8"/><path d="M8 19 H40" stroke-width="2.5"/><path d="M16 7 V14 M32 7 V14"/><circle cx="17" cy="26" r="1.6" fill="#6b584a" stroke="none"/><circle cx="24" cy="26" r="1.6" fill="#6b584a" stroke="none"/><circle cx="31" cy="26" r="1.6" fill="#6b584a" stroke="none"/><circle cx="17" cy="33" r="1.6" fill="#6b584a" stroke="none"/><circle cx="24" cy="33" r="1.6" fill="#6b584a" stroke="none"/></svg> 日付</div>
+      <input type="date" id="fDate">
+      <div class="f-label"><svg viewBox="0 0 48 48" width="15" height="15" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><circle cx="22" cy="15" r="7" fill="#f2d4a8"/><path d="M10 41 Q10 27 22 27 Q34 27 34 41 Z" fill="#a8d8c8"/><path d="M33 24 L39 13" stroke-width="4"/><circle cx="40" cy="10.5" r="3.2" fill="#f2d4a8"/></svg> 誰の？</div>
+      <div class="chips" id="whoChips"></div>
+      <div class="f-label"><svg viewBox="0 0 48 48" width="15" height="15" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M10 10 H24 L40 26 Q42 28 40 30 L30 40 Q28 42 26 40 L10 24 Z" fill="#f6cd8e"/><circle cx="17.5" cy="17.5" r="3" fill="#fff"/></svg> 区分</div>
+      <div class="chips" id="catChips"></div>
+      <div class="f-label"><svg viewBox="0 0 48 48" width="15" height="15" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="10" y="11" width="28" height="29" rx="2" fill="#f4f6f8"/><path d="M24 17 V27 M19 22 H29" stroke="#e8837e" stroke-width="4"/><rect x="20" y="32" width="8" height="8" fill="#ccd8e0" stroke-width="2"/><path d="M6 40 H42" stroke-width="2.5"/></svg> 病院・薬局の名前</div>
+      <input type="text" id="fPlace" placeholder="れい：やまだ小児科" maxlength="30" list="placeList">
+      <datalist id="placeList"></datalist>
+      <div class="f-label"><svg viewBox="0 0 48 48" width="15" height="15" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M19.5 12 Q17 8.5 20 7.5 L28 7.5 Q31 8.5 28.5 12" fill="#e8c987"/><path d="M18 13 H30 Q39 20 39 29.5 Q39 40 24 40 Q9 40 9 29.5 Q9 20 18 13 Z" fill="#f0d49c"/><path d="M20 21.5 L24 27 L28 21.5 M24 27 V34.5 M20.5 29.5 H27.5 M20.5 32.5 H27.5" stroke-width="2.6"/></svg> 支払った金額</div>
+      <div class="yen-row"><input type="number" id="fAmt" placeholder="0" min="0" inputmode="numeric"></div>
+      <button class="save-btn" id="saveBtn">記録する</button>
+    </div>
+    <div class="tip">通院の交通費（バス・電車）も医療費控除の対象になることがあるよ <svg viewBox="0 0 48 48" width="15" height="15" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="8" y="9" width="32" height="27" rx="5" fill="#f0c26e"/><rect x="12" y="14" width="10" height="8" rx="2" fill="#dff0f8"/><rect x="26" y="14" width="10" height="8" rx="2" fill="#dff0f8"/><path d="M8 28 H40" stroke-width="2"/><circle cx="16" cy="38" r="3.5" fill="#8a7466" stroke-width="2.5"/><circle cx="32" cy="38" r="3.5" fill="#8a7466" stroke-width="2.5"/></svg><br>「交通費」区分で記録しておこう</div>
+  </div>
+
+  <!-- ============ list ============ -->
+  <div class="page" id="page-list">
+    <div class="m-nav">
+      <button id="mPrev">‹</button>
+      <div class="m-title" id="mTitle"></div>
+      <button id="mNext">›</button>
+    </div>
+    <div class="m-sum">この月の合計 <b id="mSum">0</b> 円（<span id="mCnt">0</span>件）</div>
+    <div id="recList"></div>
+  </div>
+
+  <!-- ============ summary ============ -->
+  <div class="page" id="page-summary">
+    <div class="y-nav">
+      <button id="yPrev">‹</button>
+      <div class="y-title" id="yTitle"></div>
+      <button id="yNext">›</button>
+    </div>
+    <div class="year-card">
+      <div class="yc-label">年間医療費</div>
+      <div class="yc-amt"><span id="yAmt">0</span><small> 円</small></div>
+      <div class="yc-sub" id="ySub"></div>
+      <div class="ded-bar"><div class="ded-fill" id="dedFill"></div></div>
+      <div class="ded-cap"><span>0円</span><span>医療費控除ライン 10万円</span></div>
+    </div>
+    <div class="who-sum" id="whoSum"></div>
+    <button class="csv-btn" id="csvBtn"><svg viewBox="0 0 48 48" width="16" height="16" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M12 6 H28 L36 14 V42 H12 Z" fill="#fdfaf2"/><path d="M28 6 V14 H36"/><path d="M17 22 H31 M17 28 H31 M17 34 H26" stroke-width="2.5"/></svg> CSVで書き出す（確定申告用）</button>
+    <div class="tip">医療費控除は、1年間（1月〜12月）の医療費が原則10万円をこえた分が対象になる制度だよ。<br>くわしくは国税庁のサイトや税務署で確認してね。</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const KEY="iryohi_app_v1";
+const CATS=["診察・治療","くすり","交通費","その他"];
+const DEF_FAMILY=["さく","あお","パパ","ママ"];
+
+let state={family:DEF_FAMILY.slice(),records:[]};
+let selWho=0, selCat=0;
+let mRef=new Date(), yRef=new Date().getFullYear();
+
+/* storage: works inside Claude (window.storage) AND standalone (localStorage) */
+async function storeGet(k){
+  try{if(typeof window!=="undefined"&&window.storage&&window.storage.get){const r=await window.storage.get(k);return r?r.value:null;}}catch(e){}
+  try{return localStorage.getItem(k);}catch(e){return null;}
+}
+async function storeSet(k,v){
+  try{if(typeof window!=="undefined"&&window.storage&&window.storage.set){await window.storage.set(k,v);return;}}catch(e){}
+  try{localStorage.setItem(k,v);}catch(e){}
+}
+async function load(){
+  try{const v=await storeGet(KEY);if(v)state=Object.assign(state,JSON.parse(v));}catch(e){}
+  if(!Array.isArray(state.family)||state.family.length<1)state.family=DEF_FAMILY.slice();
+  if(!Array.isArray(state.records))state.records=[];
+  renderAll();
+}
+async function save(){try{await storeSet(KEY,JSON.stringify(state));}catch(e){}}
+
+function esc(s){return(""+s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function yen(n){return n.toLocaleString("ja-JP");}
+let toastT;function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),2300);}
+
+function renderAll(){renderWhoChips();renderCatChips();renderSettings();renderList();renderSummary();renderPlaceList();}
+
+/* ---- tabs ---- */
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x===t));
+  document.querySelectorAll(".page").forEach(x=>x.classList.toggle("active",x.id==="page-"+t.dataset.tab));
+  if(t.dataset.tab==="list")renderList();
+  if(t.dataset.tab==="summary")renderSummary();
+}));
+
+/* ---- input form ---- */
+function todayStr(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+document.getElementById("fDate").value=todayStr();
+
+function renderWhoChips(){
+  const w=document.getElementById("whoChips");w.innerHTML="";
+  if(selWho>=state.family.length)selWho=0;
+  state.family.forEach((n,i)=>{
+    const b=document.createElement("button");b.className="chip"+(i===selWho?" sel":"");b.textContent=n;
+    b.addEventListener("click",()=>{selWho=i;renderWhoChips();});
+    w.appendChild(b);
+  });
+}
+function renderCatChips(){
+  const w=document.getElementById("catChips");w.innerHTML="";
+  CATS.forEach((n,i)=>{
+    const b=document.createElement("button");b.className="chip cat"+(i===selCat?" sel":"");b.textContent=n;
+    b.addEventListener("click",()=>{selCat=i;renderCatChips();});
+    w.appendChild(b);
+  });
+}
+function renderPlaceList(){
+  const dl=document.getElementById("placeList");dl.innerHTML="";
+  const seen={};
+  state.records.slice().reverse().forEach(r=>{
+    if(r.place&&!seen[r.place]){seen[r.place]=1;
+      const o=document.createElement("option");o.value=r.place;dl.appendChild(o);}
+  });
+}
+document.getElementById("saveBtn").addEventListener("click",async()=>{
+  const date=document.getElementById("fDate").value;
+  const place=document.getElementById("fPlace").value.trim();
+  const amt=parseInt(document.getElementById("fAmt").value,10);
+  if(!date){toast("日付を選んでね");return;}
+  if(!amt||amt<1){toast("金額を入力してね");return;}
+  state.records.push({id:Date.now(),date:date,who:selWho,cat:selCat,place:place,amt:amt});
+  await save();
+  document.getElementById("fPlace").value="";document.getElementById("fAmt").value="";
+  renderPlaceList();
+  toast("記録したよ ✓ "+state.family[selWho]+"・"+yen(amt)+"円");
+});
+
+/* ---- settings ---- */
+document.getElementById("gearBtn").addEventListener("click",()=>document.getElementById("settings").classList.toggle("show"));
+function renderSettings(){
+  const sr=document.getElementById("setRows");sr.innerHTML="";
+  state.family.forEach((n,i)=>{
+    const row=document.createElement("div");row.className="set-row";
+    row.innerHTML='<input type="text" value="'+esc(n)+'" maxlength="10" data-i="'+i+'">';
+    sr.appendChild(row);
+  });
+  sr.querySelectorAll("input").forEach(inp=>inp.addEventListener("input",()=>{
+    state.family[+inp.dataset.i]=inp.value||"なまえ";renderWhoChips();save();}));
+}
+
+/* ---- monthly list ---- */
+function monthKey(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");}
+function renderList(){
+  const mk=monthKey(mRef);
+  document.getElementById("mTitle").textContent=mRef.getFullYear()+"年 "+(mRef.getMonth()+1)+"月";
+  const recs=state.records.filter(r=>r.date&&r.date.slice(0,7)===mk).sort((a,b)=>a.date<b.date?1:-1);
+  const list=document.getElementById("recList");list.innerHTML="";
+  let sum=0;
+  if(recs.length===0)list.innerHTML='<div class="empty">この月の記録はまだないよ ✎</div>';
+  recs.forEach(r=>{
+    sum+=r.amt;
+    const el=document.createElement("div");el.className="rec";
+    const d=r.date.slice(8,10).replace(/^0/,"")+"日";
+    el.innerHTML='<span class="r-who w'+((r.who%4)+1)+'">'+esc(state.family[r.who]||"？")+'</span>'
+      +'<div class="r-mid"><div class="r-place">'+esc(r.place||CATS[r.cat]||"")+'</div>'
+      +'<div class="r-meta">'+d+'・'+(CATS[r.cat]||"")+'</div></div>'
+      +'<span class="r-amt">'+yen(r.amt)+'円</span>'
+      +'<button class="del" data-id="'+r.id+'">×</button>';
+    list.appendChild(el);
+  });
+  document.getElementById("mSum").textContent=yen(sum);
+  document.getElementById("mCnt").textContent=recs.length;
+  list.querySelectorAll(".del").forEach(b=>b.addEventListener("click",async()=>{
+    state.records=state.records.filter(r=>r.id!=b.dataset.id);
+    await save();renderList();renderSummary();renderPlaceList();
+  }));
+}
+document.getElementById("mPrev").addEventListener("click",()=>{mRef=new Date(mRef.getFullYear(),mRef.getMonth()-1,1);renderList();});
+document.getElementById("mNext").addEventListener("click",()=>{mRef=new Date(mRef.getFullYear(),mRef.getMonth()+1,1);renderList();});
+
+/* ---- yearly summary ---- */
+const DED_LINE=100000;
+function renderSummary(){
+  document.getElementById("yTitle").textContent=yRef+"年";
+  const recs=state.records.filter(r=>r.date&&r.date.slice(0,4)==(""+yRef));
+  const total=recs.reduce((s,r)=>s+r.amt,0);
+  document.getElementById("yAmt").textContent=yen(total);
+  const pct=Math.min(100,Math.round(total/DED_LINE*100));
+  document.getElementById("dedFill").style.width=pct+"%";
+  const sub=document.getElementById("ySub");
+  if(total>=DED_LINE)sub.textContent="10万円を超えたよ！医療費控除をチェック✨";
+  else sub.textContent="控除ラインまであと "+yen(DED_LINE-total)+"円";
+  const ws=document.getElementById("whoSum");ws.innerHTML="";
+  state.family.forEach((n,i)=>{
+    const rs=recs.filter(r=>r.who===i);if(rs.length===0&&total>0&&false)return;
+    const t=rs.reduce((s,r)=>s+r.amt,0);
+    const el=document.createElement("div");el.className="ws";
+    el.innerHTML='<span class="r-who w'+((i%4)+1)+'">'+esc(n)+'</span>'
+      +'<span class="w-name"></span><span class="w-cnt">'+rs.length+'件</span>'
+      +'<span class="w-amt">'+yen(t)+'円</span>';
+    ws.appendChild(el);
+  });
+}
+document.getElementById("yPrev").addEventListener("click",()=>{yRef--;renderSummary();});
+document.getElementById("yNext").addEventListener("click",()=>{yRef++;renderSummary();});
+
+/* ---- CSV export ---- */
+document.getElementById("csvBtn").addEventListener("click",()=>{
+  const recs=state.records.filter(r=>r.date&&r.date.slice(0,4)==(""+yRef)).sort((a,b)=>a.date<b.date?-1:1);
+  if(recs.length===0){toast("この年の記録がないよ");return;}
+  let csv="\uFEFF日付,氏名,区分,病院・薬局,金額\n";
+  recs.forEach(r=>{
+    const cell=s=>'"'+(""+s).replace(/"/g,'""')+'"';
+    csv+=[r.date,cell(state.family[r.who]||""),cell(CATS[r.cat]||""),cell(r.place||""),r.amt].join(",")+"\n";
+  });
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download="iryohi_"+yRef+".csv";document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
+  toast("CSVを書き出したよ");
+});
+
+const now=new Date();const wd=["日","月","火","水","木","金","土"][now.getDay()];
+document.getElementById("date").textContent=(now.getMonth()+1)+"月"+now.getDate()+"日（"+wd+"）";
+load();
+</script>
+
+<div class="bkx">
+  <h3><svg viewBox="0 0 48 48" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M24 7 V25 M17 19 L24 26 L31 19"/><path d="M8 29 V35 Q8 40 13 40 H35 Q40 40 40 35 V29"/></svg> データのバックアップ</h3>
+  記録はこの端末のブラウザ内に保存されています。ときどきファイルに書き出しておくと、機種変更やアプリのお引っ越しでも安心です。<br>
+  <button class="bkx-btn" id="bkxExp">書き出す</button><button class="bkx-btn sub" id="bkxImpBtn">読み込む</button>
+  <input type="file" id="bkxImp" accept=".json" style="display:none">
+</div>
+<script>
+(function(){
+  var APP="iryohi";
+  document.getElementById("bkxExp").addEventListener("click",function(){
+    var data={};
+    for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);data[k]=localStorage.getItem(k);}
+    var blob=new Blob([JSON.stringify({__bkx:APP,data:data},null,2)],{type:"application/json"});
+    var a=document.createElement("a");a.href=URL.createObjectURL(blob);
+    var d=new Date();
+    a.download=APP+"-backup-"+d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")+".json";
+    a.click();URL.revokeObjectURL(a.href);
+  });
+  document.getElementById("bkxImpBtn").addEventListener("click",function(){document.getElementById("bkxImp").click();});
+  document.getElementById("bkxImp").addEventListener("change",function(ev){
+    var f=ev.target.files[0];if(!f)return;
+    var r=new FileReader();
+    r.onload=function(){
+      try{
+        var j=JSON.parse(r.result);
+        var data=j.__bkx?j.data:j;
+        if(typeof data!=="object"||!data)throw 0;
+        if(!confirm("今の記録を読み込んだ内容で置き換えます。よろしいですか？"))return;
+        Object.keys(data).forEach(function(k){localStorage.setItem(k,data[k]);});
+        alert("読み込みました。画面を更新します。");location.reload();
+      }catch(e){alert("このファイルは読み込めませんでした");}
+    };
+    r.readAsText(f);ev.target.value="";
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>予防接種手帳</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#a8d8c8">
+<style>
+@font-face{font-family:"Azuki";src:url("../azukiP.ttf") format("truetype");font-display:swap;}
+
+  :root{
+    --bg:#f0f8f4; --card:#ffffff; --text:#3d4a44; --sub:#93a89d;
+    --accent:#7ec8a9; --accent-dark:#5eab8c; --pink:#f4a09c;
+    --done:#7ec8a9; --pending:#e4ded6; --optional:#b8a9d9;
+    --shadow:0 2px 10px rgba(90,140,115,.12);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    font-family:"Azuki","Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif;
+    background:var(--bg); color:var(--text);
+    max-width:480px; margin:0 auto; min-height:100vh; padding-bottom:84px;
+  }
+  header{text-align:center; padding:18px 16px 10px}
+  header h1{font-size:20px; letter-spacing:2px; display:flex; align-items:center; justify-content:center; gap:8px}
+  header h1 svg{width:26px; height:26px}
+
+  .kids{display:flex; gap:8px; padding:10px 16px 4px}
+  .kid-tab{
+    flex:1; border:none; background:var(--card); border-radius:16px;
+    padding:10px 6px; font-family:inherit; box-shadow:var(--shadow);
+    color:var(--sub); font-size:14px; border:2px solid transparent;
+  }
+  .kid-tab.active{border-color:var(--accent); color:var(--text); font-weight:bold}
+  .kid-tab .age{display:block; font-size:10.5px; margin-top:2px; font-weight:normal}
+  .kid-edit{font-size:11px; color:var(--sub); text-align:center; padding:6px 0 2px}
+  .kid-edit button{border:none;background:none;color:var(--accent-dark);font-family:inherit;font-size:11px;text-decoration:underline}
+
+  .progress-wrap{padding:8px 16px 12px}
+  .progress-bar{background:#e2ede7; border-radius:999px; height:14px; overflow:hidden}
+  .progress-fill{background:linear-gradient(90deg,var(--accent),#9adbbf); height:100%; border-radius:999px; transition:.4s}
+  .progress-text{font-size:11px; color:var(--sub); text-align:center; margin-top:4px}
+
+  .page{display:none; padding:0 14px}
+  .page.active{display:block}
+
+  .section-label{font-size:12.5px; font-weight:bold; color:var(--sub); margin:12px 4px 8px; letter-spacing:1px}
+
+  .vac{
+    background:var(--card); border-radius:18px; box-shadow:var(--shadow);
+    padding:14px 16px; margin-bottom:10px;
+  }
+  .vac-head{display:flex; align-items:center; gap:8px}
+  .vac .icon{width:28px; height:28px; flex-shrink:0}
+  .vac .icon svg{width:100%; height:100%}
+  .vac .vname{font-size:14.5px; font-weight:bold; flex:1}
+  .vac .tag{font-size:10px; padding:2px 8px; border-radius:999px; color:#fff; background:var(--optional)}
+  .vac .vdel{border:none;background:none;color:#dcd4c9;font-size:14px;padding:4px}
+  .vac .note{font-size:11px; color:var(--sub); margin:3px 0 8px}
+  .doses{display:flex; gap:8px; flex-wrap:wrap}
+  .dose{
+    min-width:58px; border:none; font-family:inherit;
+    background:#f2efe9; border-radius:12px; padding:7px 8px;
+    font-size:11px; color:var(--sub); text-align:center;
+  }
+  .dose .dnum{display:block; font-size:12px; font-weight:bold}
+  .dose .ddate{display:block; font-size:10px; margin-top:1px}
+  .dose.done{background:var(--done); color:#fff}
+  .dose.done .ddate{color:#eafff5}
+
+  .add-row{display:flex; gap:8px; margin:14px 0 20px}
+  .add-row input{
+    flex:1; border:2px solid #dcebe2; border-radius:14px; padding:10px 14px;
+    font-family:inherit; font-size:13px; background:var(--card); color:var(--text);
+    outline:none; min-width:0;
+  }
+  .add-row input.cnt{flex:0 0 74px}
+  .add-row button{
+    border:none; background:var(--accent); color:#fff; font-family:inherit;
+    font-weight:bold; font-size:13px; padding:0 16px; border-radius:14px;
+  }
+
+  .hist-item{
+    background:var(--card); border-radius:14px; box-shadow:var(--shadow);
+    padding:10px 14px; margin-bottom:6px; font-size:13.5px;
+  }
+  .hist-item .top{display:flex; justify-content:space-between; gap:8px; align-items:center}
+  .hist-item .hico{display:inline-block; width:20px; height:20px; vertical-align:-4px; margin-right:4px}
+  .hist-item .hico svg{width:100%; height:100%}
+  .hist-item .memo{font-size:11px; color:var(--sub); margin-top:2px}
+  .hist-item time{font-size:11px; color:var(--sub); flex-shrink:0}
+  .empty{text-align:center; color:var(--sub); font-size:13px; padding:40px 0; line-height:2}
+
+  .bk-card{background:var(--card); border-radius:18px; box-shadow:var(--shadow); padding:16px; margin-bottom:12px}
+  .bk-card h3{font-size:14px; margin-bottom:6px; display:flex; align-items:center; gap:6px}
+  .bk-card h3 svg{width:20px; height:20px}
+  .bk-card p{font-size:12px; color:var(--sub); line-height:1.7; margin-bottom:10px}
+  .bk-btn{
+    border:none; background:var(--accent); color:#fff; font-family:inherit;
+    font-weight:bold; font-size:13px; padding:10px 18px; border-radius:14px; margin-right:8px;
+  }
+  .bk-btn.sub{background:#c9bfae}
+  .disclaimer{font-size:11px; color:var(--sub); line-height:1.8; padding:4px 6px 20px}
+
+  .tabbar{
+    position:fixed; bottom:0; left:0; right:0; max-width:480px; margin:0 auto;
+    display:flex; background:var(--card); box-shadow:0 -2px 10px rgba(90,140,115,.15);
+    padding-bottom:env(safe-area-inset-bottom); z-index:5;
+  }
+  .tabbar button{
+    flex:1; border:none; background:none; padding:11px 0 9px;
+    font-size:12px; color:var(--sub); font-family:inherit;
+  }
+  .tabbar button .ico{display:flex; justify-content:center; margin-bottom:3px}
+  .tabbar button .ico svg{width:22px; height:22px}
+  .tabbar button.active{color:var(--accent-dark); font-weight:bold}
+
+  #overlay{
+    display:none; position:fixed; inset:0; background:rgba(60,80,70,.35); z-index:20;
+    align-items:center; justify-content:center; padding:20px;
+  }
+  #overlay.show{display:flex}
+  .modal{
+    background:var(--card); border-radius:20px; padding:20px; width:100%; max-width:340px;
+    box-shadow:0 10px 40px rgba(0,0,0,.2);
+  }
+  .modal h3{font-size:15px; margin-bottom:12px}
+  .modal label{font-size:12px; color:var(--sub); display:block; margin:10px 0 4px}
+  .modal input{
+    width:100%; border:2px solid #dcebe2; border-radius:12px; padding:10px 12px;
+    font-family:inherit; font-size:14px; background:#fbfdfb; color:var(--text); outline:none;
+  }
+  .modal input:focus{border-color:var(--accent)}
+  .modal .btns{display:flex; gap:8px; margin-top:16px}
+  .modal .btns button{
+    flex:1; border:none; border-radius:12px; padding:11px 0; font-family:inherit;
+    font-size:13.5px; font-weight:bold;
+  }
+  .m-save{background:var(--accent); color:#fff}
+  .m-del{background:#f0e3e2; color:#c4756f}
+  .m-cancel{background:#eee9e0; color:var(--sub)}
+
+  #toast{
+    position:fixed; left:50%; bottom:92px; transform:translateX(-50%) translateY(20px);
+    background:var(--text); color:#fff; font-size:14px; padding:12px 22px;
+    border-radius:999px; opacity:0; pointer-events:none; transition:.3s;
+    white-space:nowrap; z-index:30;
+  }
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<header><h1><span id="hIcon"></span>予防接種手帳</h1></header>
+
+<div class="kids" id="kidTabs"></div>
+<div class="kid-edit"><button onclick="editKid()">✎ 名前・誕生日を設定</button></div>
+
+<div class="progress-wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progFill" style="width:0%"></div></div>
+  <div class="progress-text" id="progText"></div>
+</div>
+
+<div id="pageVac" class="page active">
+  <div id="vacList"></div>
+  <div class="add-row">
+    <input id="newVac" type="text" placeholder="ワクチンを追加（例：インフルエンザ）" maxlength="20">
+    <input id="newVacCnt" class="cnt" type="number" min="1" max="10" value="1" title="回数">
+    <button onclick="addVaccine()">追加</button>
+  </div>
+  <div class="disclaimer">
+    ※ 正式な記録は母子健康手帳です。接種時期・対象は自治体からのお知らせやかかりつけ医で確認してください。
+  </div>
+</div>
+
+<div id="pageHistory" class="page"><div id="histList"></div></div>
+
+<div id="pageBackup" class="page">
+  <div class="bk-card">
+    <h3><span id="bkIcon"></span>バックアップ</h3>
+    <p>記録はこのスマホのブラウザ内に保存されています。大切な記録なので、ときどきファイルに書き出して保存しておくと安心です。</p>
+    <button class="bk-btn" onclick="exportData()">書き出す</button>
+    <button class="bk-btn sub" onclick="document.getElementById('importFile').click()">読み込む</button>
+    <input id="importFile" type="file" accept=".json" style="display:none" onchange="importData(event)">
+  </div>
+</div>
+
+<nav class="tabbar">
+  <button id="tabVac" class="active" onclick="showPage('Vac')"><span class="ico" data-icon="syringe"></span>接種</button>
+  <button id="tabHistory" onclick="showPage('History')"><span class="ico" data-icon="book"></span>記録</button>
+  <button id="tabBackup" onclick="showPage('Backup')"><span class="ico" data-icon="save"></span>保存</button>
+</nav>
+
+<div id="overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <h3 id="mTitle"></h3>
+    <label>接種した日</label>
+    <input type="date" id="mDate">
+    <label>メモ（病院名など・省略可）</label>
+    <input type="text" id="mMemo" maxlength="40" placeholder="〇〇クリニック">
+    <div class="btns">
+      <button class="m-cancel" onclick="closeModal()">やめる</button>
+      <button class="m-del" id="mDelBtn" onclick="deleteRecord()">削除</button>
+      <button class="m-save" onclick="saveRecord()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const KEY = "sesshu-log-v1";
+
+/* 手描き風SVGアイコン */
+const SVG_OPEN = '<svg viewBox="0 0 48 48" fill="none" stroke="#5b4636" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">';
+const ICONS = {
+  syringe: SVG_OPEN+'<g transform="rotate(-35 24 24)"><rect x="13" y="19" width="17" height="10" rx="2" fill="#cfe8f5"/><path d="M30 24 H39"/><path d="M39 24 H45" stroke-width="2"/><path d="M8 24 H13 M8 19 V29"/><path d="M18 20 V24 M23 20 V24" stroke-width="2"/></g></svg>',
+  bottle: SVG_OPEN+'<path d="M20 15 Q24 5 28 15 Z" fill="#f4a09c"/><rect x="17" y="15" width="14" height="6" rx="2" fill="#f6d9a4"/><rect x="16" y="21" width="16" height="20" rx="5" fill="#fdf6e3"/><path d="M20 27 H28 M20 33 H28" stroke="#c9b48c" stroke-width="2"/></svg>',
+  shield: SVG_OPEN+'<path d="M24 6 L39 12 V23 Q39 35 24 42 Q9 35 9 23 V12 Z" fill="#b8e0cc"/><path d="M18 24 L23 29 L31 19" stroke="#fff" stroke-width="3.5"/></svg>',
+  arm: SVG_OPEN+'<g transform="rotate(-25 24 24)"><rect x="12" y="18" width="19" height="11" rx="2.5" fill="#cfe8f5"/><path d="M31 23.5 H40"/><path d="M40 23.5 H45" stroke-width="2"/><path d="M7 23.5 H12 M7 18 V29"/></g><path d="M14 8 L18 12 M34 40 L30 36" stroke-width="2.5"/><path d="M38 6 L39.5 10 L43.5 11.5 L39.5 13 L38 17 L36.5 13 L32.5 11.5 L36.5 10 Z" fill="#ffe08c" stroke-width="2"/></svg>',
+  lungs: SVG_OPEN+'<path d="M24 9 V19"/><path d="M22 19 Q10 24 12 35 Q13 40 18 39 Q22 38 22 31 V19 Z" fill="#f4bcc6"/><path d="M26 19 Q38 24 36 35 Q35 40 30 39 Q26 38 26 31 V19 Z" fill="#f4bcc6"/></svg>',
+  sprout: SVG_OPEN+'<path d="M24 42 V25"/><path d="M24 27 Q12 26 10 14 Q22 15 24 27 Z" fill="#a9d9a0"/><path d="M24 23 Q36 22 38 10 Q26 11 24 23 Z" fill="#c6e8b8"/></svg>',
+  star: SVG_OPEN+'<path d="M24 7 L28.5 17.5 L40 18.7 L31.3 26.5 L34 38.5 L24 32.2 L14 38.5 L16.7 26.5 L8 18.7 L19.5 17.5 Z" fill="#ffdf8c"/></svg>',
+  drop: SVG_OPEN+'<path d="M24 7 Q35 24 31 33 Q28 40 24 40 Q20 40 17 33 Q13 24 24 7 Z" fill="#b8def0"/><path d="M20.5 28 Q19.5 32 22.5 34.5" stroke="#fff" stroke-width="2.5"/></svg>',
+  bug: SVG_OPEN+'<ellipse cx="16" cy="22" rx="8.5" ry="4.5" fill="#e9f3f8" transform="rotate(-25 16 22)"/><ellipse cx="32" cy="22" rx="8.5" ry="4.5" fill="#e9f3f8" transform="rotate(25 32 22)"/><ellipse cx="24" cy="27" rx="4.5" ry="10.5" fill="#c0b4aa"/><circle cx="24" cy="13.5" r="4" fill="#c0b4aa"/><path d="M20 33 L13 40 M28 33 L35 40" stroke-width="2"/></svg>',
+  bag: SVG_OPEN+'<path d="M17 16 Q24 8 31 16"/><rect x="11" y="15" width="26" height="24" rx="9" fill="#f4a09c"/><rect x="18" y="25" width="12" height="10" rx="3.5" fill="#fdf0e8"/></svg>',
+  ribbon: SVG_OPEN+'<path d="M20.5 22 Q8 13.5 9.8 25.5 Q11 33 20.5 26.5 Z" fill="#f7b8cc"/><path d="M27.5 22 Q40 13.5 38.2 25.5 Q37 33 27.5 26.5 Z" fill="#f7b8cc"/><path d="M21 28 L17.5 38 M27 28 L30.5 38" stroke-width="2.5"/><circle cx="24" cy="24" r="3.6" fill="#f290b0"/></svg>',
+  hamster: SVG_OPEN+'<circle cx="14.5" cy="14" r="5" fill="#f2d4a8"/><circle cx="33.5" cy="14" r="5" fill="#f2d4a8"/><circle cx="24" cy="26" r="14" fill="#f2d4a8"/><circle cx="19" cy="24" r="1.8" fill="#5b4636" stroke="none"/><circle cx="29" cy="24" r="1.8" fill="#5b4636" stroke="none"/><circle cx="14.5" cy="30" r="3.5" fill="#f7b8b0" stroke="none"/><circle cx="33.5" cy="30" r="3.5" fill="#f7b8b0" stroke="none"/><path d="M22.5 29.5 Q24 31 25.5 29.5" stroke-width="2"/></svg>',
+  mask: SVG_OPEN+'<circle cx="24" cy="24" r="15" fill="#f9ddc4"/><circle cx="18" cy="18.5" r="1.8" fill="#5b4636" stroke="none"/><circle cx="30" cy="18.5" r="1.8" fill="#5b4636" stroke="none"/><rect x="14" y="24" width="20" height="11" rx="5" fill="#cfe8f5"/><path d="M14 27 L9 22.5 M34 27 L39 22.5" stroke-width="2"/><path d="M18 29 H30" stroke="#9cc4dc" stroke-width="2"/></svg>',
+  bandage: SVG_OPEN+'<g transform="rotate(35 24 24)"><rect x="6" y="17" width="36" height="14" rx="7" fill="#f5d9a8"/><rect x="18" y="19" width="12" height="10" rx="2.5" fill="#fdf0d8" stroke-width="2"/><circle cx="22" cy="22.5" r="0.9" fill="#c9ae82" stroke="none"/><circle cx="26" cy="22.5" r="0.9" fill="#c9ae82" stroke="none"/><circle cx="22" cy="26" r="0.9" fill="#c9ae82" stroke="none"/><circle cx="26" cy="26" r="0.9" fill="#c9ae82" stroke="none"/></g></svg>',
+  book: SVG_OPEN+'<path d="M24 13 Q16 8 7 10 V36 Q16 34 24 39 Q32 34 41 36 V10 Q32 8 24 13 Z" fill="#fdf3dc"/><path d="M24 13 V39"/><path d="M12 17 Q16 16 19 18 M12 23 Q16 22 19 24" stroke-width="2"/><path d="M29 18 Q33 16 36 17 M29 24 Q33 22 36 23" stroke-width="2"/></svg>',
+  save: SVG_OPEN+'<path d="M24 7 V25 M17 19 L24 26 L31 19"/><path d="M8 29 V35 Q8 40 13 40 H35 Q40 40 40 35 V29"/></svg>',
+};
+function icon(name, fallback){ return ICONS[name] || ICONS[fallback||"bandage"]; }
+const VAC_ICON = {rota:"bottle", hepb:"shield", "5mix":"arm", pcv:"lungs", bcg:"sprout", mr:"star", vzv:"drop", je:"bug", dt:"bag", hpv:"ribbon", mumps:"hamster", flu:"mask"};
+function vacIcon(id){ return icon(VAC_ICON[id], "bandage"); }
+
+const PRESET = [
+  {id:"rota",  name:"ロタウイルス",     doses:3, note:"生後2か月〜 ／ ロタリックスは2回・ロタテックは3回", optional:false},
+  {id:"hepb",  name:"B型肝炎",         doses:3, note:"生後2か月・3か月・7〜8か月ごろ", optional:false},
+  {id:"5mix",  name:"五種混合",         doses:4, note:"生後2・3・4か月＋1歳ごろ追加（四種混合＋ヒブで開始した場合はそのまま完了）", optional:false},
+  {id:"pcv",   name:"小児用肺炎球菌",   doses:4, note:"生後2・3・4か月＋1歳ごろ追加", optional:false},
+  {id:"bcg",   name:"BCG",             doses:1, note:"生後5〜8か月ごろ", optional:false},
+  {id:"mr",    name:"MR（麻しん・風しん）", doses:2, note:"1期：1歳 ／ 2期：年長の1年間", optional:false},
+  {id:"vzv",   name:"水痘（みずぼうそう）", doses:2, note:"1歳〜1歳半ごろに2回", optional:false},
+  {id:"je",    name:"日本脳炎",         doses:4, note:"1期：3歳で2回＋4歳 ／ 2期：9歳", optional:false},
+  {id:"dt",    name:"二種混合（DT）",   doses:1, note:"11〜12歳", optional:false},
+  {id:"hpv",   name:"HPV",             doses:3, note:"小6〜高1（開始年齢により2回で完了の場合あり）", optional:false},
+  {id:"mumps", name:"おたふくかぜ",     doses:2, note:"1歳〜（任意接種）", optional:true},
+  {id:"flu",   name:"インフルエンザ",   doses:2, note:"毎年秋〜（任意接種）", optional:true},
+];
+
+let state = load();
+let modalCtx = null;
+
+function load(){
+  try{
+    const s = JSON.parse(localStorage.getItem(KEY));
+    if(s && s.kids) return s;
+  }catch(e){}
+  return {
+    kids:[{name:"子ども1", birth:""},{name:"子ども2", birth:""}],
+    active:0,
+    vaccines: PRESET.map(v=>({...v})),
+    records:[]
+  };
+}
+function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+
+function fmtDate(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
+function jpDate(s){ if(!s) return ""; const [y,m,d]=s.split("-"); return `${y}/${+m}/${+d}`; }
+function ageText(birth){
+  if(!birth) return "";
+  const b = new Date(birth+"T00:00:00"), n = new Date();
+  let months = (n.getFullYear()-b.getFullYear())*12 + n.getMonth()-b.getMonth();
+  if(n.getDate() < b.getDate()) months--;
+  if(months < 0) return "";
+  const y = Math.floor(months/12), m = months%12;
+  return y>0 ? `${y}歳${m}か月` : `${m}か月`;
+}
+
+function getRecord(kid, vac, dose){
+  return state.records.find(r=>r.kid===kid && r.vac===vac && r.dose===dose) || null;
+}
+
+function renderKids(){
+  const el = document.getElementById("kidTabs");
+  el.innerHTML = "";
+  state.kids.forEach((k,i)=>{
+    const b = document.createElement("button");
+    b.className = "kid-tab" + (i===state.active?" active":"");
+    b.innerHTML = `${escapeHtml(k.name)}<span class="age">${ageText(k.birth)||"　"}</span>`;
+    b.onclick = ()=>{ state.active=i; save(); renderAll(); };
+    el.appendChild(b);
+  });
+}
+
+function renderVaccines(){
+  const el = document.getElementById("vacList");
+  el.innerHTML = "";
+  const kid = state.active;
+  const groups = [["定期接種", state.vaccines.filter(v=>!v.optional)],
+                  ["任意接種など", state.vaccines.filter(v=>v.optional)]];
+  groups.forEach(([label, vacs])=>{
+    if(!vacs.length) return;
+    const lab = document.createElement("div");
+    lab.className="section-label"; lab.textContent=label;
+    el.appendChild(lab);
+    vacs.forEach(v=>{
+      const vi = state.vaccines.indexOf(v);
+      const card = document.createElement("div");
+      card.className="vac";
+      let dosesHtml = "";
+      for(let d=0; d<v.doses; d++){
+        const rec = getRecord(kid, v.id, d);
+        dosesHtml += `<button class="dose${rec?" done":""}" onclick="openModal(${vi},${d})">
+          <span class="dnum">${d+1}回目</span>
+          <span class="ddate">${rec?jpDate(rec.date):"未接種"}</span>
+        </button>`;
+      }
+      card.innerHTML = `
+        <div class="vac-head">
+          <span class="icon">${vacIcon(v.id)}</span>
+          <span class="vname">${escapeHtml(v.name)}</span>
+          ${v.optional?'<span class="tag">任意</span>':""}
+          ${v.custom?`<button class="vdel" onclick="removeVaccine(${vi})">✕</button>`:""}
+        </div>
+        <div class="note">${escapeHtml(v.note||"")}</div>
+        <div class="doses">${dosesHtml}</div>`;
+      el.appendChild(card);
+    });
+  });
+}
+
+function renderProgress(){
+  const kid = state.active;
+  const routine = state.vaccines.filter(v=>!v.optional);
+  let total=0, done=0;
+  routine.forEach(v=>{
+    total += v.doses;
+    for(let d=0;d<v.doses;d++) if(getRecord(kid,v.id,d)) done++;
+  });
+  const pct = total? Math.round(done/total*100) : 0;
+  document.getElementById("progFill").style.width = pct+"%";
+  document.getElementById("progText").textContent =
+    `${state.kids[kid].name}の定期接種：${done} / ${total} 回（${pct}%）`;
+}
+
+function renderHistory(){
+  const el = document.getElementById("histList");
+  el.innerHTML = "";
+  const kid = state.active;
+  const recs = state.records
+    .filter(r=>r.kid===kid)
+    .sort((a,b)=>b.date.localeCompare(a.date));
+  if(!recs.length){
+    el.innerHTML = '<div class="empty">まだ記録がありません。<br>接種したら「未接種」ボタンをタップしてね</div>';
+    return;
+  }
+  recs.forEach(r=>{
+    const v = state.vaccines.find(v=>v.id===r.vac);
+    const div = document.createElement("div");
+    div.className="hist-item";
+    div.innerHTML = `
+      <div class="top">
+        <span><span class="hico">${vacIcon(r.vac)}</span>${escapeHtml(v?v.name:r.vac)}（${r.dose+1}回目）</span>
+        <time>${jpDate(r.date)}</time>
+      </div>
+      ${r.memo?`<div class="memo">📝 ${escapeHtml(r.memo)}</div>`:""}`;
+    el.appendChild(div);
+  });
+}
+
+function renderAll(){ renderKids(); renderVaccines(); renderProgress(); renderHistory(); }
+
+function openModal(vi, dose){
+  const v = state.vaccines[vi];
+  const rec = getRecord(state.active, v.id, dose);
+  modalCtx = {vac:v.id, dose, vname:v.name};
+  document.getElementById("mTitle").textContent = `${v.name} ${dose+1}回目`;
+  document.getElementById("mDate").value = rec ? rec.date : fmtDate(new Date());
+  document.getElementById("mMemo").value = rec ? (rec.memo||"") : "";
+  document.getElementById("mDelBtn").style.display = rec ? "block" : "none";
+  document.getElementById("overlay").classList.add("show");
+}
+function closeModal(){ document.getElementById("overlay").classList.remove("show"); modalCtx=null; }
+function saveRecord(){
+  if(!modalCtx) return;
+  const date = document.getElementById("mDate").value;
+  if(!date){ toast("日付を入れてね"); return; }
+  const memo = document.getElementById("mMemo").value.trim();
+  const i = state.records.findIndex(r=>r.kid===state.active && r.vac===modalCtx.vac && r.dose===modalCtx.dose);
+  if(i>=0){ state.records[i].date=date; state.records[i].memo=memo; }
+  else state.records.push({kid:state.active, vac:modalCtx.vac, dose:modalCtx.dose, date, memo});
+  save(); closeModal(); renderAll();
+  toast("記録したよ！えらい👏");
+}
+function deleteRecord(){
+  if(!modalCtx) return;
+  const i = state.records.findIndex(r=>r.kid===state.active && r.vac===modalCtx.vac && r.dose===modalCtx.dose);
+  if(i>=0) state.records.splice(i,1);
+  save(); closeModal(); renderAll();
+}
+
+function editKid(){
+  const k = state.kids[state.active];
+  const name = prompt("お名前（ニックネームでOK）", k.name);
+  if(name===null) return;
+  if(name.trim()) k.name = name.trim().slice(0,10);
+  const birth = prompt("誕生日（例：2023-04-01）省略可", k.birth||"");
+  if(birth!==null){
+    const t = birth.trim();
+    if(t==="") k.birth="";
+    else if(/^\d{4}-\d{2}-\d{2}$/.test(t)) k.birth=t;
+    else toast("日付は 2023-04-01 の形で入れてね");
+  }
+  save(); renderAll();
+}
+
+function addVaccine(){
+  const nameEl = document.getElementById("newVac");
+  const cntEl = document.getElementById("newVacCnt");
+  const name = nameEl.value.trim();
+  const cnt = Math.min(10, Math.max(1, parseInt(cntEl.value)||1));
+  if(!name) return;
+  const id = "c_" + Date.now();
+  state.vaccines.push({id, name, doses:cnt, note:"", optional:true, custom:true});
+  nameEl.value=""; cntEl.value="1";
+  save(); renderAll();
+  toast(`「${name}」を追加したよ`);
+}
+function removeVaccine(vi){
+  const v = state.vaccines[vi];
+  if(!confirm(`「${v.name}」を削除する？記録も消えるよ`)) return;
+  state.records = state.records.filter(r=>r.vac!==v.id);
+  state.vaccines.splice(vi,1);
+  save(); renderAll();
+}
+
+function exportData(){
+  const blob = new Blob([JSON.stringify(state,null,2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `yobousesshu-backup-${fmtDate(new Date())}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast("書き出したよ");
+}
+function importData(ev){
+  const f = ev.target.files[0];
+  if(!f) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      const s = JSON.parse(reader.result);
+      if(!s.kids || !s.vaccines || !s.records) throw 0;
+      if(!confirm("今の記録を読み込んだ内容で置き換えるよ。いい？")) return;
+      state = s; save(); renderAll();
+      toast("読み込んだよ！");
+    }catch(e){ toast("このファイルは読み込めなかった…"); }
+  };
+  reader.readAsText(f);
+  ev.target.value="";
+}
+
+function showPage(name){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll(".tabbar button").forEach(b=>b.classList.remove("active"));
+  document.getElementById("page"+name).classList.add("active");
+  document.getElementById("tab"+name).classList.add("active");
+}
+
+let toastTimer;
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove("show"), 1800);
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+/* 静的アイコン差し込み */
+document.getElementById("hIcon").innerHTML = ICONS.syringe;
+document.getElementById("bkIcon").innerHTML = ICONS.save;
+document.querySelectorAll(".ico[data-icon]").forEach(el=>{ el.innerHTML = ICONS[el.dataset.icon]; });
+
+renderAll();
+</script>
+</body>
+</html>

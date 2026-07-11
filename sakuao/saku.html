@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Saku">
+<meta name="theme-color" content="#f7f2ea">
+<title>Saku の 宿題＆お手伝い</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Klee+One:wght@400;600&family=Yomogi&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:"Uzura";src:url("../uzura.ttf") format("truetype");font-display:swap;}
+
+  :root{
+    --cream:#f7f2ea;--paper:#fffdf8;--ink:#5a5048;--ink-soft:#938678;
+    --rose:#d8a7a0;--rose-deep:#c98b84;--sage:#a8b89a;--sage-deep:#8fa37f;
+    --mustard:#e0bd7a;--mustard-deep:#cda254;--sky:#94b8c4;--sky-deep:#6f9aa8;
+    --line:#e8dfd2;--shadow:rgba(120,100,80,.14);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{font-family:"Uzura","Klee One","Zen Maru Gothic",sans-serif;
+    background:radial-gradient(circle at 12% 8%,rgba(216,167,160,.10),transparent 42%),
+      radial-gradient(circle at 88% 92%,rgba(168,184,154,.12),transparent 42%),var(--cream);
+    color:var(--ink);min-height:100dvh;padding:16px 14px 40px;display:flex;justify-content:center;}
+  .app{width:100%;max-width:440px;}
+  .head{text-align:center;margin:4px 0 12px;}
+  .head .deco{font-family:"Yomogi",cursive;font-size:13px;color:var(--rose-deep);letter-spacing:.1em;}
+  .head h1{font-weight:700;font-size:22px;letter-spacing:.04em;margin-top:4px;color:var(--rose-deep);}
+  .date{font-size:12px;color:var(--ink-soft);margin-top:4px;}
+
+  /* child switch */
+  .kids{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+  .kid{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;font-weight:700;
+    font-size:14px;color:var(--ink-soft);background:var(--paper);border:2px solid var(--line);border-radius:16px;
+    padding:11px 8px;cursor:pointer;transition:.2s;overflow:hidden;white-space:nowrap;}
+  .kid .av{font-size:18px;}
+  .kid.active{color:var(--ink);box-shadow:0 4px 12px var(--shadow);}
+  .kid.active.points{border-color:var(--mustard);background:#fdf7ea;}
+  .kid.active.stickers{border-color:var(--sky);background:#eef4f6;}
+  .gear{flex:0 0 auto;width:42px;height:42px;border-radius:14px;border:2px solid var(--line);background:var(--paper);
+    font-size:18px;cursor:pointer;color:var(--ink-soft);}
+  .gear:active{background:var(--line);}
+
+  /* settings */
+  .settings{display:none;background:var(--paper);border:1px solid var(--line);border-radius:18px;
+    padding:14px;margin-bottom:14px;box-shadow:0 4px 12px var(--shadow);}
+  .settings.show{display:block;}
+  .settings h3{font-size:13px;color:var(--ink-soft);margin-bottom:10px;text-align:center;}
+  .set-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+  .set-row input{flex:1;font-family:inherit;font-size:14px;color:var(--ink);background:var(--cream);
+    border:1.5px solid var(--line);border-radius:11px;padding:9px 11px;outline:none;}
+  .set-row input:focus{border-color:var(--rose);}
+  .modepick{display:flex;gap:5px;flex:0 0 auto;}
+  .modepick button{font-family:inherit;font-size:12px;font-weight:700;border:1.5px solid var(--line);
+    background:var(--cream);color:var(--ink-soft);border-radius:11px;padding:8px 9px;cursor:pointer;}
+  .modepick button.sel{color:#fff;}
+  .modepick button.sel.p{background:var(--mustard-deep);border-color:var(--mustard-deep);}
+  .modepick button.sel.s{background:var(--sky-deep);border-color:var(--sky-deep);}
+
+  /* content tabs */
+  .tabs{display:flex;gap:6px;background:var(--line);padding:5px;border-radius:18px;margin-bottom:16px;}
+  .tab{flex:1;text-align:center;font-family:inherit;font-weight:700;font-size:14px;color:var(--ink-soft);
+    background:transparent;border:none;padding:11px 0;border-radius:14px;cursor:pointer;transition:.2s;}
+  .tab.active{background:var(--paper);color:var(--ink);box-shadow:0 2px 8px var(--shadow);}
+  .tab .pt-badge{display:inline-block;background:var(--mustard);color:#fff;font-size:11px;border-radius:99px;padding:1px 7px;margin-left:3px;}
+  .tab .pt-badge.s{background:var(--sky-deep);}
+  .page{display:none;animation:fade .3s ease;}
+  .page.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+  /* progress */
+  .progress-card{background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:18px 18px 16px;
+    box-shadow:0 8px 22px var(--shadow);margin-bottom:18px;text-align:center;}
+  .cheer{font-family:"Yomogi",cursive;font-size:18px;color:var(--rose-deep);min-height:26px;}
+  .count{font-size:13px;color:var(--ink-soft);margin:8px 0 12px;}
+  .count b{font-weight:700;font-size:22px;color:var(--sage-deep);}
+  .bar{height:18px;background:var(--line);border-radius:99px;overflow:hidden;}
+  .bar-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--sage),var(--mustard));border-radius:99px;
+    transition:width .55s cubic-bezier(.34,1.56,.64,1);}
+  .dots{display:flex;justify-content:center;gap:6px;margin-top:10px;flex-wrap:wrap;min-height:14px;}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--line);transition:.3s;}
+  .dot.on{background:var(--mustard);transform:scale(1.15);}
+
+  /* list */
+  .list{display:flex;flex-direction:column;gap:10px;}
+  .item{display:flex;align-items:center;gap:13px;background:var(--paper);border:1px solid var(--line);
+    border-radius:18px;padding:14px;box-shadow:0 3px 10px var(--shadow);cursor:pointer;
+    transition:transform .14s,background .25s;user-select:none;}
+  .item:active{transform:scale(.985);}
+  .check{flex:0 0 auto;width:30px;height:30px;border-radius:10px;border:2.5px solid var(--rose);
+    display:flex;align-items:center;justify-content:center;transition:.2s;}
+  .check svg{width:18px;height:18px;opacity:0;transform:scale(.4);transition:.25s cubic-bezier(.34,1.56,.64,1);}
+  .label{flex:1;font-size:16px;font-weight:500;transition:.25s;line-height:1.3;}
+  .pt-tag{flex:0 0 auto;font-size:11px;font-weight:700;color:var(--mustard-deep);background:#fbf3e0;border-radius:99px;padding:3px 8px;}
+  .pt-tag.s{color:var(--sky-deep);background:#eaf2f4;}
+  .del{flex:0 0 auto;width:26px;height:26px;border:none;background:transparent;color:var(--ink-soft);font-size:18px;cursor:pointer;border-radius:50%;opacity:.45;}
+  .del:active{opacity:1;background:var(--line);}
+  .item.done{background:#f1f0ea;}
+  .item.done .check{background:var(--sage-deep);border-color:var(--sage-deep);}
+  .item.done .check svg{opacity:1;transform:scale(1);}
+  .item.done .label{color:var(--ink-soft);text-decoration:line-through;text-decoration-color:var(--sage);}
+  .item.done .pt-tag{opacity:.4;}
+
+  .add-row{display:flex;gap:8px;margin-top:14px;}
+  .add-row input{flex:1;font-family:inherit;font-size:15px;color:var(--ink);background:var(--paper);
+    border:1.5px dashed var(--line);border-radius:14px;padding:13px 14px;outline:none;}
+  .add-row input:focus{border-color:var(--rose);}
+  .add-row button{flex:0 0 auto;font-family:inherit;font-weight:700;font-size:15px;color:#fff;
+    background:var(--rose-deep);border:none;border-radius:14px;padding:0 18px;cursor:pointer;}
+  .add-row button:active{transform:scale(.95);}
+  .tip{font-size:11.5px;color:var(--ink-soft);text-align:center;margin-top:18px;line-height:1.6;}
+  .reset{display:block;margin:14px auto 0;font-family:inherit;font-size:12px;color:var(--ink-soft);
+    background:none;border:1px solid var(--line);border-radius:99px;padding:7px 16px;cursor:pointer;}
+  .reset:active{background:var(--line);}
+  .empty{text-align:center;color:var(--ink-soft);font-size:14px;padding:24px 0;font-family:"Yomogi",cursive;}
+
+  /* points reward page */
+  .jar{background:linear-gradient(160deg,#fbf3e0,#fff);border:1px solid var(--line);border-radius:24px;
+    padding:24px 18px 22px;text-align:center;box-shadow:0 8px 22px var(--shadow);margin-bottom:18px;}
+  .jar .star{font-size:34px;}
+  .jar .pts{font-weight:700;font-size:48px;color:var(--mustard-deep);line-height:1.1;margin-top:4px;transition:transform .3s;}
+  .jar .pts-label{font-size:13px;color:var(--ink-soft);letter-spacing:.1em;}
+  .jar .sub{font-family:"Yomogi",cursive;font-size:13px;color:var(--rose-deep);margin-top:8px;}
+  .sec-title{display:flex;align-items:center;justify-content:space-between;margin:4px 4px 10px;}
+  .sec-title h2{font-size:16px;font-weight:700;}
+  .edit-toggle{font-family:inherit;font-size:12px;color:var(--ink-soft);background:none;border:1px solid var(--line);
+    border-radius:99px;padding:6px 13px;cursor:pointer;}
+  .edit-toggle.on{background:var(--rose-deep);color:#fff;border-color:var(--rose-deep);}
+  .reward{display:flex;align-items:center;gap:12px;background:var(--paper);border:1px solid var(--line);
+    border-radius:18px;padding:14px;box-shadow:0 3px 10px var(--shadow);margin-bottom:10px;}
+  .reward .emoji{font-size:24px;flex:0 0 auto;}
+  .reward .r-name{flex:1;font-size:15px;font-weight:500;}
+  .reward .r-cost{flex:0 0 auto;font-size:13px;font-weight:700;color:var(--mustard-deep);}
+  .reward .swap{flex:0 0 auto;font-family:inherit;font-weight:700;font-size:13px;color:#fff;background:var(--sage-deep);
+    border:none;border-radius:12px;padding:9px 13px;cursor:pointer;}
+  .reward .swap:disabled{background:var(--line);color:var(--ink-soft);cursor:default;}
+  .reward .swap:active:not(:disabled){transform:scale(.95);}
+  .reward .r-del{flex:0 0 auto;width:26px;height:26px;border:none;background:transparent;color:var(--ink-soft);font-size:18px;cursor:pointer;border-radius:50%;}
+  .add-reward{display:none;gap:8px;margin-top:6px;flex-wrap:wrap;}
+  .add-reward.show{display:flex;}
+  .add-reward input.rn{flex:1 1 130px;font-family:inherit;font-size:14px;background:var(--paper);border:1.5px dashed var(--line);border-radius:12px;padding:11px;outline:none;}
+  .add-reward input.rc{flex:0 0 80px;font-family:inherit;font-size:14px;background:var(--paper);border:1.5px dashed var(--line);border-radius:12px;padding:11px;outline:none;text-align:center;}
+  .add-reward button{flex:0 0 auto;font-family:inherit;font-weight:700;font-size:14px;color:#fff;background:var(--rose-deep);border:none;border-radius:12px;padding:0 16px;cursor:pointer;}
+
+  /* sticker card page */
+  .card-head{background:linear-gradient(160deg,#eef4f6,#fff);border:1px solid var(--line);border-radius:24px;
+    padding:20px 18px 18px;text-align:center;box-shadow:0 8px 22px var(--shadow);margin-bottom:16px;}
+  .card-head .cardno{font-weight:700;font-size:18px;color:var(--sky-deep);}
+  .card-head .csub{font-family:"Yomogi",cursive;font-size:14px;color:var(--rose-deep);margin-top:6px;}
+  .card-head .done-cards{font-size:11.5px;color:var(--ink-soft);margin-top:6px;}
+  .sticker-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;background:var(--paper);
+    border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:0 4px 12px var(--shadow);}
+  .slot{aspect-ratio:1;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;
+    background:#f3eee5;border:2px dashed #ddd2c2;transition:.25s;}
+  .slot.filled{background:#eef4f6;border:2px solid var(--sky);border-style:solid;}
+  .slot .ghost{opacity:.18;font-size:22px;}
+  @keyframes stick{0%{transform:scale(0) rotate(-30deg);}60%{transform:scale(1.25) rotate(8deg);}100%{transform:scale(1) rotate(0);}}
+  .slot.pop span{animation:stick .45s cubic-bezier(.34,1.56,.64,1);}
+
+  .toast{position:fixed;left:50%;bottom:32px;transform:translateX(-50%) translateY(80px);background:var(--ink);
+    color:#fff;font-size:14px;font-weight:500;padding:12px 22px;border-radius:99px;box-shadow:0 6px 20px var(--shadow);
+    z-index:60;opacity:0;transition:.35s cubic-bezier(.34,1.56,.64,1);max-width:90vw;text-align:center;}
+  .toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+  .float-pt{position:fixed;font-family:"Yomogi",cursive;font-weight:700;font-size:24px;color:var(--mustard-deep);
+    pointer-events:none;z-index:55;animation:floatup 1s ease forwards;}
+  @keyframes floatup{0%{opacity:0;transform:translateY(0) scale(.6);}20%{opacity:1;}100%{opacity:0;transform:translateY(-60px) scale(1.2);}}
+  .confetti{position:fixed;top:-10px;width:9px;height:14px;border-radius:2px;pointer-events:none;z-index:50;animation:fall linear forwards;}
+  @keyframes fall{to{transform:translateY(105vh) rotate(540deg);opacity:.9;}}
+  @keyframes pop{0%{transform:scale(1);}50%{transform:scale(1.4);}100%{transform:scale(1);}}
+  .pop-anim{animation:pop .4s ease;}
+
+  /* timer */
+  .timer-card{background:var(--paper);border:1px solid var(--line);border-radius:24px;padding:22px 18px 18px;
+    box-shadow:0 8px 22px var(--shadow);text-align:center;}
+  .t-modes{display:flex;gap:6px;background:var(--line);padding:4px;border-radius:14px;margin-bottom:18px;}
+  .t-modes .tm-btn{flex:1;font-family:inherit;font-weight:700;font-size:13px;color:var(--ink-soft);
+    background:transparent;border:none;padding:10px 0;border-radius:10px;cursor:pointer;transition:.2s;}
+  .t-modes .tm-btn.active{background:var(--paper);color:var(--ink);box-shadow:0 2px 6px var(--shadow);}
+  .t-display{font-weight:700;font-size:62px;color:var(--rose-deep);letter-spacing:.03em;line-height:1;
+    font-variant-numeric:tabular-nums;}
+  .t-track{position:relative;height:50px;margin:22px 12px 4px;}
+  .t-track::after{content:"";position:absolute;bottom:0;left:0;right:0;height:12px;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2224%22%20height%3D%2212%22%3E%3Crect%20x%3D%228%22%20y%3D%220%22%20width%3D%228%22%20height%3D%2212%22%20fill%3D%22rgb%28210%2C196%2C178%29%22%20rx%3D%221%22/%3E%3Crect%20x%3D%220%22%20y%3D%221.5%22%20width%3D%2224%22%20height%3D%222.8%22%20fill%3D%22rgb%28168%2C152%2C132%29%22/%3E%3Crect%20x%3D%220%22%20y%3D%227.5%22%20width%3D%2224%22%20height%3D%222.8%22%20fill%3D%22rgb%28168%2C152%2C132%29%22/%3E%3C/svg%3E") repeat-x;background-size:24px 12px;z-index:0;}
+  .t-train{position:absolute;bottom:10px;left:0;line-height:0;transition:left 1s linear;z-index:2;}
+  .t-train svg{display:block;}
+  .t-stn{position:absolute;bottom:4px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;
+    opacity:.4;transition:opacity .25s;z-index:1;}
+  .t-stn.start{transform:none;align-items:flex-start;}
+  .t-stn .stn-ic{font-size:16px;filter:grayscale(.7);}
+  .t-stn .stn-lb{font-size:8px;font-weight:700;color:var(--ink-soft);margin-top:1px;white-space:nowrap;}
+  .t-stn.passed{opacity:1;}
+  .t-stn.passed .stn-ic{filter:none;}
+  .t-stn.passed .stn-lb{color:var(--sky-deep);}
+  .t-stn.last .stn-ic{font-size:18px;}
+  @keyframes trainLoop{
+    0%{left:0%;opacity:1} 80%{left:80%;opacity:1} 88%{left:80%;opacity:0} 89%{left:0%;opacity:0} 100%{left:0%;opacity:1}
+  }
+  .t-train.looping{animation:trainLoop 15s linear infinite;transition:none!important;}
+  .t-train.looping.loop-paused{animation-play-state:paused;}
+  .t-presets{display:flex;gap:6px;justify-content:center;margin:16px 0 14px;flex-wrap:wrap;}
+  .t-presets button{font-family:inherit;font-weight:700;font-size:13px;color:var(--ink-soft);background:var(--cream);
+    border:1.5px solid var(--line);border-radius:12px;padding:9px 12px;cursor:pointer;transition:.15s;}
+  .t-presets button.sel{background:var(--rose-deep);color:#fff;border-color:var(--rose-deep);}
+  .t-presets button:active{transform:scale(.95);}
+  .t-controls{display:flex;gap:10px;}
+  .t-go{flex:1;font-family:inherit;font-weight:700;font-size:17px;color:#fff;background:var(--sage-deep);
+    border:none;border-radius:16px;padding:14px;cursor:pointer;transition:.15s;}
+  .t-go.running{background:var(--mustard-deep);}
+  .t-go:active{transform:scale(.97);}
+  .t-reset{flex:0 0 auto;font-family:inherit;font-weight:700;font-size:14px;color:var(--ink-soft);
+    background:var(--cream);border:1.5px solid var(--line);border-radius:16px;padding:0 18px;cursor:pointer;}
+  .t-reset:active{background:var(--line);}
+.pts-edit-toggle{display:block;width:100%;margin:0 0 12px;font-family:inherit;font-weight:700;font-size:13px;
+    color:var(--mustard-deep);background:#fbf3e0;border:1.5px solid #ecdcb6;border-radius:14px;padding:11px;cursor:pointer;}
+  .pts-edit-toggle.on{background:var(--mustard-deep);color:#fff;border-color:var(--mustard-deep);}
+  .pts-edit-toggle:active{transform:scale(.99);}
+
+  .item.editing{background:#fdf7ea;border-color:#ecdcb6;}
+  .pt-input{flex:0 0 auto;width:56px;font-family:inherit;font-weight:700;font-size:15px;color:var(--mustard-deep);
+    text-align:center;background:#fff;border:1.5px solid var(--mustard);border-radius:10px;padding:7px 4px;outline:none;}
+  .pt-unit{flex:0 0 auto;font-size:12px;font-weight:700;color:var(--mustard-deep);margin-left:-2px;}
+  /* calendar */
+  .cal-card{background:var(--paper);border:1px solid var(--line);border-radius:24px;padding:18px 16px;box-shadow:0 8px 22px var(--shadow);}
+  .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .cal-nav button{width:38px;height:38px;border-radius:12px;border:1.5px solid var(--line);background:var(--cream);
+    font-size:20px;color:var(--ink-soft);cursor:pointer;font-family:inherit;}
+  .cal-nav button:active{background:var(--line);}
+  .cal-title{font-weight:700;font-size:17px;color:var(--rose-deep);}
+  .cal-week{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:5px;}
+  .cal-week span{text-align:center;font-size:11px;font-weight:700;color:var(--ink-soft);}
+  .cal-week .sun{color:#cc8a86;}
+  .cal-week .sat{color:#7f9fb0;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+  .cal-cell{aspect-ratio:1;border-radius:10px;background:#f1ede4;position:relative;display:flex;align-items:center;justify-content:center;}
+  .cal-cell.has-rec{cursor:pointer;}
+  .cal-cell.has-rec:active{transform:scale(.93);}
+  .cal-cell.blank{background:transparent;pointer-events:none;}
+  /* edit modal */
+  .modal-bg{position:fixed;inset:0;background:rgba(90,74,58,.35);backdrop-filter:blur(3px);z-index:80;
+    display:flex;align-items:flex-end;justify-content:center;animation:fadein .2s ease;}
+  @keyframes fadein{from{opacity:0;}to{opacity:1;}}
+  .modal{background:var(--paper);border-radius:26px 26px 0 0;padding:24px 20px 40px;width:100%;max-width:440px;
+    box-shadow:0 -8px 32px rgba(90,74,58,.18);animation:slideup .25s cubic-bezier(.34,1.3,.64,1);}
+  @keyframes slideup{from{transform:translateY(60px);}to{transform:translateY(0);}}
+  .modal h3{font-size:16px;font-weight:700;text-align:center;margin-bottom:16px;color:var(--rose-deep);}
+  .modal .f-label{font-size:12px;font-weight:700;color:var(--ink-soft);margin:14px 0 6px;}
+  .modal .f-label:first-of-type{margin-top:0;}
+  .det-list{max-height:38vh;overflow-y:auto;margin-bottom:6px;}
+  .det-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--cream);
+    border:1px solid var(--line);border-radius:12px;padding:9px 12px;margin-bottom:6px;}
+  .det-t{font-size:13.5px;font-weight:500;color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .det-p{flex:0 0 auto;font-size:13px;font-weight:700;color:var(--mustard-deep);}
+  .det-empty{text-align:center;color:var(--ink-soft);font-size:13px;padding:14px 0;font-family:"Yomogi",cursive;}
+  .det-divider{text-align:center;font-size:11.5px;font-weight:700;color:var(--ink-soft);margin:12px 0 4px;}
+  .ce-list{max-height:40vh;overflow-y:auto;margin-bottom:8px;}
+  .ce-row{display:flex;align-items:center;gap:6px;margin-bottom:7px;}
+  .ce-row .ce-t{flex:1;min-width:0;font-family:inherit;font-size:14px;color:var(--ink);background:var(--cream);
+    border:1.5px solid var(--line);border-radius:11px;padding:9px 11px;outline:none;-webkit-appearance:none;}
+  .ce-row .ce-p{width:62px;font-family:inherit;font-size:14px;font-weight:700;color:var(--mustard-deep);text-align:right;
+    background:var(--cream);border:1.5px solid var(--line);border-radius:11px;padding:9px 6px;outline:none;-webkit-appearance:none;}
+  .ce-row .ce-t:focus,.ce-row .ce-p:focus{border-color:var(--rose);}
+  .ce-unit{font-size:12px;font-weight:700;color:var(--ink-soft);}
+  .ce-del{flex:0 0 auto;width:28px;height:28px;border:none;background:transparent;color:var(--ink-soft);font-size:17px;cursor:pointer;border-radius:50%;opacity:.5;}
+  .ce-del:active{opacity:1;background:var(--line);}
+  .ce-add{display:flex;gap:6px;margin:10px 0 6px;}
+  .ce-add .ce-t,.ce-add input[type=text]{flex:1;}
+  .ce-add input{font-family:inherit;font-size:14px;background:var(--cream);border:1.5px solid var(--line);
+    border-radius:11px;padding:9px 11px;outline:none;-webkit-appearance:none;color:var(--ink);min-width:0;}
+  .ce-add input[type=number]{width:58px;text-align:right;}
+  .ce-add button{flex:0 0 auto;font-family:inherit;font-weight:700;font-size:13px;color:#fff;background:var(--sage-deep);
+    border:none;border-radius:11px;padding:0 13px;cursor:pointer;}
+  .ce-total{text-align:center;font-size:13px;color:var(--ink-soft);margin:8px 0 2px;}
+  .ce-total b{font-size:20px;color:var(--mustard-deep);font-variant-numeric:tabular-nums;}
+  .modal-pt{display:flex;align-items:center;gap:10px;justify-content:center;margin:10px 0;}
+  .modal-pt button{width:44px;height:44px;border-radius:14px;border:1.5px solid var(--line);background:var(--cream);
+    font-size:20px;font-weight:700;color:var(--ink-soft);cursor:pointer;font-family:inherit;}
+  .modal-pt button:active{background:var(--line);}
+  .modal-pt input{width:90px;font-family:inherit;font-weight:700;font-size:24px;color:var(--ink);text-align:center;
+    background:var(--cream);border:1.5px solid var(--line);border-radius:14px;padding:10px;outline:none;-webkit-appearance:none;}
+  .modal-pt input:focus{border-color:var(--rose);}
+  .modal-pt .pt-lbl{font-size:16px;font-weight:700;color:var(--ink-soft);}
+  .modal-btns{display:flex;gap:10px;margin-top:20px;}
+  .modal-btns button{flex:1;font-family:inherit;font-weight:700;font-size:15px;border:none;border-radius:16px;padding:14px;cursor:pointer;}
+  .modal-btns .m-cancel{background:var(--line);color:var(--ink-soft);}
+  .modal-btns .m-save{background:var(--rose-deep);color:#fff;}
+  .modal-btns button:active{transform:scale(.97);}
+  .cal-cell .cd{position:absolute;top:3px;left:5px;font-size:10px;color:rgba(80,68,56,.7);}
+  .cal-cell .cc{background:rgba(255,255,255,.9);color:#4a4438;border-radius:99px;min-width:19px;height:19px;
+    padding:0 4px;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;margin-top:7px;}
+  .cal-cell.lvl1{background:#d7e4cb;}
+  .cal-cell.lvl2{background:#aecb98;}
+  .cal-cell.lvl3{background:#8fb377;}
+  .cal-cell.lvl4{background:#6f9a57;}
+  .cal-cell.today{outline:2.5px solid var(--rose);outline-offset:-2px;}
+  .cal-stats{text-align:center;font-family:"Yomogi",cursive;font-size:14px;color:var(--rose-deep);margin-top:16px;line-height:1.8;}
+  .cal-stats b{font-size:18px;color:var(--sage-deep);}
+  .cal-legend{display:flex;align-items:center;justify-content:center;gap:5px;margin-top:12px;font-size:10.5px;color:var(--ink-soft);}
+  .cal-legend i{width:14px;height:14px;border-radius:4px;display:inline-block;}
+
+  
+  .tabs .tab{font-size:12px;}
+  .stn-ic svg{width:16px;height:16px;display:block}
+  .t-stn.last .stn-ic svg{width:19px;height:19px}
+  .slot svg{display:block}
+  .jar .star svg,.reward .emoji svg{display:block;margin:0 auto}
+
+  .bkx{margin:18px 14px 100px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:18px;
+    padding:14px 16px;box-shadow:0 4px 12px rgba(0,0,0,.06);font-size:12px;color:#8a8073;line-height:1.7}
+  .bkx h3{font-size:13.5px;color:#5b4636;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+  .bkx h3 svg{width:18px;height:18px}
+  .bkx .bkx-btn{border:none;border-radius:12px;padding:9px 16px;font-family:inherit;font-weight:700;
+    font-size:12.5px;color:#fff;background:#a8b89a;margin:8px 8px 0 0;cursor:pointer}
+  .bkx .bkx-btn.sub{background:#c9bfae}
+</style>
+<link rel="apple-touch-icon" href="data:image/png;base64,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">
+<link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjogIlNha3Ug44Ki44OX44OqIiwgInNob3J0X25hbWUiOiAiU2FrdSIsICJzdGFydF91cmwiOiAiLi8iLCAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwgImJhY2tncm91bmRfY29sb3IiOiAiI2Y3ZjJlYSIsICJ0aGVtZV9jb2xvciI6ICIjZjdmMmVhIiwgImljb25zIjogW3sic3JjIjogImRhdGE6aW1hZ2UvcG5nO2Jhc2U2NCxpVkJPUncwS0dnb0FBQUFOU1VoRVVnQUFBZ0FBQUFJQUNBWUFBQUQwZU5UNkFBQU9ya2xFUVZSNDJ1M2RQVzhjVlJRRzRObVJoWlFtWldqU1FKbkNIVFR3TnhDUklxVkJza3ZnbHdDbEk5RkVpaFRFMzRBR3VoUXBvVW5EbHR1c1JMTVVVU0JZam1Qdnp1eWNlOS9uNlJCSlBCOTN6M252bWJHOUdyaldkclBldVFvQWJicHo5OTdLVmJpYUM2UEpBd2dIQW9DR0Q0QkFJQUJvK0FBSUJBS0FwZytBTUNBQWFQb0FDQU1DZ01ZUGdDQWdBR2o4QUFnQ0FvREdENEFnSUFCby9BQUlBZ0tBeGcrQUlDQUFhUHdBQ0FLekdqVi9BTWpyWnlzWENnRHlwZ0dsSmdDYVB3Q21BVUVUQUkwZkFOT0FzQW1BNWcrQWFVQllBTkQ4QVJBQ2xyRktPMkVBcU9qWWp3U09QZ0hRL0FGZytmNDQ5bnh5QUNBRUxCd0FOSDhBcU5Ndng1NU9CZ0NFZ0NJQlFQTUhnSHI5YzJ6NTRBRkFDQ2dXQURSL0FLamJUOGVXRGhZQWhJQ2lBVUR6QjRENklXQ3NmSEFBd0R4OWRxeDRVQURBdlAxMmRDa0JJTThrQWNEdUh3RGFtZ0tNRlE0Q0FEaHUveDJYL09JQXdESjkyRHNBQUJCbzd3Qmc5dzhBN1U0QnhtTitNUUNnUmdqd0NBQUFBdDA2QU5qOUEwRDdVNEJ4em44Y0FLZ1pBandDQUlCQU53NEFkdjhBME04VXdBUUFBRXdBN1A0QklHRUtZQUlBQUNZQWR2OEFrREFGTUFFQUFCTUF1MzhBU0pnQ21BQUFnQW1BM1Q4QUpFd0JUQUFBd0FUQTdoOEFFcVlBSmdBQVlBSUFBRVFHQU9OL0FPalA1ZjV1QWdBQUpnQkFrcjkrLzk1RkFBSEErQjhBZXZaMm56Y0JnUERkdnlrQW1BQUFBQUlBMFB2dS8xMy9EUVFGQU0vL0FhQi9iL3E5Q1FDRTcvNkI4QWtBSUJnQUFnQ2d5UU85QndEUC93RUJBWEpzTit1ZENRQUFwRTRBQUx0N1FBQUFCQVZBQUFBMGRVQUFBQVFHUUFBQU5IT2d3UURnV3dBQndBUUFZQmdHa3dNUUFBQk5IQkFBQUFFQ0VBQUF6UnNRQUFBQUFRQm9mdmR2a2dBQ0FBQWdBQUM5Ny81TkFVQUFBQUE2c3ZLVEFDRm5KNytFRHovNXhzMEVBUUEwY2dRSHFNQWpBTkRJWERNUUFBQU56YldDQkI0QndKRjVKS0R4Z3drQWFIUzRKaUFBZ0libldnQUNBR2g4cmdFZ0FJQUc2TndCQVFBMFF1Y003TTEzQVVBaHZYK0hnTVlQSmdCQVdJUFUvRUVBQU1JYXBlWVBBZ0FRMWpBMWZ4QUFnTERHcWZtREFBQ0VOVkROSDJyelhRRFFpRmErUTBEakJ4TUFJS3l4YXY0Z0FBQmhEVmJ6QndFQUNHdTBtajhJQUFDQUFBQUFDQURBd1NwK04wRHZ2OE1BQkFBQVFBQUFBQVFBQUVBQUFLWlcrVm03OXdCQUFBQUFCQUFBUUFBQUFBUUFBRUFBQU42aGhaZnN2QWdJQWdBQVVOaUpTd0NaM3Y0TmZuYnVZQUlBaERYL3EvNGI2TjlxdTFudlhBYW9iYW9kK2swYS9SUmZTNkNBK2p3Q2dNQWQvMDMrck1jQzBEZVBBS0R6eHIvdmJ0d3VIZ1FBb1BOZC94d0JBcWpOSXdEUStHLzhiM29zQVAzd0VpQVVkOU9tZTZ5ZGVyWGpBZmJqRVFEWTlkLzZhMm51SUFBQUN6ZitwWnF4RUFCdDh3NEEyUEVmZkJ6ZURZRDJlQWNBQ3J2Y1dLdnZ1bHM3WGtqbUVRRFk5VWNkSS9DYVJ3Q2dxYzV5dkI0TFFHMGVBUUJBSUk4QUFFQUFBQUFFQUFCQUFBQUFCQUFBUUFBQUFBUUFBRUFBQUFBRUFBQkFBQUFBQkFBQVFBQUFBQVFBQUVBQUFBQUVBQUJBQUFBQUJBQUFRQUFBQUFFQUFCQUFBSUJlbmJnRW1WNWNQSEVSZ0grZG5wKzVDR0ZXMjgxNjV6Sm85Z0JDZ1FDQXBnOGdEQWdBYVBvQXdvQUFnTVlQSUFnSUFHajhnQ0NBQUlER0R3Z0NDQUJvL0lBZ1FFVitFSkRtRDZCZUNRRDRNQUdvV3drOEF2QUJBcGlWUndJbUFHaitnSHFHQUlBUEM2Q3VJUURnUXdLb2J3Z0FQaHdBNmh3Q2dBOEZnSHFIQU9EREFLRHVJUUQ0RUFDb2Z3Z0FBSUFBSVAwQ3FJTUlBQlk5Z0hxSUFHQ3hBNmlMQWdBQUlBQWc1UUtvandJQUFDQUFJTjBDcUpNQ0FBQWdBQ0RWQXFpWEFnQUFJQUJJc3dDb213czZjUWtZaG1GNDhQQ1JpekNUbDgrZnVRaUFBSUNHbjM2dEJRS2dndFYyczk2NURQT3BOc2JTK0UwR29DV241MmN1Z2drQUduK2Y5MFFRQUFRQU5QL1ErMU01QkJ4ei9WUzREczYzNy9QbFB4NEJ6R2pwOGIvRzM1NUtCWExKOWJQRWRYQytkYy9YWXdBQlFBRFEvSVdBc0xWempHdmhmT3VmcndBd0R6OEhvRU9hdi92WHk5cVorM2ljcjFvbEFLQjVFSDhmcTY2ZHVZN0wrYXBaQWdDYUJ2SDNzL3JhbWZyNG5LL2FoUUF3R3ovR0VrQTlGUUNRb0NsN1gxdFpPMU1kcC9OVnd4QUFOQW5jWDBBQUFJU0wzby9YK1ZxUENBQUtPTzR6SUFBQUFBSUFkb1c0MzRBQUFBQUlBQUNBQUFBQUNBQWNpZWZCN2p1QUFBQUFDQUFBZ0FBQUFBZ0FBSUFBQUFBQ0FBQWdBQUFBQWdBQUlBQUFBQUlBQUNBQUFBQUNBQUFnQUFBQUFnQUFJQUFBQUFJQUFDQUFBQUFDQUFBZ0FBQUFBZ0FBSUFBQUFBSUFBQWdBQUlBQUFBQUlBQUNBQUFBQUNBQUFnQUFBQUFnQUFJQUFBQUFJQUFDQUFBQUFDQUFBZ0FBQUFBZ0FBSUFBQUFBSUFBQ0FBQUFBQ0FBQUlBQUFBQUlBQUNBQUFBQUNBQUFnQUFBQUFnQUFJQUFBQUFJQUFDQUFBQUFDQUFBZ0FBQUFBZ0QvZXZuOG1Zdmd2Z01JQUFDQUFBQUFDQURBVlZwN3BIRG84VHBmNnhFQlFQSEcvUVlFQUVDd1NEbE81MnNkSWdBbzNyalBnQUFBQ0JncHgrZDhyVDhFQU1VYjk3ZjRPcHJydUp5ditpVUFvRW5ndmhaZFIzTWZqL05WdDVLZHVBVEFWVVg1d2NOSEVZM0IrV3I4cVZiYnpYcm5Na3p2eGNXVFJiN3VraDlxK2l5U3gxeFRGYzdaK2RZODM5UHpNMFZCQUJBQWhBRE5IOUlJQU5QekRvRG1nZnNIQ0FCb0lyaHZRQUl2QVFZMEU0OEVOSDRBRXdETkJmY0h3QVRBTkFDTkh4QUFFQVRRK0FFQmdKd21KQkJvK0lBQWdDWUZRT2U4QkFnQUFnQUFJQUFBQUFJQUFDQUFBQUFDQUFBZ0FBQUFBZ0FBSUFBQUFBSUFBQ0FBQUFBQ0FBQWdBQUFBQWdBQUlBQUFBQUlBQUNBQUFBQUNBQUJrT25FSjV2SG5xMWN1QXNCRVRsMENFd0FBUUFBQUFBUUFBRUFBQUFBRUFBRGdOZDhGQU1DMXZ2ejI0M2YrdjUrKys4TUZFZ0FBU0duOGwvK01JTkFlandBQTJLdjVIL0xuTVFFQW9PSEdieHBnQWdBQUNBQUFKTzMrNS9oM0VBQUFhS1Q1Q3dFQ0FBQWdBQUNRc3ZzM0JSQUFBQUFCQUFBUUFBQUFBUUFBRUFBQUFBRUFBQkFBQUpqTVhEKzczKzhFRUFBQUFBRUFnTjZuQUhiL0FnQUFZU0ZBOHhjQUFJQ2lUbHdDQUM3djN2ZjVPZjUyL2dJQXd6QjhkUCsraXdBMDY3ZWYveDQrL2VLRFcvMTVkVThBQUtDVEVEQU13N1ZCNE0yZlFRQUFvTk1nUUYrOEJBZ0FBZ0JUT1QwL2N4RUExRk1CQUFBUUFBQUFBUUFBRUFBQUFBR2dWVjVjQVZCSEJRQUFRQUFBQUFTQWJobGZBYWlmRmZsUndEVGpoMTkvdWZHZi9mcXp6MTB3ckQ4UUFPaTk0TDd2N3lySVdIL3dmNnZ0WnIxekdlYjM0dUtKaTNDRXdtdG5odlhYQitOL0V3QVUzZG0ram1LTTlVY3lMd0ZLc3pIRnQ4clh4ZnF6L3RSTEV3QVUzaUxIWURkbS9WbC9tQUFnMVFidWZ1ekdyRC9IbzA0S0FCQmE3QlJoNjg5eElRQWczWVlXT1VYWStuTjg2cU1BQUtIRlRRaXcvaHduQWdCU2JtaFJVNFN0UDhlckxnb0FXT3loeFV3SXNQNGN0M29vQUdEUmh4WXhJY0Q2Yy96cW9BQUFvY1ZMQ0hEZm5BY0NBTkl2Z1BvbkFPQkRrTEpyc1F0enY1eVB1aWNBNE1NUTJpeUZBUGZKZWFsM0FnQStGQURxWE5QOE1xQ0NINDRYRjA5Y2lHdjgrUFRwTy8vZlY0OGZ1MEJZZjVvL043RGFidFk3bDZHZVZrUEFuR1BLNndydk1RdXgzOXhtL1ZsL21yOEpBQ1lCQysrNDN2ZDM3TWl3L2pSL1RBQk1BeHJjZmUxVGZJK3hHek1Gc1A2c1A0Mi9kVjRDOUNIcWF1YzE1NytEOVdmOXFWc0NBRDVNalJSZklRRHJUNzNpYXQ0QmFQQkQ1ZDBBUU9QblVONEJhRmlsSUREbDg5YzVkMHRUUG8vMUhzQmcvVmwvR3I4SkFDWUNnQjAvTGZFT1FDY2Z3bDQraUhNL0svVXVBTmFmbW9NSlFOZHAzRlFBc050SEFCQUdYQkJBMDBjQThDRVdDZ0ROWGdEQWgzMEtnYjhxVjhFc3hQcURXL01TSUFBSUFBQ0FBQUJITnZkdlQvUGIyYkQrUUFBQUFBRUFEakhsRHppWmE1YzA1Yi9yQndwWmY5WWZBZ0FBSUFCQXhWMllaNjlZZnlBQUVGYUVGVitzUHhBQW1ORWN6eVVQTFo1ekZGL1BYNjAvNjQ4ZStFbUFOTE1UdTAzaHMrdkMrb1BycmJhYjljNWxvTkt1NlpBZDBKSmZHK3ZQK3NNRUFCb3U4R0Q5a2NBN0FBQWdBTURoZWgxVEdyKzZUODRMQVFEQ2lwWGk2MzQ1SHdRQUFFQUFnTjUzTFhaZjdwdnpRQUNBc09LbCtGcC9qaDhCQU1LS21PSnIvVGx1QkFBSUsyYUtyL1huZUJFQUlLeW9LYjdXbitORUFJQ3c0cWI0V24rT0R3RUF3b3FjNG12OU9TNEVBQWdyZG9xdjllZDRTT08zQWJLNEpYKzVpc0tMOVljSkFJUVZRY1VYNnc4VEFBalprU202V0g4Z0FCQlVpQlZlckQ4UUFBZ295QW91MWg4SUFBREFKVjRDQkFBQkFBQVFBQUFBQVFBQUVBQUFBQUVBQUJBQUFBQUJBQUFRQUFBQUFRQUFFQUFBQUFFQUFCQUFBQUFCQUFBUUFBQUFBUUFBRUFBQUFBRUFBQVFBQUVBQUFBQUVBQUJBQUFBQUJBQUFRQUFBQUFRQUFFQUFBQUFFQUFCQUFBQUFCQUFBUUFBQUFBUUFBRUFBQUFBRUFBQkFBQUFBQkFBQUVBQUFBQUVBQUJBQUFBQUJBQUFRQUFBQUFRQUFFQUFBQUFFQUFCQUFBQUFCQUFBUUFBQUFBUUFBRUFBQUFBRUFBTGhwQUxoejk5N0taUUFBRXdBQVFBQUFBQVFBQUVBQUFBQUVBQUJBQUFBQXlnWUEzd29JQURudTNMMjNNZ0VBZ05RSkFBQWdBQUFBS1FIQWV3QUEwTDgzL2Q0RUFBQ1NKd0FBZ0FBQUFLUUVBTzhCQUVDLzN1N3pKZ0FBa0Q0QkFBQkNBNERIQUFEUW44djkzUVFBQUV3QUFJRFlBT0F4QUFEMDQ2cStiZ0lBQUNZQXBnQUEwUHZ1M3dRQUFFd0FUQUVBSUdIM2J3SUFBQ1lBcGdBQWtMRDdOd0VBQUJNQVV3QUFTTmo5bXdBQWdBbUFLUUFBSk96K1RRQUF3QVRBRkFBQUVuYi9lMDBBaEFBQWFMdjU3eFVBQUlEMjdSVUFUQUVBb04zZC8wRVRBQ0VBQU5wcy9nY0ZBQUNnWFFjRkFGTUFBR2h2OXovSkJFQUlBSUMybXY4a0FVQUlBSUMybXY5a0FRQUFhTXRrQWNBVUFBRGEyUDFQUGdFUUFnQ2dmdk9mUEFBSUFRQlF2L25QRWdDRUFBQ28zMWZIbGc0V0FEVC80Z0ZBQ0FDQXVuMTBiUG5nQVVEekx4b0FoQUFBcU5jM3g1NU9CZ0EwLzJJQlFBZ0FnRHA5Y3V6NTVBQkE4Ny9hb3MxNHUxbnYzSElBTlA3akd4TlBHZ0NTbS8vaUFVQUlBRUR6WDBhcDV1dVJBQUFhZjhnRXdEUUFBTTAvZkFKZ0dnQ0F4aDg0QVRBTkFFRHpENThBbUFZQW9QR0hCd0JCQUFDTlB6Z0FDQUlBYVB6QkFVQVFBRURqRHc0QWdnQUFHbjl3QUJBRUFORDRnd09BTUFDQXBoOGVBSVFCQURUOThBQWdFQUNRM3ZBRkFJRUFnTUZQblAwSE9QVGk0MXUyYzRnQUFBQUFTVVZPUks1Q1lJST0iLCAic2l6ZXMiOiAiNTEyeDUxMiIsICJ0eXBlIjogImltYWdlL3BuZyIsICJwdXJwb3NlIjogImFueSBtYXNrYWJsZSJ9XX0=">
+</head>
+<body>
+
+<div class="app">
+  <div class="head">
+    <div class="deco">(｡✧‿✧｡) さく がんばろう</div>
+    <h1>Saku の 記録</h1>
+    <div class="date" id="date"></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="hw">宿題</button>
+    <button class="tab" data-tab="chore">お手伝い</button>
+    <button class="tab" data-tab="reward" id="tab-reward">ご褒美<span class="pt-badge" id="rewardBadge">0</span></button>
+    <button class="tab" data-tab="calendar"><svg viewBox="0 0 48 48" width="15" height="15" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="8" y="11" width="32" height="29" rx="4" fill="#f7ead8"/><path d="M8 19 H40" stroke-width="2.5"/><path d="M16 7 V14 M32 7 V14"/><circle cx="17" cy="26" r="1.6" fill="#6b584a" stroke="none"/><circle cx="24" cy="26" r="1.6" fill="#6b584a" stroke="none"/><circle cx="31" cy="26" r="1.6" fill="#6b584a" stroke="none"/><circle cx="17" cy="33" r="1.6" fill="#6b584a" stroke="none"/><circle cx="24" cy="33" r="1.6" fill="#6b584a" stroke="none"/></svg>記録</button>
+    <button class="tab" data-tab="timer"><svg viewBox="0 0 48 48" width="15" height="15" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><circle cx="24" cy="26" r="15" fill="#fdf6e8"/><path d="M24 18 V26 L30 30"/><path d="M11 13 L7 17 M37 13 L41 17" stroke-width="3.5"/><path d="M17 42 L14 45 M31 42 L34 45" stroke-width="2.5"/></svg>タイマー</button>
+  </div>
+
+  <div class="page active" id="page-hw">
+    <div class="progress-card">
+      <div class="cheer" id="cheer-hw">さあ 始めよう！</div>
+      <div class="count">終わったよ <b id="done-hw">0</b> / <span id="total-hw">0</span> こ</div>
+      <div class="bar"><div class="bar-fill" id="fill-hw"></div></div>
+      <div class="dots" id="dots-hw"></div>
+    </div>
+    <button class="pts-edit-toggle" id="ptsEdit-hw" style="display:none;">✏️ ポイントを 決める（おうちの人）</button>
+    <div class="list" id="list-hw"></div>
+    <div class="add-row">
+      <input id="input-hw" type="text" placeholder="宿題を かこう（れい：漢字ドリル）" maxlength="30">
+      <button id="add-hw">増やす</button>
+    </div>
+    <button class="reset" id="reset-hw">新しい日にする（宿題を消す）</button>
+    <div class="tip" id="tip-hw"></div>
+  </div>
+  <div class="page" id="page-chore">
+    <div class="progress-card">
+      <div class="cheer" id="cheer-chore">さあ 始めよう！</div>
+      <div class="count">終わったよ <b id="done-chore">0</b> / <span id="total-chore">0</span> こ</div>
+      <div class="bar"><div class="bar-fill" id="fill-chore"></div></div>
+      <div class="dots" id="dots-chore"></div>
+    </div>
+    <button class="pts-edit-toggle" id="ptsEdit-chore" style="display:none;">✏️ ポイントを 決める（おうちの人）</button>
+    <div class="list" id="list-chore"></div>
+    <div class="add-row">
+      <input id="input-chore" type="text" placeholder="お手伝いを かこう（れい：お風呂そうじ）" maxlength="30">
+      <button id="add-chore">増やす</button>
+    </div>
+    <button class="reset" id="reset-chore">新しい日にする（お手伝いを消す）</button>
+    <div class="tip" id="tip-chore"></div>
+  </div>
+
+  <div class="page" id="page-reward">
+    <!-- POINTS view -->
+    <div id="pointsView" style="display:none;">
+      <div class="jar">
+        <div class="star"><svg viewBox="0 0 48 48" width="34" height="34" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M24 6 L29 17 L41 18.2 L32 26.5 L34.8 39 L24 32.4 L13.2 39 L16 26.5 L7 18.2 L19 17 Z" fill="#e8c987"/></svg></div>
+        <div class="pts" id="bigPts">0</div>
+        <div class="pts-label">ポイント</div>
+        <div class="sub" id="jarSub"></div>
+      </div>
+      <div class="sec-title">
+        <h2>交換できる ご褒美</h2>
+        <button class="edit-toggle" id="editToggle">編集</button>
+      </div>
+      <div id="rewardList"></div>
+      <div class="add-reward" id="addReward">
+        <input class="rn" id="rName" type="text" placeholder="ご褒美の 名前" maxlength="20">
+        <input class="rc" id="rCost" type="number" placeholder="P" min="1">
+        <button id="rAdd">追加</button>
+      </div>
+      <div class="tip">ポイントが たまったら「交換」してね。<br>交換したら おうちの人に 見せよう😊</div>
+    </div>
+    <!-- STICKER view -->
+    <div id="stickerView" style="display:none;">
+      <div class="card-head">
+        <div class="cardno" id="cardNo"><svg viewBox="0 0 48 48" width="18" height="18" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="6" y="13" width="36" height="21" rx="6" fill="#94b8c4"/><rect x="11" y="18" width="9" height="8" rx="2" fill="#f2f4f6"/><rect x="28" y="18" width="9" height="8" rx="2" fill="#f2f4f6"/><path d="M6 29 H42" stroke-width="2"/><circle cx="15" cy="38" r="3.6" fill="#8a7466" stroke-width="2.5"/><circle cx="33" cy="38" r="3.6" fill="#8a7466" stroke-width="2.5"/></svg> 電車シールカード</div>
+        <div class="csub" id="cardSub">電車シールを 集めよう！</div>
+      </div>
+      <div class="sticker-grid" id="grid"></div>
+      <div class="tip">宿題や お手伝いを 1つ 終わらせると 電車シールが 1枚！<br>5枚 集めたら カード完成🎉</div>
+    </div>
+  </div>
+  <div class="page" id="page-calendar">
+    <div class="cal-card">
+      <div class="cal-nav">
+        <button id="calPrev">‹</button>
+        <div class="cal-title" id="calTitle"></div>
+        <button id="calNext">›</button>
+      </div>
+      <div class="cal-week">
+        <span class="sun">日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span class="sat">土</span>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-stats" id="calStats"></div>
+      <div class="cal-legend">
+        少ない <i style="background:#f1ede4"></i><i style="background:#d7e4cb"></i><i style="background:#aecb98"></i><i style="background:#8fb377"></i><i style="background:#6f9a57"></i> 多い
+      </div>
+    </div>
+  </div>
+<div class="page" id="page-timer">
+    <div class="timer-card">
+      <div class="t-modes">
+        <button class="tm-btn active" data-tm="down"><svg viewBox="0 0 48 48" width="13" height="13" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><circle cx="24" cy="26" r="15" fill="#fdf6e8"/><path d="M24 18 V26 L30 30"/><path d="M11 13 L7 17 M37 13 L41 17" stroke-width="3.5"/><path d="M17 42 L14 45 M31 42 L34 45" stroke-width="2.5"/></svg> タイマー</button>
+        <button class="tm-btn" data-tm="up">⏱ ストップウォッチ</button>
+      </div>
+      <div class="t-display" id="tDisplay">15:00</div>
+      <div class="t-track" id="tTrack">
+        <div class="t-train" id="tTrain"><svg viewBox="0 0 72 22" width="64" height="20" xmlns="http://www.w3.org/2000/svg"><path d="M5 3 H67 Q70 3 70 6 V16 Q70 19 67 19 H5 Q2 19 2 16 V6 Q2 3 5 3 Z" fill="#4f86cf" stroke="#36659f" stroke-width="1.2"/><rect x="2.5" y="12.8" width="67" height="3.4" fill="#ffffff"/><rect x="7" y="6.4" width="7" height="5" rx="1" fill="#dbe9f5"/><rect x="16.5" y="6.4" width="7" height="5" rx="1" fill="#dbe9f5"/><rect x="26" y="6.4" width="7" height="5" rx="1" fill="#dbe9f5"/><rect x="35.5" y="6.4" width="7" height="5" rx="1" fill="#dbe9f5"/><rect x="45" y="6.4" width="7" height="5" rx="1" fill="#dbe9f5"/><rect x="56" y="6" width="9" height="5.7" rx="1.3" fill="#cfe0f0"/><circle cx="67" cy="16.3" r="1.2" fill="#ffe08a"/></svg></div>
+      </div>
+      <div class="t-presets" id="tPresets">
+        <button data-min="5">5分</button>
+        <button data-min="10">10分</button>
+        <button data-min="15" class="sel">15分</button>
+        <button data-min="20">20分</button>
+        <button data-min="25">25分</button>
+        <button data-min="30">30分</button>
+      </div>
+      <div class="t-controls">
+        <button class="t-go" id="tGo">スタート</button>
+        <button class="t-reset" id="tReset">リセット</button>
+      </div>
+      <div class="tip" id="tTip">「この ドリル 何分で できるかな？」<br>電車が 駅に 着いたら おしまい<svg viewBox="0 0 48 48" width="15" height="15" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M8 20 L24 9 L40 20"/><rect x="11" y="20" width="26" height="19" fill="#f2e3cd"/><path d="M11 39 H37"/><rect x="20" y="28" width="8" height="11" rx="1" fill="#c9a887"/><rect x="17" y="14.5" width="14" height="6" rx="2" fill="#fff" stroke-width="2"/></svg></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+
+const KEY="saku_app_v1";
+const MODE="points";              /* "points" | "stickers" */
+const PER_ITEM=10, ALL_BONUS=30, SLOTS=5;
+const TRAINS=['<svg viewBox="0 0 48 48" width="30" height="30" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="24" y="11" width="16" height="17" rx="3" fill="#c98b84"/><rect x="6" y="19" width="22" height="9" rx="3" fill="#d8a7a0"/><rect x="10" y="8" width="6" height="11" rx="2" fill="#8a7466"/><rect x="28" y="15" width="8" height="7" rx="1.5" fill="#f2f4f6"/><path d="M4 32 H44" stroke-width="2"/><circle cx="13" cy="36" r="3.4" fill="#8a7466" stroke-width="2.5"/><circle cx="24" cy="36" r="3.4" fill="#8a7466" stroke-width="2.5"/><circle cx="35" cy="36" r="3.4" fill="#8a7466" stroke-width="2.5"/></svg>','<svg viewBox="0 0 48 48" width="30" height="30" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="13" width="36" height="21" rx="6" fill="#94b8c4"/><rect x="11" y="18" width="9" height="8" rx="2" fill="#f2f4f6"/><rect x="28" y="18" width="9" height="8" rx="2" fill="#f2f4f6"/><path d="M6 29 H42" stroke-width="2"/><circle cx="15" cy="38" r="3.6" fill="#8a7466" stroke-width="2.5"/><circle cx="33" cy="38" r="3.6" fill="#8a7466" stroke-width="2.5"/></svg>','<svg viewBox="0 0 48 48" width="30" height="30" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="13" width="36" height="21" rx="6" fill="#a8b89a"/><rect x="11" y="18" width="9" height="8" rx="2" fill="#f2f4f6"/><rect x="28" y="18" width="9" height="8" rx="2" fill="#f2f4f6"/><path d="M6 29 H42" stroke-width="2"/><circle cx="15" cy="38" r="3.6" fill="#8a7466" stroke-width="2.5"/><circle cx="33" cy="38" r="3.6" fill="#8a7466" stroke-width="2.5"/></svg>','<svg viewBox="0 0 48 48" width="30" height="30" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="13" width="36" height="21" rx="6" fill="#e0bd7a"/><rect x="11" y="18" width="9" height="8" rx="2" fill="#f2f4f6"/><rect x="28" y="18" width="9" height="8" rx="2" fill="#f2f4f6"/><path d="M6 29 H42" stroke-width="2"/><circle cx="15" cy="38" r="3.6" fill="#8a7466" stroke-width="2.5"/><circle cx="33" cy="38" r="3.6" fill="#8a7466" stroke-width="2.5"/></svg>','<svg viewBox="0 0 48 48" width="30" height="30" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 30 Q6 16 20 15 H36 Q42 15 42 22 V30 Q42 33 39 33 H9 Q6 33 6 30 Z" fill="#f4f1ea"/><path d="M8 27 H41" stroke="#94b8c4" stroke-width="3"/><rect x="16" y="19" width="7" height="6" rx="2" fill="#cfe0ea"/><rect x="27" y="19" width="7" height="6" rx="2" fill="#cfe0ea"/><circle cx="15" cy="38" r="3.2" fill="#8a7466" stroke-width="2.5"/><circle cx="33" cy="38" r="3.2" fill="#8a7466" stroke-width="2.5"/></svg>'];
+const STN_SVG='<svg viewBox="0 0 48 48" width="16" height="16" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 20 L24 9 L40 20"/><rect x="11" y="20" width="26" height="19" fill="#f2e3cd"/><path d="M11 39 H37"/><rect x="20" y="28" width="8" height="11" rx="1" fill="#c9a887"/><rect x="17" y="14.5" width="14" height="6" rx="2" fill="#fff" stroke-width="2"/></svg>';
+const FLAG_SVG='<svg viewBox="0 0 48 48" width="16" height="16" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M14 6 V42"/><path d="M14 8 H38 L33 16 L38 24 H14 Z" fill="#fff"/><path d="M14 8 H20 V16 H14 Z M26 8 H32 V16 H26 Z M20 16 H26 V24 H20 Z" fill="#6b584a" stroke="none"/></svg>';
+const RICONS={"\uD83C\uDFAE":'<svg viewBox="0 0 48 48" width="26" height="26" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="15" width="32" height="18" rx="9" fill="#a8b8c8"/><path d="M16 20 V28 M12 24 H20" stroke-width="3"/><circle cx="31" cy="21.5" r="2.2" fill="#e0bd7a" stroke="none"/><circle cx="35.5" cy="26.5" r="2.2" fill="#d8a7a0" stroke="none"/></svg>',"\uD83C\uDF6A":'<svg viewBox="0 0 48 48" width="26" height="26" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="24" r="15" fill="#e3bd8a"/><circle cx="18" cy="19" r="2.2" fill="#8a6248" stroke="none"/><circle cx="29" cy="17" r="2.2" fill="#8a6248" stroke="none"/><circle cx="27" cy="28" r="2.2" fill="#8a6248" stroke="none"/><circle cx="17" cy="29" r="2.2" fill="#8a6248" stroke="none"/></svg>',"\uD83D\uDCDA":'<svg viewBox="0 0 48 48" width="26" height="26" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="26" width="30" height="7" rx="2" fill="#d8a7a0"/><rect x="12" y="19" width="26" height="7" rx="2" fill="#a8b89a"/><rect x="15" y="12" width="20" height="7" rx="2" fill="#94b8c4"/><path d="M7 36 H41" stroke-width="2"/></svg>',"\uD83D\uDE97":'<svg viewBox="0 0 48 48" width="26" height="26" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 28 Q8 22 13 21 L17 15 Q18 13 21 13 H30 Q33 13 34 15.5 L37 21 Q40 22 40 27 V31 H8 Z" fill="#e0bd7a"/><rect x="20" y="16" width="9" height="6" rx="1.5" fill="#f2f4f6" stroke-width="2"/><circle cx="15" cy="33" r="3.6" fill="#8a7466" stroke-width="2.5"/><circle cx="33" cy="33" r="3.6" fill="#8a7466" stroke-width="2.5"/></svg>',"\uD83C\uDF66":'<svg viewBox="0 0 48 48" width="26" height="26" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M16 22 H32 L24 42 Z" fill="#e8cc9a"/><circle cx="24" cy="15" r="9" fill="#f0c8c0"/></svg>',"\uD83C\uDF81":'<svg viewBox="0 0 48 48" width="26" height="26" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="18" width="30" height="21" rx="3" fill="#d8a7a0"/><rect x="7" y="12" width="34" height="8" rx="2.5" fill="#e6bdb6"/><path d="M24 12 V39"/><path d="M24 12 Q17 12 17 7.5 Q20 4 24 12 Q28 4 31 7.5 Q31 12 24 12 Z" fill="#c98b84" stroke-width="2.5"/></svg>',"\uD83E\uDDF8":'<svg viewBox="0 0 48 48" width="26" height="26" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="14" cy="13" r="5" fill="#cfa678"/><circle cx="34" cy="13" r="5" fill="#cfa678"/><circle cx="24" cy="25" r="14" fill="#cfa678"/><ellipse cx="24" cy="30" rx="6.5" ry="5" fill="#eddbbe" stroke="none"/><circle cx="19" cy="22" r="1.7" fill="#5b4636" stroke="none"/><circle cx="29" cy="22" r="1.7" fill="#5b4636" stroke="none"/><circle cx="24" cy="28.5" r="1.8" fill="#5b4636" stroke="none"/></svg>',"\uD83C\uDFA8":'<svg viewBox="0 0 48 48" width="26" height="26" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M24 8 Q40 8 41 21 Q42 32 32 32 H28 Q25 32 25 35 Q25 40 20 40 Q8 39 7 26 Q6 12 24 8 Z" fill="#eadfcd"/><circle cx="16" cy="18" r="2.6" fill="#d8a7a0" stroke="none"/><circle cx="25" cy="14.5" r="2.6" fill="#94b8c4" stroke="none"/><circle cx="33" cy="19" r="2.6" fill="#a8b89a" stroke="none"/><circle cx="14" cy="27" r="2.6" fill="#e0bd7a" stroke="none"/></svg>',"\uD83C\uDF69":'<svg viewBox="0 0 48 48" width="26" height="26" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="24" r="15" fill="#e8b28a"/><circle cx="24" cy="24" r="5.5" fill="#fdf6ec"/><path d="M15 17 L18 19 M28 13 L29 16 M33 22 L30 24 M19 31 L21 29" stroke="#c96f82" stroke-width="2.5"/></svg>',"\u26BD":'<svg viewBox="0 0 48 48" width="26" height="26" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="24" r="15" fill="#f4f1ea"/><path d="M24 17 L30 21.5 L27.7 28.5 H20.3 L18 21.5 Z" fill="#6b584a" stroke-width="2"/><path d="M24 9.5 V17 M30 21.5 L37.5 19.5 M27.7 28.5 L32 35 M20.3 28.5 L16 35 M18 21.5 L10.5 19.5" stroke-width="2"/></svg>'};
+function rIcon(e){return RICONS[e]||RICONS["\uD83C\uDF81"];}
+
+const EMOJIS=["\uD83C\uDFAE","\uD83C\uDF6A","\uD83D\uDCDA","\uD83D\uDE97","\uD83C\uDF66","\uD83C\uDF81","\uD83E\uDDF8","\uD83C\uDFA8","\uD83C\uDF69","\u26BD"];
+function mk(t,i,p){return{id:Date.now()+i+(Math.random()*1000|0),text:t,done:false,pts:(typeof p==="number"?p:10)};}
+const DEF_HW=()=>["漢字ドリル","計算ドリル","音読","プリント"].map((t,i)=>mk(t,i));
+const DEF_CHORE=()=>[["お風呂そうじ",30],["食器ならべ",10],["くつを揃える",10],["おもちゃ片づけ",10]].map((x,i)=>mk(x[0],i+50,x[1]));
+const DEF_REWARDS=[{id:1,name:"ゲーム 30分",cost:100,emoji:"\uD83C\uDFAE"},{id:2,name:"好きな おやつ",cost:150,emoji:"\uD83C\uDF6A"},{id:3,name:"本を 1冊",cost:300,emoji:"\uD83D\uDCDA"},{id:4,name:"お出かけ",cost:500,emoji:"\uD83D\uDE97"}];
+
+let state={hw:DEF_HW(),chores:DEF_CHORE(),points:0,stickers:0,hwBonus:false,choreBonus:false,catalog:DEF_REWARDS.slice(),history:{}};
+let curTab="hw", editMode=false;
+let ptsEdit={hw:false,chore:false};
+let calRef=new Date();
+
+/* works inside Claude (window.storage) AND standalone on an iPad (localStorage) */
+async function storeGet(k){
+  try{if(typeof window!=="undefined"&&window.storage&&window.storage.get){const r=await window.storage.get(k);return r?r.value:null;}}catch(e){}
+  try{return localStorage.getItem(k);}catch(e){return null;}
+}
+async function storeSet(k,v){
+  try{if(typeof window!=="undefined"&&window.storage&&window.storage.set){await window.storage.set(k,v);return;}}catch(e){}
+  try{localStorage.setItem(k,v);}catch(e){}
+}
+async function load(){
+  try{const v=await storeGet(KEY);if(v)state=Object.assign(state,JSON.parse(v));}catch(e){}
+  if(!Array.isArray(state.hw))state.hw=DEF_HW();
+  if(!Array.isArray(state.chores))state.chores=DEF_CHORE();
+  if(typeof state.points!=="number")state.points=0;
+  if(typeof state.stickers!=="number")state.stickers=0;
+  if(!Array.isArray(state.catalog)||!state.catalog.length)state.catalog=DEF_REWARDS.slice();
+  if(!state.history)state.history={};
+  state.hw.concat(state.chores).forEach(it=>{if(typeof it.pts!=="number")it.pts=10;});
+  /* 日付が変わっていたら自動リセット */
+  const today=todayKey();
+  if(state.lastDate && state.lastDate!==today){
+    state.hw.forEach(it=>{it.done=false;it.awarded=0;});
+    state.chores.forEach(it=>{it.done=false;it.awarded=0;});
+    state.hwBonus=false;state.choreBonus=false;
+    await save();
+  }
+  state.lastDate=today;await save();
+  initRewardView();renderAll();
+}
+async function save(){try{await storeSet(KEY,JSON.stringify(state));}catch(e){}}
+
+function arr(kind){return kind==="hw"?state.hw:state.chores;}
+function bonusGet(kind){return kind==="hw"?state.hwBonus:state.choreBonus;}
+function bonusSet(kind,v){if(kind==="hw")state.hwBonus=v;else state.choreBonus=v;}
+
+function esc(s){return(""+s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+function renderAll(){renderBadge();renderList("hw");renderList("chore");renderReward();renderCalendar();}
+
+/* ---- tabs ---- */
+function initRewardView(){
+  const t=document.getElementById("tab-reward");const b=document.getElementById("rewardBadge");
+  if(MODE==="points"){t.childNodes[0].nodeValue="ご褒美";b.className="pt-badge";}
+  else{t.childNodes[0].nodeValue="電車カード";b.className="pt-badge s";}
+}
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
+  curTab=t.dataset.tab;
+  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x===t));
+  document.querySelectorAll(".page").forEach(x=>x.classList.toggle("active",x.id==="page-"+curTab));
+  if(curTab==="calendar")renderCalendar();
+}));
+function renderBadge(){
+  const b=document.getElementById("rewardBadge");
+  if(MODE==="points"){b.textContent=state.points;}else{b.innerHTML=TRAINS[1]+" "+state.stickers;}
+}
+
+/* ---- checklists (hw / chore) ---- */
+const cheers=["さあ 始めよう！","いいちょうし！","その調子！","あと ちょっと！","もうすぐ 終わり！！"];
+function suf(kind){return kind==="hw"?"hw":"chore";}
+function renderList(kind){
+  const s=suf(kind);const items=arr(kind);
+  const list=document.getElementById("list-"+s);list.innerHTML="";
+  const isP=MODE==="points";const editing=isP&&ptsEdit[s];
+  const tgl=document.getElementById("ptsEdit-"+s);
+  if(isP){tgl.style.display="block";tgl.classList.toggle("on",editing);
+    tgl.textContent=editing?"\u2713 ポイントを きめ終わり":"\u270F\uFE0F ポイントを 決める（おうちの人）";}
+  else tgl.style.display="none";
+  if(items.length===0)list.innerHTML='<div class="empty">'+(kind==="hw"?"宿題":"お手伝い")+'を ふやしてね \u270E</div>';
+  items.forEach(it=>{
+    const el=document.createElement("div");el.className="item"+(it.done?" done":"")+(editing?" editing":"");
+    const right=editing
+      ?'<input class="pt-input" type="number" min="0" step="5" value="'+it.pts+'" data-id="'+it.id+'"><span class="pt-unit">P</span>'
+      :'<span class="pt-tag'+(isP?'':' s')+'">'+(isP?'+'+it.pts:'\uD83D\uDE83+1')+'</span>';
+    el.innerHTML='<div class="check"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>'
+      +'<div class="label">'+esc(it.text)+'</div>'+right+'<button class="del">\u00D7</button>';
+    el.addEventListener("click",e=>{
+      if(e.target.classList.contains("del")){removeItem(kind,it.id);return;}
+      if(e.target.classList.contains("pt-input"))return;
+      if(editing)return;
+      toggleItem(kind,it.id,el,e);
+    });
+    list.appendChild(el);
+  });
+  list.querySelectorAll(".pt-input").forEach(inp=>{
+    inp.addEventListener("click",e=>e.stopPropagation());
+    inp.addEventListener("change",()=>{const it=items.find(i=>i.id==inp.dataset.id);
+      if(it){it.pts=Math.max(0,parseInt(inp.value,10)||0);inp.value=it.pts;save();}});
+  });
+  document.getElementById("tip-"+s).innerHTML=isP
+    ?'1つ おわると <b>きめた ポイント</b>、ぜんぶ おわると <b>+30ポイント</b>！<br>「\u270F\uFE0Fポイントを 決める」で すきな てんすうに できるよ'
+    :'1つ おわると <b>電車シール1まい</b>、ぜんぶ おわると <b>もう1まい</b>！<br>3つ おわったら ちょっと休けいしよう\u2615';
+  updateProgress(kind);
+}
+function updateProgress(kind){
+  const s=suf(kind);const items=arr(kind);
+  const total=items.length,done=items.filter(i=>i.done).length;
+  const pct=total?Math.round(done/total*100):0;
+  document.getElementById("done-"+s).textContent=done;
+  document.getElementById("total-"+s).textContent=total;
+  document.getElementById("fill-"+s).style.width=pct+"%";
+  const dots=document.getElementById("dots-"+s);dots.innerHTML="";
+  items.forEach(it=>{const d=document.createElement("div");d.className="dot"+(it.done?" on":"");dots.appendChild(d);});
+  const cheer=document.getElementById("cheer-"+s);
+  if(total===0)cheer.textContent=(kind==="hw"?"宿題":"お手伝い")+"を かいてね";
+  else if(done===total)cheer.textContent="ぜんぶ おわった！！\uD83C\uDF89";
+  else cheer.textContent=cheers[Math.min(Math.floor(pct/25),cheers.length-1)];
+}
+function toggleItem(kind,id,el,ev){
+  const items=arr(kind);const it=items.find(i=>i.id===id);if(!it)return;
+  it.done=!it.done;el.classList.toggle("done",it.done);
+  const ck=el.querySelector(".check");ck.classList.add("pop-anim");setTimeout(()=>ck.classList.remove("pop-anim"),400);
+  const kindLabel=(kind==="hw"?"宿題":"お手伝い");
+  const itemLabel=it.text+"（"+kindLabel+"）";
+  const bonusLabel=kindLabel+" ぜんぶできた！ボーナス";
+  if(MODE==="points"){
+    if(it.done){it.awarded=it.pts||0;grant(it.awarded,ev);logHistory(1,it.awarded,itemLabel);}
+    else{const a=(it.awarded||it.pts||0);grant(-a);logHistory(-1,-a,itemLabel);it.awarded=0;}
+  }else{
+    if(it.done){grant(1,ev);logHistory(1,1,itemLabel);}else{grant(-1);logHistory(-1,-1,itemLabel);}
+  }
+  const allDone=items.length>0&&items.every(i=>i.done);
+  if(allDone&&!bonusGet(kind)){bonusSet(kind,true);const b=MODE==="points"?ALL_BONUS:1;grant(b,ev);logHistory(0,b,bonusLabel);celebrate();
+    toast(MODE==="points"?"ぜんぶ できた！ +"+ALL_BONUS+"ポイント\uD83C\uDF89":"ぜんぶ できた！ シール もう1まい\uD83C\uDF89");}
+  if(!allDone&&bonusGet(kind)){bonusSet(kind,false);const b=MODE==="points"?ALL_BONUS:1;grant(-b);logHistory(0,-b,bonusLabel);}
+  updateProgress(kind);save();
+}
+function removeItem(kind,id){
+  if(kind==="hw")state.hw=state.hw.filter(i=>i.id!==id);else state.chores=state.chores.filter(i=>i.id!==id);
+  renderList(kind);save();
+}
+function addItem(kind){
+  const s=suf(kind);const inp=document.getElementById("input-"+s);const t=inp.value.trim();if(!t)return;
+  arr(kind).push({id:Date.now(),text:t,done:false,pts:10});inp.value="";renderList(kind);save();
+}
+["hw","chore"].forEach(kind=>{
+  const s=suf(kind);
+  document.getElementById("ptsEdit-"+s).addEventListener("click",()=>{ptsEdit[s]=!ptsEdit[s];renderList(kind);});
+  document.getElementById("add-"+s).addEventListener("click",()=>addItem(kind));
+  document.getElementById("input-"+s).addEventListener("keydown",e=>{if(e.key==="Enter")addItem(kind);});
+  document.getElementById("reset-"+s).addEventListener("click",async()=>{
+    if(kind==="hw"){state.hw=[];state.hwBonus=false;}else{state.chores=[];state.choreBonus=false;}
+    await save();renderList(kind);
+  });
+});
+
+/* ---- grant points / stickers (shared pool) ---- */
+function grant(n,ev){
+  if(MODE==="points"){
+    state.points=Math.max(0,state.points+n);
+    if(n>0&&ev)floatPoint("+"+n,ev,"var(--mustard-deep)");
+  }else{
+    const before=state.stickers;state.stickers=Math.max(0,before+n);
+    if(n>0&&Math.floor(state.stickers/SLOTS)>Math.floor(before/SLOTS)){celebrate();toast("カード 全部 集まった！\uD83C\uDF89");}
+    if(n>0&&ev)floatPoint(TRAINS[(state.stickers-1)%SLOTS]||TRAINS[1],ev,"var(--sky-deep)");
+  }
+  renderBadge();renderReward();
+}
+
+/* ---- reward page ---- */
+function renderReward(){
+  const pv=document.getElementById("pointsView"),sv=document.getElementById("stickerView");
+  if(MODE==="points"){pv.style.display="";sv.style.display="none";renderPoints();}
+  else{pv.style.display="none";sv.style.display="";renderStickers();}
+}
+function renderPoints(){
+  const bp=document.getElementById("bigPts");bp.textContent=state.points;
+  bp.classList.add("pop-anim");setTimeout(()=>bp.classList.remove("pop-anim"),400);
+  const sub=document.getElementById("jarSub");
+  const cheapest=state.catalog.length?Math.min(...state.catalog.map(r=>r.cost)):0;
+  sub.textContent=(state.points>=cheapest&&cheapest>0)?"ご褒美と 交換できるよ！\uD83C\uDF89":"あと "+(cheapest-state.points)+"ポイントで 交換できる！";
+  const rl=document.getElementById("rewardList");rl.innerHTML="";
+  state.catalog.forEach(r=>{
+    const can=state.points>=r.cost;const el=document.createElement("div");el.className="reward";
+    el.innerHTML='<div class="emoji">'+rIcon(r.emoji)+'</div><div class="r-name">'+esc(r.name)+'</div><div class="r-cost">'+r.cost+'P</div>'+
+      (editMode?'<button class="r-del" data-id="'+r.id+'">\u00D7</button>':'<button class="swap" data-id="'+r.id+'" '+(can?"":"disabled")+'>交換</button>');
+    rl.appendChild(el);
+  });
+  rl.querySelectorAll(".swap").forEach(b=>b.addEventListener("click",()=>redeem(+b.dataset.id)));
+  rl.querySelectorAll(".r-del").forEach(b=>b.addEventListener("click",()=>{state.catalog=state.catalog.filter(r=>r.id!=b.dataset.id);renderPoints();save();}));
+}
+function renderStickers(){
+  const inCard=state.stickers%SLOTS;
+  document.getElementById("cardSub").textContent=inCard===0?"電車シールを 集めよう！":"あと "+(SLOTS-inCard)+"枚で 完成！";
+  const grid=document.getElementById("grid");
+  const prev=grid.querySelectorAll(".slot.filled").length;
+  grid.innerHTML="";
+  for(let i=0;i<SLOTS;i++){
+    const s=document.createElement("div");
+    if(i<inCard){s.className="slot filled"+(i===inCard-1&&inCard>prev?" pop":"");s.innerHTML='<span>'+TRAINS[i]+'</span>';}
+    else{s.className="slot";s.innerHTML='<span class="ghost">'+TRAINS[1]+'</span>';}
+    grid.appendChild(s);
+  }
+}
+function redeem(id){const r=state.catalog.find(x=>x.id===id);if(!r||state.points<r.cost)return;
+  state.points-=r.cost;renderBadge();renderPoints();save();celebrate();toast("「"+r.name+"」と 交換！");}
+function addReward(){const n=document.getElementById("rName").value.trim();const co=parseInt(document.getElementById("rCost").value,10);
+  if(!n||!co||co<1)return;state.catalog.push({id:Date.now(),name:n,cost:co,emoji:EMOJIS[state.catalog.length%EMOJIS.length]});
+  document.getElementById("rName").value="";document.getElementById("rCost").value="";renderPoints();save();}
+document.getElementById("editToggle").addEventListener("click",function(){editMode=!editMode;this.classList.toggle("on",editMode);
+  this.textContent=editMode?"終わり":"編集";document.getElementById("addReward").classList.toggle("show",editMode);renderPoints();});
+document.getElementById("rAdd").addEventListener("click",addReward);
+
+/* ---- history + calendar ---- */
+function todayKey(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function logHistory(dc,dp,label){
+  if(!state.history)state.history={};const k=todayKey();const h=state.history[k]||{count:0,pts:0,items:[]};
+  if(!Array.isArray(h.items))h.items=[];
+  h.count=Math.max(0,h.count+dc);h.pts=Math.max(0,h.pts+dp);
+  if(label){
+    if(dp>0){h.items.push({t:label,p:dp});}
+    else if(dp<0){
+      /* 直近の同じ項目を1件取り消す */
+      for(let i=h.items.length-1;i>=0;i--){if(h.items[i].t===label){h.items.splice(i,1);break;}}
+    }
+  }
+  if(h.count===0&&h.pts===0&&(!h.items||h.items.length===0))delete state.history[k];else state.history[k]=h;
+}
+function renderCalendar(){
+  const hist=state.history||{};const isP=MODE==="points";
+  const y=calRef.getFullYear(),m=calRef.getMonth();
+  document.getElementById("calTitle").textContent=y+"年 "+(m+1)+"月";
+  const first=new Date(y,m,1).getDay();const days=new Date(y,m+1,0).getDate();
+  const grid=document.getElementById("calGrid");grid.innerHTML="";
+  for(let i=0;i<first;i++){const e=document.createElement("div");e.className="cal-cell blank";grid.appendChild(e);}
+  const tk=todayKey();let monthCount=0,monthPts=0,activeDays=0;
+  for(let d=1;d<=days;d++){
+    const key=y+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+    const rec=hist[key];const cnt=rec?rec.count:0;const dayPts=rec?rec.pts:0;
+    const active=cnt>0||dayPts>0;
+    if(active)activeDays++;
+    monthCount+=cnt;if(rec)monthPts+=dayPts;
+    const lvl=!active?0:dayPts<=10?1:dayPts<=30?2:dayPts<=60?3:4;
+    const e=document.createElement("div");e.className="cal-cell"+(lvl?" lvl"+lvl:"")+(key===tk?" today":"")+" has-rec";
+    e.innerHTML='<span class="cd">'+d+'</span>'+(active?'<span class="cc">'+dayPts+(isP?"P":"")+'</span>':"");
+    e.addEventListener("click",()=>openCalEdit(key,d,dayPts));
+    grid.appendChild(e);
+  }
+  document.getElementById("calStats").innerHTML=
+    "今月 <b>"+monthCount+"</b> こ がんばった！　"+activeDays+"日 つづけたよ"+
+    (isP?"<br>ためた ポイント： <b>"+monthPts+"</b> P":"<br>あつめた 電車シール： <b>"+monthPts+"</b> まい");
+}
+function openCalEdit(key,day,curPts){
+  const old=document.getElementById("calModal");if(old)old.remove();
+  const bg=document.createElement("div");bg.className="modal-bg";bg.id="calModal";
+  const [y,m,d]=key.split("-");
+  const label=parseInt(m,10)+"月"+parseInt(d,10)+"日";
+  if(!state.history)state.history={};
+  const rec=state.history[key]||{count:0,pts:0,items:[]};
+  /* 編集用に明細をコピー（なければ空） */
+  let rows=Array.isArray(rec.items)?rec.items.map(x=>({t:x.t,p:x.p})):[];
+  const beforeTotal=curPts;
+
+  bg.innerHTML=`<div class="modal">
+    <h3><svg viewBox="0 0 48 48" width="15" height="15" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="8" y="11" width="32" height="29" rx="4" fill="#f7ead8"/><path d="M8 19 H40" stroke-width="2.5"/><path d="M16 7 V14 M32 7 V14"/><circle cx="17" cy="26" r="1.6" fill="#6b584a" stroke="none"/><circle cx="24" cy="26" r="1.6" fill="#6b584a" stroke="none"/><circle cx="31" cy="26" r="1.6" fill="#6b584a" stroke="none"/><circle cx="17" cy="33" r="1.6" fill="#6b584a" stroke="none"/><circle cx="24" cy="33" r="1.6" fill="#6b584a" stroke="none"/></svg> ${label} の記録</h3>
+    <div class="ce-list" id="ceList"></div>
+    <div class="ce-add">
+      <input type="text" id="ceName" placeholder="こうもく（れい：お手伝い）" maxlength="20">
+      <input type="number" id="ceP" placeholder="P" min="0" step="5">
+      <button id="ceAdd">増やす</button>
+    </div>
+    <div class="ce-total">合計 <b id="ceTotal">0</b> P</div>
+    <div class="modal-btns">
+      <button class="m-cancel" id="mCancel">キャンセル</button>
+      <button class="m-save" id="mSave">保存する</button>
+    </div>
+  </div>`;
+  document.body.appendChild(bg);
+
+  function rowsTotal(){return rows.reduce((s,r)=>s+(parseInt(r.p,10)||0),0);}
+  function drawRows(){
+    const list=document.getElementById("ceList");list.innerHTML="";
+    if(rows.length===0)list.innerHTML='<div class="det-empty">こうもくを ふやしてね ✎</div>';
+    rows.forEach((r,idx)=>{
+      const row=document.createElement("div");row.className="ce-row";
+      row.innerHTML='<input class="ce-t" type="text" value="'+esc(r.t)+'" maxlength="20" data-i="'+idx+'">'
+        +'<input class="ce-p" type="number" value="'+(parseInt(r.p,10)||0)+'" min="0" step="5" data-i="'+idx+'"><span class="ce-unit">P</span>'
+        +'<button class="ce-del" data-i="'+idx+'">×</button>';
+      list.appendChild(row);
+    });
+    list.querySelectorAll(".ce-t").forEach(inp=>inp.addEventListener("input",()=>{rows[+inp.dataset.i].t=inp.value;}));
+    list.querySelectorAll(".ce-p").forEach(inp=>inp.addEventListener("input",()=>{rows[+inp.dataset.i].p=Math.max(0,parseInt(inp.value,10)||0);document.getElementById("ceTotal").textContent=rowsTotal();}));
+    list.querySelectorAll(".ce-del").forEach(b=>b.addEventListener("click",()=>{rows.splice(+b.dataset.i,1);drawRows();}));
+    document.getElementById("ceTotal").textContent=rowsTotal();
+  }
+  drawRows();
+
+  document.getElementById("ceAdd").addEventListener("click",()=>{
+    const nm=document.getElementById("ceName").value.trim();
+    const p=Math.max(0,parseInt(document.getElementById("ceP").value,10)||0);
+    if(!nm){toast("こうもくの なまえを いれてね");return;}
+    rows.push({t:nm,p:p});
+    document.getElementById("ceName").value="";document.getElementById("ceP").value="";
+    drawRows();
+  });
+  document.getElementById("mCancel").addEventListener("click",()=>bg.remove());
+  bg.addEventListener("click",e=>{if(e.target===bg)bg.remove();});
+  document.getElementById("mSave").addEventListener("click",async()=>{
+    /* 空の名前の行は除外 */
+    rows=rows.filter(r=>(r.t||"").trim()!=="");
+    const newTotal=rows.reduce((s,r)=>s+(parseInt(r.p,10)||0),0);
+    const diff=newTotal-beforeTotal;
+    if(newTotal===0&&rows.length===0){delete state.history[key];}
+    else{
+      const keepCount=(state.history[key]&&state.history[key].count)||0;
+      state.history[key]={count:keepCount,pts:newTotal,items:rows.map(r=>({t:r.t.trim(),p:parseInt(r.p,10)||0}))};
+    }
+    state.points=Math.max(0,state.points+diff);
+    await save();bg.remove();renderCalendar();renderBadge();renderReward();
+    toast(label+"を "+newTotal+"P に保存したよ ✓");
+  });
+}
+  function calShift(delta){calRef=new Date(calRef.getFullYear(),calRef.getMonth()+delta,1);renderCalendar();}
+document.getElementById("calPrev").addEventListener("click",()=>calShift(-1));
+document.getElementById("calNext").addEventListener("click",()=>calShift(1));
+
+/* ---- effects ---- */
+let toastT;function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),2300);}
+function floatPoint(txt,ev,col){const f=document.createElement("div");f.className="float-pt";f.innerHTML=txt;f.style.color=col;
+  f.style.left=(ev.clientX-12)+"px";f.style.top=(ev.clientY-20)+"px";document.body.appendChild(f);setTimeout(()=>f.remove(),1000);}
+function celebrate(){const colors=["#d8a7a0","#a8b89a","#e0bd7a","#94b8c4","#c98b84"];
+  for(let i=0;i<60;i++){const c=document.createElement("div");c.className="confetti";c.style.left=Math.random()*100+"vw";
+    c.style.background=colors[i%colors.length];c.style.animationDuration=(2+Math.random()*1.8)+"s";c.style.animationDelay=(Math.random()*.5)+"s";
+    document.body.appendChild(c);setTimeout(()=>c.remove(),4500);}}
+
+const now=new Date();const wd=["日","月","火","水","木","金","土"][now.getDay()];
+document.getElementById("date").textContent=(now.getMonth()+1)+"月"+now.getDate()+"日（"+wd+"）";
+
+/* ---- timer ---- */
+let tMode="down",tTotal=900,tRemain=900,tElapsed=0,tRunning=false,tInterval=null,audioCtx=null;
+const TRAIN_BLUE=`<svg viewBox="0 0 72 22" width="64" height="20" xmlns="http://www.w3.org/2000/svg"><path d="M5 3 H67 Q70 3 70 6 V16 Q70 19 67 19 H5 Q2 19 2 16 V6 Q2 3 5 3 Z" fill="#4f86cf" stroke="#36659f" stroke-width="1.2"/><rect x="2.5" y="12.8" width="67" height="3.4" fill="#ffffff"/><rect x="7" y="6.4" width="7" height="5" rx="1" fill="#dbe9f5"/><rect x="16.5" y="6.4" width="7" height="5" rx="1" fill="#dbe9f5"/><rect x="26" y="6.4" width="7" height="5" rx="1" fill="#dbe9f5"/><rect x="35.5" y="6.4" width="7" height="5" rx="1" fill="#dbe9f5"/><rect x="45" y="6.4" width="7" height="5" rx="1" fill="#dbe9f5"/><rect x="56" y="6" width="9" height="5.7" rx="1.3" fill="#cfe0f0"/><circle cx="67" cy="16.3" r="1.2" fill="#ffe08a"/></svg>`;
+const TRAIN_YELLOW=`<svg viewBox="0 0 72 22" width="64" height="20" xmlns="http://www.w3.org/2000/svg"><path d="M5 3 H67 Q70 3 70 6 V16 Q70 19 67 19 H5 Q2 19 2 16 V6 Q2 3 5 3 Z" fill="#e8c840" stroke="#c4a020" stroke-width="1.2"/><rect x="2.5" y="12.8" width="67" height="3.4" fill="#2a5298"/><rect x="7" y="6.4" width="7" height="5" rx="1" fill="#f5f0c0"/><rect x="16.5" y="6.4" width="7" height="5" rx="1" fill="#f5f0c0"/><rect x="26" y="6.4" width="7" height="5" rx="1" fill="#f5f0c0"/><rect x="35.5" y="6.4" width="7" height="5" rx="1" fill="#f5f0c0"/><rect x="45" y="6.4" width="7" height="5" rx="1" fill="#f5f0c0"/><rect x="56" y="6" width="9" height="5.7" rx="1.3" fill="#8fb0d8"/><circle cx="67" cy="16.3" r="1.2" fill="#ffe08a"/></svg>`;
+function setTrainColor(){document.getElementById('tTrain').innerHTML=tMode==='down'?TRAIN_BLUE:TRAIN_YELLOW;}
+const TRACK_MAX=80;
+const ROUTE=["東京","新横浜","名古屋","京都","新大阪","岡山","博多"];
+function fmt(s){const m=Math.floor(s/60),ss=s%60;return m+":"+String(ss).padStart(2,"0");}
+function renderStations(){
+  const track=document.getElementById("tTrack");
+  track.querySelectorAll(".t-stn").forEach(n=>n.remove());
+  const totalMin=tMode==="down"?tTotal/60:30;
+  for(let i=0;i*5<=totalMin+0.001;i++){
+    const mm=i*5;const isStart=(mm===0);const isLast=(Math.abs(mm-totalMin)<0.001&&mm>0);
+    const name=ROUTE[i]||("駅"+i);
+    const st=document.createElement("div");
+    st.className="t-stn"+(isLast?" last":"")+(isStart?" start passed":"");
+    st.dataset.mm=mm;st.dataset.name=name;st.style.left=((mm/totalMin)*TRACK_MAX)+"%";
+    st.innerHTML=`<span class="stn-ic">${isLast?FLAG_SVG:STN_SVG}</span><span class="stn-lb">${name}</span>`;
+    track.appendChild(st);
+  }
+}
+function updStations(){
+  const totalMin=tMode==="down"?tTotal/60:30;
+  const passedMin=tMode==="down"?(tTotal-tRemain)/60:tElapsed/60;
+  document.querySelectorAll("#tTrack .t-stn").forEach(st=>{
+    const mm=+st.dataset.mm;const isPassed=passedMin>=mm-0.001;
+    if(isPassed&&!st.classList.contains("passed")){
+      st.classList.add("passed","pop-anim");setTimeout(()=>st.classList.remove("pop-anim"),400);
+      if(mm<totalMin&&mm>0){stnBeep();toast(st.dataset.name+" 到着！");}
+    }else if(!isPassed&&mm>0){st.classList.remove("passed");}
+  });
+}
+function stnBeep(){try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();
+  const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type="sine";o.frequency.value=880;
+  o.connect(g);g.connect(audioCtx.destination);const t=audioCtx.currentTime;
+  g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.18,t+0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+0.28);o.start(t);o.stop(t+0.3);}catch(e){}}
+function updTimer(){
+  const d=document.getElementById("tDisplay"),tr=document.getElementById("tTrain");
+  if(tMode==="down"){d.textContent=fmt(Math.max(0,tRemain));tr.style.left=(tTotal?(tTotal-tRemain)/tTotal*TRACK_MAX:0)+"%";updStations();}
+  else{d.textContent=fmt(tElapsed);updStations();}
+}
+function tTick(){
+  if(tMode==="down"){tRemain--;if(tRemain<=0){tRemain=0;updTimer();tFinish();return;}}
+  else{tElapsed++;}
+  updTimer();
+}
+function tStartLabel(s){const g=document.getElementById("tGo");g.textContent=s;g.classList.toggle("running",s==="とめる");}
+function tToggle(){
+  const tr=document.getElementById("tTrain");
+  if(tRunning){
+    clearInterval(tInterval);tRunning=false;tStartLabel("つづける");
+    if(tMode==="up")tr.classList.add("loop-paused");
+    return;
+  }
+  try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==="suspended")audioCtx.resume();}catch(e){}
+  tRunning=true;tStartLabel("とめる");tInterval=setInterval(tTick,1000);
+  if(tMode==="up"){tr.classList.add("looping");tr.classList.remove("loop-paused");}
+}
+function tReset(){
+  clearInterval(tInterval);tRunning=false;tStartLabel("スタート");
+  if(tMode==="down")tRemain=tTotal;else tElapsed=0;
+  const tr=document.getElementById("tTrain");
+  tr.classList.remove("looping","loop-paused");tr.style.left="0%";
+  updTimer();
+}
+function tFinish(){clearInterval(tInterval);tRunning=false;tStartLabel("スタート");chime();celebrate();toast("終点に 到着！おつかれさま！");}
+function tSetMode(m,btn){
+  const tr=document.getElementById("tTrain");
+  tr.classList.remove("looping","loop-paused");tr.style.left="";
+  tMode=m;setTrainColor();document.querySelectorAll(".tm-btn").forEach(b=>b.classList.toggle("active",b===btn));
+  document.getElementById("tPresets").style.display=(m==="down")?"flex":"none";
+  document.getElementById("tTrack").classList.toggle("up",m==="up");
+  document.getElementById("tTip").innerHTML=(m==="down")?'東京を 出発！5分ごとに えきに とまるよ<svg viewBox="0 0 48 48" width="15" height="15" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="6" y="13" width="36" height="21" rx="6" fill="#94b8c4"/><rect x="11" y="18" width="9" height="8" rx="2" fill="#f2f4f6"/><rect x="28" y="18" width="9" height="8" rx="2" fill="#f2f4f6"/><path d="M6 29 H42" stroke-width="2"/><circle cx="15" cy="38" r="3.6" fill="#8a7466" stroke-width="2.5"/><circle cx="33" cy="38" r="3.6" fill="#8a7466" stroke-width="2.5"/></svg><br>終点に ついたら おしまい<svg viewBox="0 0 48 48" width="15" height="15" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M14 6 V42"/><path d="M14 8 H38 L33 16 L38 24 H14 Z" fill="#fff"/><path d="M14 8 H20 V16 H14 Z M26 8 H32 V16 H26 Z M20 16 H26 V24 H20 Z" fill="#6b584a" stroke="none"/></svg>':'勉強した 時間を はかれるよ⏱<br>「きょうは 何分 がんばったかな？」';
+  renderStations();tReset();}
+function chime(){try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();
+  [523,659,784,1047].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.type="sine";o.frequency.value=f;o.connect(g);g.connect(audioCtx.destination);
+    const t=audioCtx.currentTime+i*0.16;g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(0.32,t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+0.45);
+    o.start(t);o.stop(t+0.5);});}catch(e){}}
+document.querySelectorAll(".tm-btn").forEach(b=>b.addEventListener("click",()=>tSetMode(b.dataset.tm,b)));
+document.querySelectorAll("#tPresets button").forEach(b=>b.addEventListener("click",()=>{
+  tTotal=(+b.dataset.min)*60;document.querySelectorAll("#tPresets button").forEach(x=>x.classList.toggle("sel",x===b));renderStations();tReset();}));
+document.getElementById("tGo").addEventListener("click",tToggle);
+document.getElementById("tReset").addEventListener("click",tReset);
+renderStations();setTrainColor();updTimer();
+
+load();
+</script>
+
+<div class="bkx">
+  <h3><svg viewBox="0 0 48 48" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M24 7 V25 M17 19 L24 26 L31 19"/><path d="M8 29 V35 Q8 40 13 40 H35 Q40 40 40 35 V29"/></svg> データのバックアップ</h3>
+  記録はこの端末のブラウザ内に保存されています。ときどきファイルに書き出しておくと、機種変更やアプリのお引っ越しでも安心です。<br>
+  <button class="bkx-btn" id="bkxExp">書き出す</button><button class="bkx-btn sub" id="bkxImpBtn">読み込む</button>
+  <input type="file" id="bkxImp" accept=".json" style="display:none">
+</div>
+<script>
+(function(){
+  var APP="saku";
+  document.getElementById("bkxExp").addEventListener("click",function(){
+    var data={};
+    for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);data[k]=localStorage.getItem(k);}
+    var blob=new Blob([JSON.stringify({__bkx:APP,data:data},null,2)],{type:"application/json"});
+    var a=document.createElement("a");a.href=URL.createObjectURL(blob);
+    var d=new Date();
+    a.download=APP+"-backup-"+d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")+".json";
+    a.click();URL.revokeObjectURL(a.href);
+  });
+  document.getElementById("bkxImpBtn").addEventListener("click",function(){document.getElementById("bkxImp").click();});
+  document.getElementById("bkxImp").addEventListener("change",function(ev){
+    var f=ev.target.files[0];if(!f)return;
+    var r=new FileReader();
+    r.onload=function(){
+      try{
+        var j=JSON.parse(r.result);
+        var data=j.__bkx?j.data:j;
+        if(typeof data!=="object"||!data)throw 0;
+        if(!confirm("今の記録を読み込んだ内容で置き換えます。よろしいですか？"))return;
+        Object.keys(data).forEach(function(k){localStorage.setItem(k,data[k]);});
+        alert("読み込みました。画面を更新します。");location.reload();
+      }catch(e){alert("このファイルは読み込めませんでした");}
+    };
+    r.readAsText(f);ev.target.value="";
+  });
+})();
+</script>
+</body>
+</html>

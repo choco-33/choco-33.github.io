@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>お掃除ログ</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#f4a09c">
+<style>
+@font-face{font-family:"Azuki";src:url("../azukiP.ttf") format("truetype");font-display:swap;}
+
+  :root{
+    --bg:#fdf6f0; --card:#ffffff; --text:#4a3f35; --sub:#a89a8c;
+    --accent:#f4a09c; --accent-dark:#e8837e; --mint:#a8d8c8;
+    --ok:#7ec8a9; --warn:#f5c26b; --bad:#ef8a80; --none:#d8cabb;
+    --shadow:0 2px 10px rgba(160,120,90,.12);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    font-family:"Azuki","Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif;
+    background:var(--bg); color:var(--text);
+    max-width:480px; margin:0 auto; min-height:100vh;
+    padding-bottom:84px;
+  }
+  header{text-align:center; padding:18px 16px 10px}
+  header h1{font-size:21px; letter-spacing:2px; display:flex; align-items:center; justify-content:center; gap:8px}
+  header h1 svg{width:27px; height:27px}
+  header p{font-size:12px; color:var(--sub); margin-top:3px}
+
+  .summary{display:flex; gap:10px; padding:0 16px 14px}
+  .summary .box{
+    flex:1; background:var(--card); border-radius:16px; box-shadow:var(--shadow);
+    padding:10px; text-align:center;
+  }
+  .summary .num{font-size:20px; font-weight:bold; color:var(--accent-dark)}
+  .summary .label{font-size:10px; color:var(--sub); margin-top:2px}
+
+  .tabbar{
+    position:fixed; bottom:0; left:0; right:0; max-width:480px; margin:0 auto;
+    display:flex; background:var(--card); box-shadow:0 -2px 10px rgba(160,120,90,.15);
+    padding-bottom:env(safe-area-inset-bottom); z-index:5;
+  }
+  .tabbar button{
+    flex:1; border:none; background:none; padding:11px 0 9px;
+    font-size:12px; color:var(--sub); font-family:inherit;
+  }
+  .tabbar button .ico{display:flex; justify-content:center; margin-bottom:3px}
+  .tabbar button .ico svg{width:22px; height:22px}
+  .tabbar button.active{color:var(--accent-dark); font-weight:bold}
+
+  .page{display:none; padding:0 14px}
+  .page.active{display:block}
+
+  .floor-label{
+    font-size:13px; font-weight:bold; color:var(--sub);
+    margin:14px 4px 8px; letter-spacing:1px;
+    display:flex; align-items:center; gap:6px;
+  }
+  .floor-label svg{width:20px; height:20px}
+  .floor-label:first-child{margin-top:2px}
+
+  .room{
+    background:var(--card); border-radius:18px; box-shadow:var(--shadow);
+    margin-bottom:10px; overflow:hidden;
+  }
+  .room-head{
+    display:flex; align-items:center; gap:10px; padding:13px 14px;
+    cursor:pointer; user-select:none;
+  }
+  .room-head .icon{width:30px; height:30px; flex-shrink:0}
+  .room-head .icon svg{width:100%; height:100%}
+  .room-head .rname{font-size:15px; font-weight:bold; flex:1}
+  .room-head .progress{font-size:11px; color:var(--sub)}
+  .room-head .arrow{font-size:12px; color:var(--sub); transition:.2s}
+  .room.open .arrow{transform:rotate(90deg)}
+  .dots{display:flex; gap:3px; margin-top:3px}
+  .dot{width:8px; height:8px; border-radius:50%}
+  .dot.ok{background:var(--ok)} .dot.warn{background:var(--warn)}
+  .dot.bad{background:var(--bad)} .dot.none{background:var(--none)}
+
+  .room-body{display:none; border-top:1.5px dashed #f2e6da; padding:6px 12px 12px}
+  .room.open .room-body{display:block}
+
+  .spot{
+    display:flex; align-items:center; gap:10px; padding:9px 2px;
+    border-bottom:1px solid #faf1e8;
+  }
+  .spot:last-of-type{border-bottom:none}
+  .check{
+    width:30px; height:30px; border-radius:10px; border:2px solid #eeded2;
+    background:#fffdfb; font-size:16px; line-height:1; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; color:transparent;
+  }
+  .spot.done .check{background:var(--ok); border-color:var(--ok); color:#fff}
+  .spot .sinfo{flex:1; min-width:0}
+  .spot .sname{font-size:14px}
+  .spot.done .sname{color:var(--sub); text-decoration:line-through}
+  .spot .slast{font-size:10.5px; margin-top:1px}
+  .slast.ok{color:var(--ok)} .slast.warn{color:#d9a13f}
+  .slast.bad{color:var(--bad)} .slast.none{color:var(--sub)}
+  .spot .sdel{border:none; background:none; color:#e0d2c4; font-size:14px; padding:6px}
+
+  .spot-add{display:flex; gap:6px; margin-top:10px}
+  .spot-add input{
+    flex:1; border:1.5px solid #eeded2; border-radius:12px; padding:8px 12px;
+    font-family:inherit; font-size:13px; background:#fffdfb; color:var(--text);
+    outline:none; min-width:0;
+  }
+  .spot-add input:focus{border-color:var(--accent)}
+  .spot-add button{
+    border:none; background:var(--mint); color:#fff; font-family:inherit;
+    font-weight:bold; font-size:13px; padding:0 14px; border-radius:12px;
+  }
+
+  .hist-day{margin-bottom:16px}
+  .hist-day h3{font-size:13px; color:var(--sub); margin:0 4px 6px}
+  .hist-item{
+    background:var(--card); border-radius:14px; box-shadow:var(--shadow);
+    padding:10px 14px; margin-bottom:6px; font-size:13.5px;
+    display:flex; justify-content:space-between; align-items:center; gap:8px;
+  }
+  .hist-item .where{color:var(--sub); font-size:11px}
+  .hist-item time{font-size:11px; color:var(--sub); flex-shrink:0}
+  .empty{text-align:center; color:var(--sub); font-size:13px; padding:40px 0; line-height:2}
+
+  #toast{
+    position:fixed; left:50%; bottom:92px; transform:translateX(-50%) translateY(20px);
+    background:var(--text); color:#fff; font-size:14px; padding:12px 22px;
+    border-radius:999px; opacity:0; pointer-events:none; transition:.3s;
+    white-space:nowrap; z-index:10;
+  }
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+  .confetti{position:fixed; font-size:20px; pointer-events:none; z-index:9; animation:fall 1.1s ease-in forwards}
+  @keyframes fall{
+    0%{opacity:1; transform:translateY(0) rotate(0)}
+    100%{opacity:0; transform:translateY(110px) rotate(200deg)}
+  }
+
+  .bkx{margin:18px 14px 100px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:18px;
+    padding:14px 16px;box-shadow:0 4px 12px rgba(0,0,0,.06);font-size:12px;color:#8a8073;line-height:1.7}
+  .bkx h3{font-size:13.5px;color:#5b4636;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+  .bkx h3 svg{width:18px;height:18px}
+  .bkx .bkx-btn{border:none;border-radius:12px;padding:9px 16px;font-family:inherit;font-weight:700;
+    font-size:12.5px;color:#fff;background:#a8b89a;margin:8px 8px 0 0;cursor:pointer}
+  .bkx .bkx-btn.sub{background:#c9bfae}
+</style>
+</head>
+<body>
+<header>
+  <h1><span id="hIcon"></span>お掃除ログ</h1>
+  <p id="today"></p>
+</header>
+
+<div class="summary">
+  <div class="box"><div class="num" id="statToday">0</div><div class="label">今日チェック</div></div>
+  <div class="box"><div class="num" id="statMonth">0</div><div class="label">今月</div></div>
+  <div class="box"><div class="num" id="statStreak">0</div><div class="label">連続日数</div></div>
+</div>
+
+<div id="pageRooms" class="page active"></div>
+
+<div id="pageHistory" class="page">
+  <div id="histList"></div>
+</div>
+
+<nav class="tabbar">
+  <button id="tabRooms" class="active" onclick="showPage('Rooms')"><span class="ico" data-icon="house"></span>おそうじ</button>
+  <button id="tabHistory" onclick="showPage('History')"><span class="ico" data-icon="book"></span>きろく</button>
+</nav>
+
+<div id="toast"></div>
+
+<script>
+const KEY = "osouji-log-v2";
+
+/* 手描き風SVGアイコン */
+const SVG_OPEN = '<svg viewBox="0 0 48 48" fill="none" stroke="#5b4636" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">';
+const ICONS = {
+  broom: SVG_OPEN+'<g transform="rotate(12 24 24)"><path d="M27 5 L21.5 25" stroke-width="3.5"/><path d="M17 25 L28 25 L33 41 H12 Z" fill="#f6c771"/><rect x="16" y="22.5" width="14" height="6" rx="3" fill="#f48580"/><path d="M19 31 L17.5 40 M24 31 V40 M29 31 L30.5 40" stroke-width="2"/></g></svg>',
+  pan: SVG_OPEN+'<circle cx="19" cy="29" r="11" fill="#f2b56a"/><path d="M29.5 25 L43 19" stroke-width="3.5"/><circle cx="19" cy="29" r="5.5" fill="#fff" stroke="none"/><circle cx="19" cy="29" r="2.5" fill="#f6c14e" stroke="none"/></svg>',
+  sofa: SVG_OPEN+'<rect x="12" y="12" width="24" height="14" rx="5" fill="#f4a09c"/><rect x="6" y="22" width="36" height="13" rx="5" fill="#f7b3ad"/><path d="M24 22 V35" stroke-width="2"/><path d="M11 35 V40 M37 35 V40" stroke-width="2.5"/></svg>',
+  door: SVG_OPEN+'<rect x="13" y="7" width="22" height="34" rx="2" fill="#dfb894"/><circle cx="30" cy="25" r="2" fill="#5b4636" stroke="none"/><path d="M8 41 H40"/></svg>',
+  book2: SVG_OPEN+'<rect x="11" y="9" width="26" height="30" rx="3" fill="#a9c7e8"/><path d="M16 9 V39" stroke-width="2"/><path d="M27 9 V20 L30.5 16 L34 20 V9" fill="#f4a09c" stroke-width="2"/></svg>',
+  bath: SVG_OPEN+'<path d="M7 25 H41 V29 Q41 38 32 38 H16 Q7 38 7 29 Z" fill="#b8def0"/><path d="M12 25 V12 Q12 8 18 8 H21"/><circle cx="30" cy="16" r="3"/><circle cx="37" cy="10" r="2" stroke-width="2"/><path d="M14 38 L11.5 43 M34 38 L36.5 43" stroke-width="2.5"/></svg>',
+  basket: SVG_OPEN+'<circle cx="20" cy="17" r="4.5" fill="#f4a09c"/><circle cx="28" cy="16" r="4.5" fill="#a9c7e8"/><path d="M11 20 H37 L34 39 H14 Z" fill="#ead9a8"/><path d="M15 26 H33 M14.5 32 H33.5" stroke-width="2"/></svg>',
+  toilet: SVG_OPEN+'<rect x="15" y="8" width="18" height="11" rx="2" fill="#e8eef2"/><circle cx="29" cy="13.5" r="1.5" fill="#5b4636" stroke="none"/><path d="M13 22 H35 Q35 34 24 34 Q13 34 13 22 Z" fill="#eef4f7"/><path d="M24 34 V39" stroke-width="3"/><path d="M17 41 H31"/></svg>',
+  box: SVG_OPEN+'<path d="M9 16 L15 8 H33 L39 16 Z" fill="#e9c9a4"/><rect x="9" y="16" width="30" height="23" rx="2" fill="#dfb894"/><path d="M24 8 V16" stroke-width="2.5"/><rect x="14" y="22" width="9" height="6" rx="1" fill="#fdf6e8" stroke-width="2"/></svg>',
+  window2: SVG_OPEN+'<rect x="9" y="9" width="30" height="30" rx="2" fill="#cfe8f5"/><path d="M24 9 V39 M9 24 H39" stroke-width="2.5"/><path d="M14 19 L20 13" stroke="#fff" stroke-width="2.5"/></svg>',
+  frame: SVG_OPEN+'<rect x="11" y="9" width="26" height="30" rx="2" fill="#f7e8c8"/><rect x="16" y="14" width="16" height="20" fill="#dff0f8" stroke-width="2"/><path d="M17 30 L22 23 L25.5 27.5 L28 24.5 L31 30" stroke-width="2"/><circle cx="28" cy="18.5" r="2" fill="#f6c14e" stroke="none"/></svg>',
+  bed: SVG_OPEN+'<path d="M8 26 V13" stroke-width="3"/><rect x="8" y="24" width="34" height="9" rx="3" fill="#cfe0f4"/><rect x="11" y="18" width="11" height="6" rx="3" fill="#fdf6e8"/><path d="M8 33 V38 M40 33 V38" stroke-width="2.5"/></svg>',
+  house: SVG_OPEN+'<rect x="11" y="22" width="26" height="18" fill="#fbe3d2"/><path d="M7 24 L24 8 L41 24"/><path d="M11 40 H37"/><rect x="20.5" y="30" width="7" height="10" rx="1" fill="#dfa07a"/></svg>',
+  stairs: SVG_OPEN+'<path d="M8 40 H16 V32 H24 V24 H32 V16 H40" stroke-width="3.5"/><path d="M36 8 L37 11 L40 12 L37 13 L36 16 L35 13 L32 12 L35 11 Z" fill="#ffe08c" stroke-width="1.5"/></svg>',
+  book: SVG_OPEN+'<path d="M24 13 Q16 8 7 10 V36 Q16 34 24 39 Q32 34 41 36 V10 Q32 8 24 13 Z" fill="#fdf3dc"/><path d="M24 13 V39"/><path d="M12 17 Q16 16 19 18 M12 23 Q16 22 19 24" stroke-width="2"/><path d="M29 18 Q33 16 36 17 M29 24 Q33 22 36 23" stroke-width="2"/></svg>',
+  sparkle: SVG_OPEN+'<path d="M24 6 Q26 19 39 24 Q26 29 24 42 Q22 29 9 24 Q22 19 24 6 Z" fill="#ffe9a8"/></svg>',
+};
+const ROOM_ICON = {
+  "キッチン":"pan","リビング":"sofa","玄関":"door","洋室1":"book2",
+  "お風呂":"bath","脱衣所":"basket","トイレ":"toilet","納戸":"box",
+  "洋室2":"window2","洋室3":"frame","寝室":"bed"
+};
+function roomIcon(name){ return ICONS[ROOM_ICON[name]] || ICONS.sparkle; }
+
+const DEFAULT_ROOMS = [
+  {floor:"1F", name:"キッチン", spots:["シンク","コンロまわり","調理台・作業台","床"]},
+  {floor:"1F", name:"リビング", spots:["床・掃除機","テーブル拭き","窓・サッシ"]},
+  {floor:"1F", name:"玄関",     spots:["たたき掃き","靴の整理","ドア拭き"]},
+  {floor:"1F", name:"洋室1",    spots:["床・掃除機","ほこり取り"]},
+  {floor:"1F", name:"お風呂",   spots:["浴槽","床・排水口","鏡・蛇口","カビチェック"]},
+  {floor:"1F", name:"脱衣所",   spots:["床","洗面台","洗濯機まわり"]},
+  {floor:"1F", name:"トイレ",   spots:["便器","床","手洗い"]},
+  {floor:"2F", name:"納戸",     spots:["整理整頓","ほこり取り"]},
+  {floor:"2F", name:"洋室2",    spots:["床・掃除機","ほこり取り"]},
+  {floor:"2F", name:"洋室3",    spots:["床・掃除機","ほこり取り"]},
+  {floor:"2F", name:"トイレ",   spots:["便器","床","手洗い"]},
+  {floor:"2F", name:"寝室",     spots:["床・掃除機","シーツ交換","ほこり取り"]},
+];
+const PRAISE = [
+  "えらい！✨","ピカピカだね！🫧","おつかれさま！🌸","今日もがんばった！💪",
+  "気持ちいいね〜！😊","すごい！継続は力なり✨","おうちが喜んでる！🏠💕","ナイスおそうじ！🧹"
+];
+const ROOM_DONE = ["この部屋コンプリート！🎉","全部ピカピカ！✨🏆","部屋まるごとキレイ！すごい！💮"];
+
+let state = load();
+let openRooms = new Set(JSON.parse(sessionStorage.getItem("osouji-open")||"[]"));
+
+function load(){
+  try{
+    const s = JSON.parse(localStorage.getItem(KEY));
+    if(s && s.rooms) return s;
+  }catch(e){}
+  return {
+    rooms: DEFAULT_ROOMS.map(r=>({floor:r.floor, name:r.name, spots:[...r.spots]})),
+    logs: []
+  };
+}
+function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+function saveOpen(){ sessionStorage.setItem("osouji-open", JSON.stringify([...openRooms])); }
+
+function fmtDate(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
+function todayStr(){ return fmtDate(new Date()); }
+function daysAgo(dateStr){
+  const a = new Date(dateStr+"T00:00:00"), b = new Date(todayStr()+"T00:00:00");
+  return Math.round((b-a)/86400000);
+}
+function roomKey(r){ return r.floor+"/"+r.name; }
+function lastLog(r, spot){
+  for(let i=state.logs.length-1;i>=0;i--){
+    const l = state.logs[i];
+    if(l.floor===r.floor && l.room===r.name && l.spot===spot) return l;
+  }
+  return null;
+}
+function doneToday(r, spot){
+  const l = lastLog(r, spot);
+  return l && l.date===todayStr();
+}
+function spotStatus(r, spot){
+  const l = lastLog(r, spot);
+  if(!l) return {cls:"none", text:"まだ記録なし"};
+  const d = daysAgo(l.date);
+  if(d===0) return {cls:"ok", text:"今日おそうじ済み✨"};
+  if(d<=3)  return {cls:"ok", text:`${d}日前`};
+  if(d<=7)  return {cls:"warn", text:`${d}日前 そろそろかも`};
+  return {cls:"bad", text:`${d}日前 よごれてるかも…`};
+}
+
+function renderRooms(){
+  const el = document.getElementById("pageRooms");
+  el.innerHTML = "";
+  let curFloor = null;
+  state.rooms.forEach((r, ri)=>{
+    if(r.floor!==curFloor){
+      curFloor = r.floor;
+      const lab = document.createElement("div");
+      lab.className="floor-label";
+      lab.innerHTML = (curFloor==="1F" ? ICONS.house+"1階" : ICONS.stairs+"2階");
+      el.appendChild(lab);
+    }
+    const done = r.spots.filter(s=>doneToday(r,s)).length;
+    const dots = r.spots.map(s=>`<span class="dot ${spotStatus(r,s).cls}"></span>`).join("");
+    const div = document.createElement("div");
+    div.className = "room" + (openRooms.has(roomKey(r)) ? " open" : "");
+    div.innerHTML = `
+      <div class="room-head" onclick="toggleRoom(${ri})">
+        <span class="icon">${roomIcon(r.name)}</span>
+        <div style="flex:1;min-width:0">
+          <div class="rname">${escapeHtml(r.name)}</div>
+          <div class="dots">${dots}</div>
+        </div>
+        <span class="progress">${done}/${r.spots.length}</span>
+        <span class="arrow">▶</span>
+      </div>
+      <div class="room-body">
+        ${r.spots.map((s,si)=>{
+          const st = spotStatus(r,s);
+          const dn = doneToday(r,s);
+          return `<div class="spot${dn?" done":""}">
+            <button class="check" onclick="toggleSpot(${ri},${si},event)">✓</button>
+            <div class="sinfo">
+              <div class="sname">${escapeHtml(s)}</div>
+              <div class="slast ${st.cls}">${st.text}</div>
+            </div>
+            <button class="sdel" onclick="removeSpot(${ri},${si})">✕</button>
+          </div>`;
+        }).join("")}
+        <div class="spot-add">
+          <input id="spotIn${ri}" type="text" placeholder="掃除するところを追加" maxlength="15"
+                 onkeydown="if(event.key==='Enter')addSpot(${ri})">
+          <button onclick="addSpot(${ri})">追加</button>
+        </div>
+      </div>`;
+    el.appendChild(div);
+  });
+}
+
+function toggleRoom(ri){
+  const k = roomKey(state.rooms[ri]);
+  openRooms.has(k) ? openRooms.delete(k) : openRooms.add(k);
+  saveOpen(); renderRooms();
+}
+
+function toggleSpot(ri, si, ev){
+  ev.stopPropagation();
+  const r = state.rooms[ri], spot = r.spots[si];
+  const t = todayStr();
+  if(doneToday(r, spot)){
+    for(let i=state.logs.length-1;i>=0;i--){
+      const l = state.logs[i];
+      if(l.floor===r.floor && l.room===r.name && l.spot===spot && l.date===t){
+        state.logs.splice(i,1); break;
+      }
+    }
+  }else{
+    const now = new Date();
+    state.logs.push({
+      floor:r.floor, room:r.name, spot, date:t,
+      time:`${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`
+    });
+    const allDone = r.spots.every(s=>doneToday(r,s));
+    toast(allDone ? ROOM_DONE[Math.floor(Math.random()*ROOM_DONE.length)]
+                  : PRAISE[Math.floor(Math.random()*PRAISE.length)]);
+    confetti(ev);
+  }
+  save(); renderAll();
+}
+
+function addSpot(ri){
+  const input = document.getElementById("spotIn"+ri);
+  const name = input.value.trim();
+  if(!name) return;
+  const r = state.rooms[ri];
+  if(r.spots.includes(name)){ toast("もうあるよ！"); return; }
+  r.spots.push(name);
+  save(); renderAll();
+  toast(`「${name}」を追加したよ🌱`);
+  openRooms.add(roomKey(r)); saveOpen(); renderRooms();
+}
+
+function removeSpot(ri, si){
+  const r = state.rooms[ri];
+  if(!confirm(`「${r.spots[si]}」を削除する？（記録は残るよ）`)) return;
+  r.spots.splice(si,1); save(); renderAll();
+}
+
+function renderHistory(){
+  const el = document.getElementById("histList");
+  el.innerHTML="";
+  if(!state.logs.length){
+    el.innerHTML = '<div class="empty">まだ記録がないよ。<br>最初のおそうじをしてみよう！</div>';
+    return;
+  }
+  const byDay = {};
+  [...state.logs].reverse().forEach(l=>{ (byDay[l.date] ||= []).push(l); });
+  for(const [date, logs] of Object.entries(byDay)){
+    const d = new Date(date+"T00:00:00");
+    const wd = ["日","月","火","水","木","金","土"][d.getDay()];
+    const ago = daysAgo(date);
+    const label = (ago===0?"今日":ago===1?"きのう":`${d.getMonth()+1}月${d.getDate()}日(${wd})`) + ` ・ ${logs.length}か所`;
+    const sec = document.createElement("div");
+    sec.className="hist-day";
+    sec.innerHTML = `<h3>${label}</h3>` + logs.map(l=>
+      `<div class="hist-item">
+        <span>${escapeHtml(l.spot)} <span class="where">（${l.floor} ${escapeHtml(l.room)}）</span></span>
+        <time>${l.time||""}</time>
+      </div>`).join("");
+    el.appendChild(sec);
+  }
+}
+
+function renderStats(){
+  const t = todayStr(), ym = t.slice(0,7);
+  document.getElementById("statToday").textContent = state.logs.filter(l=>l.date===t).length;
+  document.getElementById("statMonth").textContent = state.logs.filter(l=>l.date.startsWith(ym)).length;
+  const days = new Set(state.logs.map(l=>l.date));
+  let streak=0, cur=new Date(t+"T00:00:00");
+  if(!days.has(t)) cur.setDate(cur.getDate()-1);
+  while(days.has(fmtDate(cur))){ streak++; cur.setDate(cur.getDate()-1); }
+  document.getElementById("statStreak").textContent = streak;
+}
+
+function renderAll(){ renderRooms(); renderHistory(); renderStats(); }
+
+function showPage(name){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll(".tabbar button").forEach(b=>b.classList.remove("active"));
+  document.getElementById("page"+name).classList.add("active");
+  document.getElementById("tab"+name).classList.add("active");
+}
+
+let toastTimer;
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove("show"), 1800);
+}
+
+function confetti(ev){
+  const x = ev && ev.clientX ? ev.clientX : window.innerWidth/2;
+  const y = ev && ev.clientY ? ev.clientY : window.innerHeight/2;
+  const chars = ["✨","🫧","🌸","⭐"];
+  for(let i=0;i<6;i++){
+    const s = document.createElement("span");
+    s.className="confetti";
+    s.textContent = chars[Math.floor(Math.random()*chars.length)];
+    s.style.left = (x + (Math.random()*70-35)) + "px";
+    s.style.top  = (y - 10 - Math.random()*20) + "px";
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(), 1200);
+  }
+}
+
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+/* 静的アイコン差し込み */
+document.getElementById("hIcon").innerHTML = ICONS.broom;
+document.querySelectorAll(".ico[data-icon]").forEach(el=>{ el.innerHTML = ICONS[el.dataset.icon]; });
+
+const now = new Date();
+document.getElementById("today").textContent =
+  `${now.getMonth()+1}月${now.getDate()}日（${["日","月","火","水","木","金","土"][now.getDay()]}）`;
+renderAll();
+</script>
+
+<div class="bkx">
+  <h3><svg viewBox="0 0 48 48" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M24 7 V25 M17 19 L24 26 L31 19"/><path d="M8 29 V35 Q8 40 13 40 H35 Q40 40 40 35 V29"/></svg> データのバックアップ</h3>
+  記録はこの端末のブラウザ内に保存されています。ときどきファイルに書き出しておくと、機種変更やアプリのお引っ越しでも安心です。<br>
+  <button class="bkx-btn" id="bkxExp">書き出す</button><button class="bkx-btn sub" id="bkxImpBtn">読み込む</button>
+  <input type="file" id="bkxImp" accept=".json" style="display:none">
+</div>
+<script>
+(function(){
+  var APP="osouji";
+  document.getElementById("bkxExp").addEventListener("click",function(){
+    var data={};
+    for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);data[k]=localStorage.getItem(k);}
+    var blob=new Blob([JSON.stringify({__bkx:APP,data:data},null,2)],{type:"application/json"});
+    var a=document.createElement("a");a.href=URL.createObjectURL(blob);
+    var d=new Date();
+    a.download=APP+"-backup-"+d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")+".json";
+    a.click();URL.revokeObjectURL(a.href);
+  });
+  document.getElementById("bkxImpBtn").addEventListener("click",function(){document.getElementById("bkxImp").click();});
+  document.getElementById("bkxImp").addEventListener("change",function(ev){
+    var f=ev.target.files[0];if(!f)return;
+    var r=new FileReader();
+    r.onload=function(){
+      try{
+        var j=JSON.parse(r.result);
+        var data=j.__bkx?j.data:j;
+        if(typeof data!=="object"||!data)throw 0;
+        if(!confirm("今の記録を読み込んだ内容で置き換えます。よろしいですか？"))return;
+        Object.keys(data).forEach(function(k){localStorage.setItem(k,data[k]);});
+        alert("読み込みました。画面を更新します。");location.reload();
+      }catch(e){alert("このファイルは読み込めませんでした");}
+    };
+    r.readAsText(f);ev.target.value="";
+  });
+})();
+</script>
+</body>
+</html>

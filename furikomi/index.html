@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>振込メモ</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#b8d8c8">
+<style>
+@font-face{font-family:"Azuki";src:url("../azukiP.ttf") format("truetype");font-display:swap;}
+  :root{
+    --bg:#f2f8f4; --card:#ffffff; --text:#3d4a42; --sub:#94a89c;
+    --accent:#6eb894; --accent-dark:#57a07d; --gold:#d4aa5a; --pink:#f0a8a0;
+    --shadow:0 2px 10px rgba(90,140,110,.12);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    font-family:"Azuki","Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif;
+    background:var(--bg); color:var(--text);
+    max-width:480px; margin:0 auto; min-height:100vh; padding-bottom:84px;
+  }
+  header{text-align:center; padding:18px 16px 10px}
+  header h1{font-size:20px; letter-spacing:2px; display:flex; align-items:center; justify-content:center; gap:8px}
+  header h1 svg{width:26px; height:26px}
+  header p{font-size:11.5px; color:var(--sub); margin-top:3px}
+
+  .page{display:none; padding:0 14px}
+  .page.active{display:block}
+
+  .form-card{background:var(--card); border-radius:18px; box-shadow:var(--shadow); padding:14px 16px; margin-bottom:14px}
+  .f-label{font-size:12px; color:var(--sub); margin:10px 0 4px; display:flex; align-items:center; gap:5px}
+  .f-label svg{width:15px; height:15px}
+  .f-label:first-child{margin-top:0}
+  .form-card input{
+    width:100%; border:2px solid #dceee4; border-radius:12px; padding:9px 12px;
+    font-family:inherit; font-size:14px; background:#fcfefd; color:var(--text); outline:none;
+  }
+  .form-card input:focus{border-color:var(--accent)}
+  .row2{display:flex; gap:8px}
+  .row2>div{flex:1}
+  .add-btn{
+    width:100%; border:none; background:var(--accent); color:#fff; font-family:inherit;
+    font-weight:bold; font-size:14.5px; padding:12px 0; border-radius:14px; margin-top:14px;
+    box-shadow:0 3px 0 var(--accent-dark);
+  }
+  .add-btn:active{transform:translateY(2px); box-shadow:0 1px 0 var(--accent-dark)}
+
+  .ynav{display:flex; align-items:center; justify-content:center; gap:14px; margin:4px 0 10px}
+  .ynav button{border:none; background:var(--card); box-shadow:var(--shadow); border-radius:10px;
+    width:32px; height:32px; font-size:15px; color:var(--sub); font-family:inherit}
+  .ynav .ylabel{font-size:14.5px; font-weight:bold}
+
+  .rec{
+    background:var(--card); border-radius:14px; box-shadow:var(--shadow);
+    padding:10px 14px; margin-bottom:7px; display:flex; align-items:center; gap:10px;
+  }
+  .rec .ricon{width:24px; height:24px; flex-shrink:0}
+  .rec .ricon svg{width:100%; height:100%}
+  .rec .rmain{flex:1; min-width:0}
+  .rec .rtop{font-size:14px; font-weight:bold}
+  .rec .rtop .arr{color:var(--sub); font-weight:normal; font-size:12px}
+  .rec .rsub{font-size:11px; color:var(--sub); margin-top:1px}
+  .rec .ramt{font-size:14.5px; font-weight:bold; color:var(--accent-dark); flex-shrink:0}
+  .sec-note{font-size:11px; color:var(--sub); line-height:1.8; margin:10px 4px 20px}
+  .empty{text-align:center; color:var(--sub); font-size:13px; padding:36px 0; line-height:2}
+
+  /* summary cards */
+  .sum-title{font-size:12.5px; font-weight:bold; color:var(--sub); margin:14px 4px 8px; letter-spacing:1px;
+    display:flex; align-items:center; gap:6px}
+  .sum-title svg{width:17px; height:17px}
+  .sum-card{background:var(--card); border-radius:16px; box-shadow:var(--shadow); padding:6px 15px; margin-bottom:10px}
+  .sum-row{display:flex; justify-content:space-between; align-items:center; padding:9px 0;
+    border-bottom:1px solid #eef6f1; font-size:13.5px}
+  .sum-row:last-child{border-bottom:none}
+  .sum-row .amt{font-weight:bold; color:var(--accent-dark)}
+  .sum-row .cnt{font-size:11px; color:var(--sub); margin-left:6px}
+
+  /* 通帳ビュー */
+  .pb-head{display:flex; align-items:center; gap:10px; margin:4px 0 10px}
+  .pb-back{border:none; background:var(--card); box-shadow:var(--shadow); border-radius:10px;
+    padding:7px 14px; font-family:inherit; font-size:12.5px; color:var(--sub)}
+  .pb-title{font-size:15px; font-weight:bold}
+  .pb-card{background:linear-gradient(160deg,#eef7f2,#fff); border:1.5px solid #d8ece0;
+    border-radius:18px; box-shadow:var(--shadow); padding:8px 15px 10px; margin-bottom:12px}
+  .pb-row{display:flex; align-items:center; gap:8px; padding:9px 0; border-bottom:1px dashed #e0efe6; font-size:12.5px}
+  .pb-row:last-child{border-bottom:none}
+  .pb-row .d{color:var(--sub); font-size:10.5px; width:64px; flex-shrink:0}
+  .pb-row .f{flex:1; min-width:0}
+  .pb-row .f small{display:block; color:var(--sub); font-size:10px}
+  .pb-row .in{color:var(--accent-dark); font-weight:bold; width:76px; text-align:right; flex-shrink:0}
+  .pb-row .bal{color:var(--sub); font-size:11px; width:80px; text-align:right; flex-shrink:0}
+  .pb-total{text-align:right; font-size:13px; font-weight:bold; color:var(--accent-dark); padding:8px 2px 2px}
+
+  .tabbar{
+    position:fixed; bottom:0; left:0; right:0; max-width:480px; margin:0 auto;
+    display:flex; background:var(--card); box-shadow:0 -2px 10px rgba(90,140,110,.15);
+    padding-bottom:env(safe-area-inset-bottom); z-index:5;
+  }
+  .tabbar button{flex:1; border:none; background:none; padding:11px 0 9px;
+    font-size:12px; color:var(--sub); font-family:inherit}
+  .tabbar button .ico{display:flex; justify-content:center; margin-bottom:3px}
+  .tabbar button .ico svg{width:22px; height:22px}
+  .tabbar button.active{color:var(--accent-dark); font-weight:bold}
+
+  #toast{position:fixed; left:50%; bottom:92px; transform:translateX(-50%) translateY(20px);
+    background:var(--text); color:#fff; font-size:14px; padding:12px 22px; border-radius:999px;
+    opacity:0; pointer-events:none; transition:.3s; white-space:nowrap; z-index:30}
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+  .bkx{margin:18px 0 30px; background:#fff; border:1px solid rgba(0,0,0,.08); border-radius:18px;
+    padding:14px 16px; box-shadow:0 4px 12px rgba(0,0,0,.06); font-size:12px; color:#8a8073; line-height:1.7}
+  .bkx h3{font-size:13.5px; color:#5b4636; margin-bottom:4px; display:flex; align-items:center; gap:6px}
+  .bkx h3 svg{width:18px; height:18px}
+  .bkx .bkx-btn{border:none; border-radius:12px; padding:9px 16px; font-family:inherit; font-weight:700;
+    font-size:12.5px; color:#fff; background:#a8b89a; margin:8px 8px 0 0; cursor:pointer}
+  .bkx .bkx-btn.sub{background:#c9bfae}
+</style>
+</head>
+<body>
+<header>
+  <h1><span id="hIcon"></span>振込メモ</h1>
+  <p>じいじからの振込も、うちからの振込も、まとめて記録</p>
+</header>
+
+<div id="pageRec" class="page active">
+  <div class="form-card">
+    <div class="row2">
+      <div>
+        <div class="f-label"><span data-ic="cal"></span>日付</div>
+        <input type="date" id="fDate">
+      </div>
+      <div>
+        <div class="f-label"><span data-ic="money"></span>金額</div>
+        <input type="number" id="fAmount" min="0" placeholder="30000">
+      </div>
+    </div>
+    <div class="row2">
+      <div>
+        <div class="f-label"><span data-ic="person"></span>誰から</div>
+        <input type="text" id="fFrom" list="fromList" maxlength="12" placeholder="じいじ">
+        <datalist id="fromList"></datalist>
+      </div>
+      <div>
+        <div class="f-label"><span data-ic="bank"></span>どこへ（口座・宛て先）</div>
+        <input type="text" id="fTo" list="toList" maxlength="15" placeholder="さくの口座">
+        <datalist id="toList"></datalist>
+      </div>
+    </div>
+    <div class="f-label"><span data-ic="person"></span>誰の？（子ども・省略可）</div>
+    <input type="text" id="fKid" list="kidList" maxlength="10" placeholder="朔">
+    <datalist id="kidList"></datalist>
+    <div class="f-label"><span data-ic="memo"></span>メモ（用途など・省略可）</div>
+    <input type="text" id="fMemo" maxlength="25" placeholder="学資用 / 習いごと代">
+    <button class="add-btn" id="addBtn">記録する</button>
+  </div>
+
+  <div class="ynav">
+    <button id="yPrev">‹</button><span class="ylabel" id="yLabel"></span><button id="yNext">›</button>
+  </div>
+  <div id="recList"></div>
+</div>
+
+<div id="pageSum" class="page">
+  <div id="sumMain">
+  <div class="ynav">
+    <button id="sPrev">‹</button><span class="ylabel" id="sLabel"></span><button id="sNext">›</button>
+  </div>
+  <div class="sum-title"><span data-ic="person"></span>誰からの合計</div>
+  <div class="sum-card" id="sumFrom"></div>
+  <div class="sum-title"><span data-ic="person"></span>子どもごとの合計（タップで通帳）</div>
+  <div class="sum-card" id="sumKid"></div>
+  <div class="sum-title"><span data-ic="bank"></span>行き先ごとの合計（タップで通帳）</div>
+  <div class="sum-card" id="sumTo"></div>
+  <div class="sec-note">※「すべての年」で見たいときは、年表示を「合計」まで送ってね（今年の右へ1回）。行き先をタップすると、その口座の通帳ページが開くよ。</div>
+  </div>
+  <div id="pbView" style="display:none">
+    <div class="pb-head">
+      <button class="pb-back" id="pbBack">‹ もどる</button>
+      <span class="pb-title" id="pbTitle"></span>
+    </div>
+    <div class="pb-card" id="pbList"></div>
+  </div>
+  <div class="bkx">
+    <h3><span data-ic="save"></span>データのバックアップ</h3>
+    記録はこの端末のブラウザ内に保存されています。ときどきファイルに書き出しておくと安心です。
+    <br><button class="bkx-btn" id="bkxExp">書き出す</button><button class="bkx-btn sub" id="bkxImpBtn">読み込む</button>
+    <input type="file" id="bkxImp" accept=".json" style="display:none">
+  </div>
+</div>
+
+<nav class="tabbar">
+  <button id="tabRec" class="active" onclick="showPage('Rec')"><span class="ico" data-ic="passbook"></span>記録</button>
+  <button id="tabSum" onclick="showPage('Sum')"><span class="ico" data-ic="chart"></span>まとめ</button>
+</nav>
+
+<div id="toast"></div>
+
+<script>
+const KEY = "furikomi-log-v1";
+
+const S0 = '<svg viewBox="0 0 48 48" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">';
+const IC = {
+  passbook: S0+'<rect x="8" y="9" width="32" height="30" rx="4" fill="#bcd8e8"/><path d="M8 17 H40" stroke-width="2.5"/><rect x="13" y="22" width="14" height="4" rx="1.5" fill="#fdfaf2" stroke-width="2"/><path d="M13 32 H35" stroke-width="2.2"/><circle cx="33" cy="13" r="1.7" fill="#6b584a" stroke="none"/></svg>',
+  piggy: S0+'<ellipse cx="24" cy="27" rx="16" ry="12.5" fill="#f4b8b0"/><circle cx="38" cy="25" r="4.5" fill="#f4b8b0"/><path d="M14 15 Q12 9 18 10 Q21 11 20 14" fill="#f4b8b0" stroke-width="2.5"/><path d="M20 36 V41 M30 36 V41" stroke-width="3.4"/><path d="M20 22 H28" stroke-width="2.5"/><circle cx="33" cy="24" r="1.5" fill="#6b584a" stroke="none"/><path d="M9 26 Q6 27 7.5 30" stroke-width="2.5"/></svg>',
+  cal: S0+'<rect x="8" y="11" width="32" height="29" rx="4" fill="#f7ead8"/><path d="M8 19 H40" stroke-width="2.5"/><path d="M16 7 V14 M32 7 V14"/><circle cx="17" cy="26" r="1.6" fill="#6b584a" stroke="none"/><circle cx="24" cy="26" r="1.6" fill="#6b584a" stroke="none"/><circle cx="31" cy="26" r="1.6" fill="#6b584a" stroke="none"/></svg>',
+  money: S0+'<path d="M19.5 12 Q17 8.5 20 7.5 L28 7.5 Q31 8.5 28.5 12" fill="#e8c987"/><path d="M18 13 H30 Q39 20 39 29.5 Q39 40 24 40 Q9 40 9 29.5 Q9 20 18 13 Z" fill="#f0d49c"/><path d="M20 21.5 L24 27 L28 21.5 M24 27 V34.5 M20.5 29.5 H27.5 M20.5 32.5 H27.5" stroke-width="2.6"/></svg>',
+  person: S0+'<circle cx="24" cy="15" r="7.5" fill="#f2d4a8"/><path d="M10 41 Q10 26 24 26 Q38 26 38 41 Z" fill="#a8c8b8"/></svg>',
+  bank: S0+'<path d="M7 19 L24 8 L41 19 Z" fill="#dce8f0"/><path d="M11 19 V36 M19.7 19 V36 M28.3 19 V36 M37 19 V36" stroke-width="3.4"/><path d="M7 39 H41" stroke-width="3.4"/><circle cx="24" cy="14.5" r="2" fill="#6b584a" stroke="none"/></svg>',
+  memo: S0+'<rect x="8" y="8" width="25" height="31" rx="2.5" fill="#fdfaf2"/><path d="M13 16 H28 M13 22 H28 M13 28 H21" stroke-width="2.2"/><g transform="rotate(40 35 28)"><rect x="32" y="13" width="6.5" height="21" rx="1.5" fill="#f0c26e"/><path d="M32 34 L35.2 40 L38.5 34 Z" fill="#f2d4a8"/></g></svg>',
+  chart: S0+'<path d="M8 40 H40" stroke-width="2.5"/><rect x="11" y="25" width="7" height="15" fill="#94b8c4"/><rect x="20.5" y="17" width="7" height="23" fill="#f4a09c"/><rect x="30" y="29" width="7" height="11" fill="#a8b89a"/></svg>',
+  save: S0+'<path d="M24 7 V25 M17 19 L24 26 L31 19"/><path d="M8 29 V35 Q8 40 13 40 H35 Q40 40 40 35 V29"/></svg>',
+};
+
+let state = load();
+let yRef = new Date().getFullYear();
+let sRef = new Date().getFullYear();   // まとめ側の年（yRef+1 まで行くと「合計」）
+
+function load(){
+  try{ const s = JSON.parse(localStorage.getItem(KEY)); if(s && s.records) return s; }catch(e){}
+  return {records:[]};
+}
+function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+function yen(n){ return "¥"+Number(n||0).toLocaleString(); }
+function jpDate(s){ if(!s) return ""; const [y,m,d]=s.split("-"); return `${y}/${+m}/${+d}`; }
+function esc(s){ return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+document.getElementById("addBtn").addEventListener("click", ()=>{
+  const date = document.getElementById("fDate").value;
+  const from = document.getElementById("fFrom").value.trim();
+  const to = document.getElementById("fTo").value.trim();
+  const amount = parseInt(document.getElementById("fAmount").value, 10);
+  if(!date){ toast("日付を入れてね"); return; }
+  if(!from){ toast("誰からか入れてね"); return; }
+  if(!amount || amount<0){ toast("金額を入れてね"); return; }
+  state.records.push({id:Date.now(), date, from, to, amount,
+    kid: document.getElementById("fKid").value.trim(),
+    memo: document.getElementById("fMemo").value.trim()});
+  save();
+  document.getElementById("fAmount").value="";
+  document.getElementById("fMemo").value="";
+  yRef = +date.slice(0,4);
+  renderAll();
+  toast("記録したよ！");
+});
+
+function renderRecs(){
+  document.getElementById("yLabel").textContent = yRef + "年";
+  const el = document.getElementById("recList");
+  el.innerHTML = "";
+  const recs = state.records.filter(r=>r.date.startsWith(yRef+"")).sort((a,b)=>b.date.localeCompare(a.date));
+  if(!recs.length){
+    el.innerHTML = '<div class="empty">'+yRef+'年の記録はまだないよ</div>'; return;
+  }
+  const total = recs.reduce((s,r)=>s+r.amount,0);
+  const sum = document.createElement("div");
+  sum.className="sec-note";
+  sum.innerHTML = `この年の合計：<b style="color:var(--accent-dark)">${yen(total)}</b>（${recs.length}件）`;
+  el.appendChild(sum);
+  recs.forEach(r=>{
+    const div = document.createElement("div");
+    div.className="rec";
+    div.innerHTML = `
+      <span class="ricon">${IC.piggy}</span>
+      <div class="rmain">
+        <div class="rtop">${esc(r.from)}<span class="arr"> → ${esc(r.to||"（宛て先なし）")}</span></div>
+        <div class="rsub">${jpDate(r.date)}${r.kid?" ・ "+esc(r.kid):""}${r.memo?" ・ "+esc(r.memo):""}</div>
+      </div>
+      <div class="ramt">${yen(r.amount)}</div>`;
+    div.addEventListener("click", ()=>{
+      if(confirm(`${jpDate(r.date)} ${r.from}→${r.to||""} ${yen(r.amount)}\nこの記録を削除する？`)){
+        state.records = state.records.filter(x=>x.id!==r.id);
+        save(); renderAll();
+      }
+    });
+    el.appendChild(div);
+  });
+}
+document.getElementById("yPrev").addEventListener("click", ()=>{yRef--; renderRecs();});
+document.getElementById("yNext").addEventListener("click", ()=>{yRef++; renderRecs();});
+
+function renderSum(){
+  const maxY = new Date().getFullYear()+1;
+  if(sRef > maxY) sRef = maxY;
+  const isAll = (sRef === maxY);
+  document.getElementById("sLabel").textContent = isAll ? "合計（すべての年）" : sRef+"年";
+  const recs = isAll ? state.records : state.records.filter(r=>r.date.startsWith(sRef+""));
+  const build = (keyFn, el, emptyMsg, skipBlank)=>{
+    const map={};
+    recs.forEach(r=>{
+      let k=keyFn(r);
+      if(!k){ if(skipBlank) return; k="（未記入）"; }
+      (map[k] ||= {a:0,c:0}); map[k].a+=r.amount; map[k].c++;
+    });
+    const keys = Object.keys(map).sort((a,b)=>map[b].a-map[a].a);
+    el.innerHTML = keys.length
+      ? keys.map(k=>`<div class="sum-row"><span>${esc(k)}<span class="cnt">${map[k].c}件</span></span><span class="amt">${yen(map[k].a)}</span></div>`).join("")
+      : '<div class="sum-row" style="color:var(--sub)">'+emptyMsg+'</div>';
+  };
+  build(r=>r.from, document.getElementById("sumFrom"), "まだ記録がないよ");
+  build(r=>r.kid, document.getElementById("sumKid"), "「誰の？」を入れて記録するとここに出るよ", true);
+  build(r=>r.to, document.getElementById("sumTo"), "まだ記録がないよ");
+  const clickable = [["sumTo","to"],["sumKid","kid"]];
+  clickable.forEach(([elId, field])=>{
+    document.getElementById(elId).querySelectorAll(".sum-row").forEach(row=>{
+      const label = row.querySelector("span")?.childNodes[0]?.textContent;
+      if(!label || label.startsWith("「誰の？」") || label==="まだ記録がないよ") return;
+      row.style.cursor="pointer";
+      row.addEventListener("click", ()=>openPassbook(label, field));
+    });
+  });
+}
+document.getElementById("sPrev").addEventListener("click", ()=>{sRef--; renderSum();});
+document.getElementById("sNext").addEventListener("click", ()=>{sRef++; renderSum();});
+
+/* ---- 通帳ビュー ---- */
+function openPassbook(label, field){
+  field = field || "to";
+  const recs = state.records
+    .filter(r=>((r[field]||"（未記入）"))===label)
+    .sort((a,b)=>a.date.localeCompare(b.date));
+  if(!recs.length) return;
+  document.getElementById("pbTitle").textContent = label + " の通帳";
+  let bal = 0;
+  const el = document.getElementById("pbList");
+  el.innerHTML = recs.map(r=>{
+    bal += r.amount;
+    return `<div class="pb-row">
+      <span class="d">${jpDate(r.date)}</span>
+      <span class="f">${esc(r.from)}${r.memo?`<small>${esc(r.memo)}</small>`:""}</span>
+      <span class="in">+${yen(r.amount)}</span>
+      <span class="bal">計 ${yen(bal)}</span>
+    </div>`;
+  }).join("") + `<div class="pb-total">これまでの合計 ${yen(bal)}</div>`;
+  document.getElementById("sumMain").style.display="none";
+  document.getElementById("pbView").style.display="block";
+}
+document.getElementById("pbBack").addEventListener("click", ()=>{
+  document.getElementById("pbView").style.display="none";
+  document.getElementById("sumMain").style.display="block";
+});
+
+function renderDatalists(){
+  const froms=[...new Set(state.records.map(r=>r.from))];
+  const tos=[...new Set(state.records.map(r=>r.to).filter(Boolean))];
+  const kids=[...new Set(state.records.map(r=>r.kid).filter(Boolean))];
+  document.getElementById("fromList").innerHTML = froms.map(n=>`<option value="${esc(n)}">`).join("");
+  document.getElementById("toList").innerHTML = tos.map(n=>`<option value="${esc(n)}">`).join("");
+  document.getElementById("kidList").innerHTML = kids.map(n=>`<option value="${esc(n)}">`).join("");
+}
+function renderAll(){ renderRecs(); renderSum(); renderDatalists(); }
+
+function showPage(name){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll(".tabbar button").forEach(b=>b.classList.remove("active"));
+  document.getElementById("page"+name).classList.add("active");
+  document.getElementById("tab"+name).classList.add("active");
+}
+
+let toastTimer;
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove("show"), 2000);
+}
+
+/* backup */
+document.getElementById("bkxExp").addEventListener("click", function(){
+  const data={}; for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i); data[k]=localStorage.getItem(k);}
+  const blob=new Blob([JSON.stringify({__bkx:"furikomi",data},null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  const d=new Date();
+  a.download="furikomi-backup-"+d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")+".json";
+  a.click(); URL.revokeObjectURL(a.href);
+  toast("書き出したよ");
+});
+document.getElementById("bkxImpBtn").addEventListener("click", ()=>document.getElementById("bkxImp").click());
+document.getElementById("bkxImp").addEventListener("change", function(ev){
+  const f=ev.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=function(){
+    try{
+      const j=JSON.parse(r.result);
+      const data=j.__bkx?j.data:j;
+      if(typeof data!=="object"||!data)throw 0;
+      if(!confirm("今の記録を読み込んだ内容で置き換えます。よろしいですか？"))return;
+      Object.keys(data).forEach(k=>localStorage.setItem(k,data[k]));
+      alert("読み込みました。画面を更新します。"); location.reload();
+    }catch(e){ alert("このファイルは読み込めませんでした"); }
+  };
+  r.readAsText(f); ev.target.value="";
+});
+
+/* init */
+document.getElementById("hIcon").innerHTML = IC.piggy;
+document.querySelectorAll("[data-ic]").forEach(el=>{ el.innerHTML = IC[el.dataset.ic]; });
+(function(){const d=new Date(); document.getElementById("fDate").value =
+  d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");})();
+renderAll();
+</script>
+</body>
+</html>
