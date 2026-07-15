@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>宿題計画表</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#f7f2ea">
+<style>
+@font-face{font-family:"Uzura";src:url("../uzura.ttf") format("truetype");font-display:swap;}
+  :root{
+    --bg:#f7f2ea; --card:#fffdf9; --text:#4a3f35; --sub:#a09484; --line:#e3d7c8;
+    --accent:#94b8c4; --accent-dark:#6f97a5; --stamp:#f0a8a0;
+    --shadow:0 2px 10px rgba(160,130,90,.13);
+  }
+  body.ao{ --accent:#e0bd7a; --accent-dark:#c4a020; --stamp:#94b8c4; }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    font-family:"Uzura","Zen Maru Gothic",sans-serif;
+    background:var(--bg); color:var(--text);
+    max-width:480px; margin:0 auto; min-height:100vh; padding-bottom:84px;
+  }
+  header{text-align:center; padding:16px 16px 6px}
+  header h1{font-size:20px; letter-spacing:2px; display:flex; align-items:center; justify-content:center; gap:8px}
+  header h1 svg{width:27px; height:27px}
+  .vac-line{font-size:12px; color:var(--sub); margin-top:3px}
+  .vac-line button{border:none; background:none; color:var(--accent-dark); font-family:inherit; font-size:12px; text-decoration:underline}
+
+  .kids{display:flex; gap:8px; padding:10px 16px 4px}
+  .kid{
+    flex:1; border:2px solid var(--line); background:var(--card); border-radius:16px;
+    padding:9px 0; font-family:inherit; font-size:15px; font-weight:bold; color:var(--sub);
+    display:flex; align-items:center; justify-content:center; gap:7px;
+  }
+  .kid svg{width:26px; height:14px}
+  .kid.on{color:var(--text); box-shadow:0 2px 8px rgba(160,130,90,.15)}
+  .kid.saku.on{border-color:#94b8c4; background:#eef4f6}
+  .kid.ao.on{border-color:#e0bd7a; background:#fdf7ea}
+
+  .stats{display:flex; gap:10px; padding:10px 16px 12px}
+  .stats .box{flex:1; background:var(--card); border-radius:16px; box-shadow:var(--shadow);
+    padding:10px; text-align:center}
+  .stats .num{font-size:19px; font-weight:bold; color:var(--accent-dark)}
+  .stats .label{font-size:10px; color:var(--sub); margin-top:2px}
+
+  .page{display:none; padding:0 14px}
+  .page.active{display:block}
+
+  .task{
+    background:var(--card); border-radius:16px; box-shadow:var(--shadow);
+    padding:12px 14px; margin-bottom:9px;
+  }
+  .task .t-top{display:flex; align-items:center; gap:8px}
+  .task .t-ico{width:24px; height:24px; flex-shrink:0}
+  .task .t-ico svg{width:100%; height:100%}
+  .task .t-name{font-size:14.5px; font-weight:bold; flex:1; min-width:0}
+  .task .t-del{border:none; background:none; color:#ddd0c0; font-size:14px; padding:4px 6px}
+  .task .t-mid{display:flex; align-items:center; gap:10px; margin-top:8px}
+  .bar{flex:1; background:#efe7da; border-radius:999px; height:14px; overflow:hidden}
+  .bar .fill{background:linear-gradient(90deg,var(--accent),var(--accent-dark)); height:100%; border-radius:999px; transition:.3s}
+  .task.comp .bar .fill{background:linear-gradient(90deg,#8fc9a8,#67ab86)}
+  .t-cnt{font-size:12px; color:var(--sub); flex-shrink:0; min-width:64px; text-align:right}
+  .t-btns{display:flex; gap:8px; margin-top:9px}
+  .t-btns button{
+    flex:1; border:none; border-radius:12px; padding:9px 0; font-family:inherit;
+    font-size:14px; font-weight:bold; color:#fff; background:var(--accent);
+  }
+  .t-btns button.minus{background:#d8cabb; flex:0 0 74px}
+  .task.comp .t-btns button.plus{background:#8fc9a8}
+  .t-done-mark{font-size:11px; color:#67ab86; font-weight:bold; margin-left:4px}
+
+  .add-card{background:var(--card); border-radius:16px; box-shadow:var(--shadow); padding:12px 14px; margin:14px 0 20px}
+  .add-card .f-label{font-size:11.5px; color:var(--sub); margin:8px 0 4px}
+  .add-card .f-label:first-child{margin-top:0}
+  .add-card input{
+    width:100%; border:2px solid var(--line); border-radius:12px; padding:8px 12px;
+    font-family:inherit; font-size:13.5px; background:#fffefb; color:var(--text); outline:none;
+  }
+  .add-card input:focus{border-color:var(--accent)}
+  .row2{display:flex; gap:8px}
+  .row2 > div{flex:1}
+  .add-card button{
+    width:100%; border:none; background:var(--accent); color:#fff; font-family:inherit;
+    font-weight:bold; font-size:14px; padding:10px 0; border-radius:12px; margin-top:10px;
+  }
+  .hint{font-size:11px; color:var(--sub); line-height:1.8; margin:8px 4px 20px}
+
+  /* カレンダー */
+  .cal-head{display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-bottom:4px}
+  .cal-head span{text-align:center; font-size:10.5px; color:var(--sub)}
+  .cal{display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-bottom:10px}
+  .cell{
+    aspect-ratio:1; border-radius:12px; background:var(--card); box-shadow:var(--shadow);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    font-size:11px; color:var(--sub); border:2px solid transparent; position:relative;
+  }
+  .cell.out{background:none; box-shadow:none}
+  .cell.today{border-color:var(--accent)}
+  .cell .dn{font-size:11px; line-height:1}
+  .cell .st{width:22px; height:22px; margin-top:1px}
+  .cell .st svg{width:100%; height:100%}
+  .cell.done{background:#fdf3f0}
+  body.ao .cell.done{background:#eef4f6}
+  .cal-month{font-size:13px; font-weight:bold; color:var(--sub); margin:10px 4px 6px}
+
+  .tabbar{
+    position:fixed; bottom:0; left:0; right:0; max-width:480px; margin:0 auto;
+    display:flex; background:var(--card); box-shadow:0 -2px 10px rgba(160,130,90,.15);
+    padding-bottom:env(safe-area-inset-bottom); z-index:5;
+  }
+  .tabbar button{flex:1; border:none; background:none; padding:11px 0 9px;
+    font-size:12px; color:var(--sub); font-family:inherit}
+  .tabbar button .ico{display:flex; justify-content:center; margin-bottom:3px}
+  .tabbar button .ico svg{width:22px; height:22px}
+  .tabbar button.active{color:var(--accent-dark); font-weight:bold}
+
+  #overlay{display:none; position:fixed; inset:0; background:rgba(80,70,50,.35); z-index:20;
+    align-items:center; justify-content:center; padding:20px}
+  #overlay.show{display:flex}
+  .modal{background:var(--card); border-radius:20px; padding:20px; width:100%; max-width:340px;
+    box-shadow:0 10px 40px rgba(0,0,0,.2)}
+  .modal h3{font-size:15px; margin-bottom:6px; display:flex; align-items:center; gap:6px}
+  .modal h3 svg{width:20px; height:20px}
+  .modal label{font-size:12px; color:var(--sub); display:block; margin:10px 0 4px}
+  .modal input{width:100%; border:2px solid var(--line); border-radius:12px; padding:10px 12px;
+    font-family:inherit; font-size:14px; background:#fffefb; color:var(--text); outline:none}
+  .season-row{display:flex; gap:8px}
+  .season-row button{flex:1; border:2px solid var(--line); background:#fffefb; border-radius:12px;
+    padding:9px 0; font-family:inherit; font-size:13.5px; color:var(--sub); font-weight:bold}
+  .season-row button.on{border-color:var(--accent); background:#eef4f6; color:var(--text)}
+  .modal .btns{display:flex; gap:8px; margin-top:16px}
+  .modal .btns button{flex:1; border:none; border-radius:12px; padding:11px 0; font-family:inherit;
+    font-size:13.5px; font-weight:bold}
+  .m-save{background:var(--accent); color:#fff}
+  .m-cancel{background:#efe7da; color:var(--sub)}
+
+  #toast{position:fixed; left:50%; bottom:92px; transform:translateX(-50%) translateY(20px);
+    background:var(--text); color:#fff; font-size:14px; padding:12px 22px; border-radius:999px;
+    opacity:0; pointer-events:none; transition:.3s; white-space:nowrap; z-index:30}
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+  .confetti{position:fixed; font-size:20px; pointer-events:none; z-index:9; animation:fall 1.1s ease-in forwards}
+  @keyframes fall{0%{opacity:1; transform:translateY(0) rotate(0)}100%{opacity:0; transform:translateY(110px) rotate(200deg)}}
+
+  .bkx{margin:18px 0 30px; background:#fff; border:1px solid rgba(0,0,0,.08); border-radius:18px;
+    padding:14px 16px; box-shadow:0 4px 12px rgba(0,0,0,.06); font-size:12px; color:#8a8073; line-height:1.7}
+  .bkx h3{font-size:13.5px; color:#5b4636; margin-bottom:4px; display:flex; align-items:center; gap:6px}
+  .bkx h3 svg{width:18px; height:18px}
+  .bkx .bkx-btn{border:none; border-radius:12px; padding:9px 16px; font-family:inherit; font-weight:700;
+    font-size:12.5px; color:#fff; background:#a8b89a; margin:8px 8px 0 0; cursor:pointer}
+  .bkx .bkx-btn.sub{background:#c9bfae}
+</style>
+</head>
+<body>
+<header>
+  <h1><span id="hIcon"></span>宿題計画表</h1>
+  <div class="vac-line"><span id="vacName"></span> <button onclick="openVac()">✎ 期間を設定</button></div>
+</header>
+
+<div class="kids">
+  <button class="kid saku" id="kidSaku" onclick="setKid('saku')">
+    <svg viewBox="0 0 72 22"><path d="M5 3 H67 Q70 3 70 6 V16 Q70 19 67 19 H5 Q2 19 2 16 V6 Q2 3 5 3 Z" fill="#4f86cf" stroke="#36659f" stroke-width="1.2"/><rect x="2.5" y="12.8" width="67" height="3.4" fill="#ffffff"/><rect x="10" y="6.4" width="12" height="5" rx="1" fill="#dbe9f5"/><rect x="30" y="6.4" width="12" height="5" rx="1" fill="#dbe9f5"/><rect x="50" y="6.4" width="12" height="5" rx="1" fill="#dbe9f5"/></svg>
+    Saku
+  </button>
+  <button class="kid ao" id="kidAo" onclick="setKid('ao')">
+    <svg viewBox="0 0 72 22"><path d="M5 3 H67 Q70 3 70 6 V16 Q70 19 67 19 H5 Q2 19 2 16 V6 Q2 3 5 3 Z" fill="#e8c840" stroke="#c4a020" stroke-width="1.2"/><rect x="2.5" y="12.8" width="67" height="3.4" fill="#2a5298"/><rect x="10" y="6.4" width="12" height="5" rx="1" fill="#f5f0c0"/><rect x="30" y="6.4" width="12" height="5" rx="1" fill="#f5f0c0"/><rect x="50" y="6.4" width="12" height="5" rx="1" fill="#f5f0c0"/></svg>
+    Ao
+  </button>
+</div>
+
+<div class="stats">
+  <div class="box"><div class="num" id="statLeft">--</div><div class="label">休みはあと</div></div>
+  <div class="box"><div class="num" id="statProg">0%</div><div class="label">宿題ぜんぶの進み</div></div>
+  <div class="box"><div class="num" id="statStamp">0</div><div class="label">がんばりスタンプ</div></div>
+</div>
+
+<div id="pageTask" class="page active">
+  <div id="taskList"></div>
+  <div class="add-card">
+    <div class="f-label">宿題の名前</div>
+    <input type="text" id="tName" placeholder="例：算数ドリル、読書感想文">
+    <div class="row2">
+      <div><div class="f-label">ぜんぶで（数）</div><input type="number" id="tTotal" min="1" placeholder="例：30"></div>
+      <div><div class="f-label">単位</div><input type="text" id="tUnit" placeholder="ページ・こ・まい"></div>
+    </div>
+    <button onclick="addTask()">宿題を追加する</button>
+  </div>
+  <div class="hint">※「読書感想文」みたいに1回で終わるものは、数を空っぽのままでOK（できた!ボタンになるよ）。宿題を消したいときは×をタップ。</div>
+</div>
+
+<div id="pageCal" class="page">
+  <div id="calWrap"></div>
+  <div class="hint">※その日の分をがんばれたら、日にちをタップしてお花スタンプをおしてね。もう一回タップで取り消し。</div>
+  <div class="bkx">
+    <h3><span data-icon="save"></span>データのバックアップ</h3>
+    記録はこの端末のブラウザ内に保存されています。ときどきファイルに書き出しておくと安心です。<br>
+    <button class="bkx-btn" onclick="bkExport()">書き出す</button>
+    <button class="bkx-btn sub" onclick="document.getElementById('bkFile').click()">読み込む</button>
+    <input type="file" id="bkFile" accept=".json,application/json" style="display:none" onchange="bkImport(this)">
+  </div>
+</div>
+
+<nav class="tabbar">
+  <button id="tabTask" class="active" onclick="showPage('Task')"><span class="ico" data-icon="pencil"></span>宿題</button>
+  <button id="tabCal" onclick="showPage('Cal')"><span class="ico" data-icon="cal"></span>カレンダー</button>
+</nav>
+
+<div id="overlay">
+  <div class="modal">
+    <h3><span data-icon="cal"></span>お休みの期間</h3>
+    <label>どっちのお休み？</label>
+    <div class="season-row">
+      <button id="seaNatsu" onclick="setSeason('夏休み')">夏休み</button>
+      <button id="seaFuyu" onclick="setSeason('冬休み')">冬休み</button>
+    </div>
+    <label>はじまりの日</label>
+    <input type="date" id="vStart">
+    <label>おわりの日（始業式の前日）</label>
+    <input type="date" id="vEnd">
+    <div class="btns">
+      <button class="m-cancel" onclick="closeVac()">やめる</button>
+      <button class="m-save" onclick="saveVac()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const KEY = "yasumi-log-v1";
+
+/* 手描き風SVGアイコン */
+const SVG_OPEN = '<svg viewBox="0 0 48 48" fill="none" stroke="#6b584a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">';
+const ICONS = {
+  cal:'<rect x="8" y="10" width="32" height="30" rx="4" fill="#fdfaf2"/><path d="M8 19 H40"/><path d="M16 6 V13 M32 6 V13" stroke-width="3.2"/><path d="M15 27 L20 32 L30 24" stroke="#e8837e" stroke-width="3.2"/>',
+  pencil:'<path d="M30 8 L38 16 L18 36 L9 39 L12 30 Z" fill="#f6c771"/><path d="M26 12 L34 20"/>',
+  book:'<path d="M24 10 Q16 6 8 8 V38 Q16 36 24 40 Q32 36 40 38 V8 Q32 6 24 10 Z" fill="#fdfaf2"/><path d="M24 10 V40"/>',
+  flower:'<circle cx="24" cy="24" r="5.5" fill="#f6c771"/><g fill="#f0a8a0" stroke-width="2.5"><ellipse cx="24" cy="12" rx="5" ry="6.5"/><ellipse cx="24" cy="36" rx="5" ry="6.5"/><ellipse cx="12" cy="24" rx="6.5" ry="5"/><ellipse cx="36" cy="24" rx="6.5" ry="5"/></g>',
+  save:'<rect x="8" y="8" width="32" height="32" rx="4" fill="#fdfaf2"/><path d="M16 8 V20 H32 V8"/><rect x="20" y="26" width="12" height="14" rx="1.5" fill="#cfe8f5"/>',
+  star:'<path d="M24 6 L29 18 L42 19 L32 28 L35 41 L24 34 L13 41 L16 28 L6 19 L19 18 Z" fill="#f6c771"/>'
+};
+function icon(n){ return SVG_OPEN + (ICONS[n]||ICONS.star) + '</svg>'; }
+document.querySelectorAll("[data-icon]").forEach(el=>{ el.innerHTML = icon(el.dataset.icon) + el.innerHTML; });
+document.getElementById("hIcon").innerHTML = icon("pencil");
+
+/* ---- データ ---- */
+let db = load();
+function load(){
+  try{ const d = JSON.parse(localStorage.getItem(KEY)); if(d && d.kids) return d; }catch(e){}
+  return {
+    cur:"saku",
+    vac:{ name:"夏休み", start:"", end:"" },
+    kids:{ saku:{tasks:[], days:{}}, ao:{tasks:[], days:{}} }
+  };
+}
+function save(){ localStorage.setItem(KEY, JSON.stringify(db)); }
+function kd(){ return db.kids[db.cur]; }
+function todayStr(){
+  const t=new Date();
+  return t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0");
+}
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+/* ---- 表示 ---- */
+function render(){
+  document.body.classList.toggle("ao", db.cur==="ao");
+  document.getElementById("kidSaku").classList.toggle("on", db.cur==="saku");
+  document.getElementById("kidAo").classList.toggle("on", db.cur==="ao");
+  const v = db.vac;
+  document.getElementById("vacName").textContent =
+    v.start ? v.name+"（"+fmtMD(v.start)+"〜"+fmtMD(v.end)+"）" : "まずは期間を設定してね →";
+  // stats
+  const t = todayStr();
+  let left = "--";
+  if(v.end && t <= v.end){
+    left = Math.round((new Date(v.end) - new Date(t)) / 86400000) + "日";
+  }else if(v.end && t > v.end){ left = "0日"; }
+  document.getElementById("statLeft").textContent = left;
+  const tasks = kd().tasks;
+  let tot=0, done=0;
+  tasks.forEach(x=>{ tot+=x.total; done+=Math.min(x.done,x.total); });
+  document.getElementById("statProg").textContent = tot ? Math.floor(done/tot*100)+"%" : "0%";
+  document.getElementById("statStamp").textContent = Object.keys(kd().days).length;
+  renderTasks();
+  renderCal();
+}
+function fmtMD(d){ return (+d.slice(5,7))+"/"+(+d.slice(8,10)); }
+
+function renderTasks(){
+  const wrap = document.getElementById("taskList");
+  const tasks = kd().tasks;
+  if(!tasks.length){
+    wrap.innerHTML = '<div class="hint" style="text-align:center;padding:26px 0">下から宿題を追加してね</div>';
+    return;
+  }
+  wrap.innerHTML = tasks.map(x=>{
+    const comp = x.done >= x.total;
+    const pct = Math.min(100, Math.floor(x.done/x.total*100));
+    const isCheck = x.total===1;
+    return '<div class="task'+(comp?' comp':'')+'">'
+      + '<div class="t-top"><span class="t-ico">'+icon(comp?"flower":"book")+'</span>'
+      + '<span class="t-name">'+esc(x.name)+(comp?'<span class="t-done-mark">おわった!</span>':'')+'</span>'
+      + '<button class="t-del" onclick="delTask(\''+x.id+'\')">✕</button></div>'
+      + '<div class="t-mid"><div class="bar"><div class="fill" style="width:'+pct+'%"></div></div>'
+      + '<span class="t-cnt">'+(isCheck ? (comp?"できた!":"まだ") : x.done+" / "+x.total+" "+esc(x.unit))+'</span></div>'
+      + '<div class="t-btns">'
+      + '<button class="minus" onclick="step(\''+x.id+'\',-1)">−</button>'
+      + '<button class="plus" onclick="step(\''+x.id+'\',1)">'+(isCheck?(comp?"やっぱりまだ":"できた!"):"＋すすんだ!")+'</button>'
+      + '</div></div>';
+  }).join("");
+}
+
+function renderCal(){
+  const wrap = document.getElementById("calWrap");
+  const v = db.vac;
+  if(!v.start || !v.end){
+    wrap.innerHTML = '<div class="hint" style="text-align:center;padding:26px 0">上の「✎ 期間を設定」からお休みの期間を入れてね</div>';
+    return;
+  }
+  const t = todayStr();
+  const days = kd().days;
+  let html = "";
+  let d = new Date(v.start);
+  const end = new Date(v.end);
+  let curMonth = -1;
+  let cells = "";
+  function flushMonth(){
+    if(curMonth>=0){
+      html += '<div class="cal-month">'+curMonth+'月</div>'
+        + '<div class="cal-head"><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span style="color:#8fb0d9">土</span><span style="color:#e0a0a0">日</span></div>'
+        + '<div class="cal">'+cells+'</div>';
+    }
+    cells = "";
+  }
+  while(d <= end){
+    const ds = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+    const m = d.getMonth()+1;
+    if(m !== curMonth){
+      flushMonth();
+      curMonth = m;
+      let pad = (d.getDay()+6)%7; // 月曜はじまり
+      for(let i=0;i<pad;i++) cells += '<div class="cell out"></div>';
+    }
+    const done = days[ds];
+    cells += '<div class="cell'+(done?' done':'')+(ds===t?' today':'')+'" onclick="stamp(\''+ds+'\')">'
+      + '<span class="dn">'+d.getDate()+'</span>'
+      + (done ? '<span class="st">'+icon("flower")+'</span>' : '')
+      + '</div>';
+    d.setDate(d.getDate()+1);
+  }
+  flushMonth();
+  wrap.innerHTML = html;
+}
+
+/* ---- 操作 ---- */
+function setKid(k){ db.cur=k; save(); render(); }
+
+function addTask(){
+  const name = document.getElementById("tName").value.trim();
+  if(!name){ toast("宿題の名前を入れてね"); return; }
+  let total = parseInt(document.getElementById("tTotal").value);
+  if(isNaN(total) || total<1) total = 1;
+  let unit = document.getElementById("tUnit").value.trim() || "ページ";
+  kd().tasks.push({ id: Date.now()+""+Math.floor(Math.random()*1000), name:name, total:total, done:0, unit:unit });
+  save();
+  document.getElementById("tName").value=""; document.getElementById("tTotal").value=""; document.getElementById("tUnit").value="";
+  render(); toast("追加したよ");
+}
+function step(id, dir){
+  const x = kd().tasks.find(a=>a.id===id); if(!x) return;
+  const was = x.done >= x.total;
+  x.done = Math.max(0, Math.min(x.total, x.done+dir));
+  save(); render();
+  if(!was && x.done>=x.total) celebrate();
+}
+function delTask(id){
+  const x = kd().tasks.find(a=>a.id===id); if(!x) return;
+  if(confirm("「"+x.name+"」を消す？")){
+    kd().tasks = kd().tasks.filter(a=>a.id!==id);
+    save(); render(); toast("消したよ");
+  }
+}
+function stamp(ds){
+  const days = kd().days;
+  if(days[ds]){ delete days[ds]; } else { days[ds]=1; }
+  save(); render();
+}
+function showPage(p){
+  ["Task","Cal"].forEach(x=>{
+    document.getElementById("page"+x).classList.toggle("active", x===p);
+    document.getElementById("tab"+x).classList.toggle("active", x===p);
+  });
+}
+function celebrate(){
+  const marks = ["flower","star"];
+  for(let i=0;i<10;i++){
+    const s = document.createElement("span");
+    s.className = "confetti";
+    s.innerHTML = '<span style="display:inline-block;width:20px;height:20px">'+icon(marks[i%2])+'</span>';
+    s.style.left = (10+Math.random()*80)+"%";
+    s.style.top = (20+Math.random()*30)+"%";
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(), 1200);
+  }
+  toast("おわった!すごい!");
+}
+
+/* ---- 期間設定 ---- */
+let seaTmp = "夏休み";
+function openVac(){
+  seaTmp = db.vac.name || "夏休み";
+  paintSeason();
+  document.getElementById("vStart").value = db.vac.start;
+  document.getElementById("vEnd").value = db.vac.end;
+  document.getElementById("overlay").classList.add("show");
+}
+function setSeason(s){ seaTmp = s; paintSeason(); }
+function paintSeason(){
+  document.getElementById("seaNatsu").classList.toggle("on", seaTmp==="夏休み");
+  document.getElementById("seaFuyu").classList.toggle("on", seaTmp==="冬休み");
+}
+function closeVac(){ document.getElementById("overlay").classList.remove("show"); }
+function saveVac(){
+  const s = document.getElementById("vStart").value, e = document.getElementById("vEnd").value;
+  if(!s || !e){ toast("日にちを入れてね"); return; }
+  if(e < s){ toast("おわりの日が前になってるよ"); return; }
+  db.vac = { name:seaTmp, start:s, end:e };
+  save(); closeVac(); render(); toast("保存したよ");
+}
+
+/* ---- バックアップ ---- */
+function bkExport(){
+  const data = {};
+  for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); data[k]=localStorage.getItem(k); }
+  const blob = new Blob([JSON.stringify({__bkx:"yasumi", data:data})], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "宿題計画表_バックアップ_" + todayStr() + ".json";
+  a.click(); URL.revokeObjectURL(a.href);
+  toast("書き出したよ");
+}
+function bkImport(inp){
+  const f = inp.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = ()=>{
+    try{
+      const j = JSON.parse(rd.result);
+      const data = j.__bkx ? j.data : j;
+      Object.keys(data).forEach(k=>localStorage.setItem(k, data[k]));
+      db = load(); render(); toast("読み込んだよ");
+    }catch(e){ toast("読み込めなかった…ファイルを確認してね"); }
+  };
+  rd.readAsText(f);
+  inp.value = "";
+}
+
+/* ---- toast ---- */
+let toastTimer;
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove("show"), 1800);
+}
+
+render();
+</script>
+</body>
+</html>
