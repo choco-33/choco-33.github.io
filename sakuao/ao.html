@@ -895,6 +895,7 @@ load();
 <script>
 (function(){
   var APP="ao";
+  var _b=document.querySelector(".bkx"),_ap=document.querySelector(".app");if(_b&&_ap)_ap.appendChild(_b);
   document.getElementById("bkxExp").addEventListener("click",function(){
     var data={};
     for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);data[k]=localStorage.getItem(k);}
