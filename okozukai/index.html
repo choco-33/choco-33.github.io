@@ -239,7 +239,7 @@
   <!-- 設定モーダル -->
   <div class="modal" id="mSet" style="display:none">
     <h3><span data-icon="gear"></span>設定（<span id="setKidName"></span>）</h3>
-    <div class="mnote">週1回、決まった曜日に「年齢＋50円」（10歳からは＋100円）を渡すよ。誕生日から自動計算!</div>
+    <div class="mnote">週1回、決まった曜日に「年齢×50円」（10歳からは×100円）を渡すよ。誕生日から自動計算!</div>
     <label>誕生日</label>
     <input type="date" id="sBday">
     <label>お小遣いの日（曜日）</label>
@@ -311,7 +311,7 @@ function ageOn(bday, dstr){
 function weeklyAmt(bday, dstr){
   const a = ageOn(bday, dstr);
   if(a === null || a < 0) return null;
-  return a + (a >= 10 ? 100 : 50);
+  return a * (a >= 10 ? 100 : 50);
 }
 /* 直近の「お小遣いの日」(今日を含む過去) */
 function lastDue(){
@@ -353,7 +353,7 @@ function render(){
       const isToday = due === todayStr();
       card.innerHTML = '<div class="p-title">'+(isToday ? "今日はお小遣いの日!" : WD[k.payDay]+"曜日の分がまだだよ")+'</div>'
         + '<div class="p-amt">'+amt+'<small>円</small></div>'
-        + '<div class="p-sub">年齢＋'+(ageOn(k.bday,due)>=10?100:50)+'円　いつも同じ曜日・同じ時間に渡すのがコツ!</div>'
+        + '<div class="p-sub">年齢×'+(ageOn(k.bday,due)>=10?100:50)+'円　いつも同じ曜日・同じ時間に渡すのがコツ!</div>'
         + '<button onclick="openSplit()">渡した!→ 3つに分ける</button>';
     }else{
       const g = k.given[due];
