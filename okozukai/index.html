@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>おこづかい帳</title>
+<title>お小遣い帳</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -44,7 +44,7 @@
   .page{display:none; padding:0 14px}
   .page.active{display:block}
 
-  /* おこづかいの日カード */
+  /* お小遣いの日カード */
   .payday{
     margin:10px 2px 12px; border-radius:20px; box-shadow:var(--shadow);
     background:var(--card); border:2px dashed var(--line);
@@ -162,7 +162,7 @@
 </head>
 <body>
 <header>
-  <h1><span id="hIcon"></span>おこづかい帳</h1>
+  <h1><span id="hIcon"></span>お小遣い帳</h1>
   <div class="set-line"><span id="setInfo"></span> <button onclick="openSet()">✎ 設定</button></div>
 </header>
 
@@ -181,11 +181,11 @@
   <div class="payday" id="paydayCard"></div>
   <div class="total-line" id="totalLine"></div>
   <div class="jars">
-    <button class="jar cho" onclick="openIO('cho')"><span data-icon="jar"></span><div class="j-name">ちょきん</div><div class="j-amt" id="amtCho">0円</div></button>
-    <button class="jar kifu" onclick="openIO('kifu')"><span data-icon="heart"></span><div class="j-name">きふ</div><div class="j-amt" id="amtKifu">0円</div></button>
-    <button class="jar sugu" onclick="openIO('sugu')"><span data-icon="wallet"></span><div class="j-name">すぐつかえる</div><div class="j-amt" id="amtSugu">0円</div></button>
+    <button class="jar cho" onclick="openIO('cho')"><span data-icon="jar"></span><div class="j-name">貯金</div><div class="j-amt" id="amtCho">0円</div></button>
+    <button class="jar kifu" onclick="openIO('kifu')"><span data-icon="heart"></span><div class="j-name">寄付</div><div class="j-amt" id="amtKifu">0円</div></button>
+    <button class="jar sugu" onclick="openIO('sugu')"><span data-icon="wallet"></span><div class="j-name">すぐ使える</div><div class="j-amt" id="amtSugu">0円</div></button>
   </div>
-  <div class="jar-hint">お財布をタップすると「つかった・いれた」の記録ができるよ</div>
+  <div class="jar-hint">お財布をタップすると「使った・入れた」の記録ができるよ</div>
 </div>
 
 <div id="pageHist" class="page">
@@ -200,18 +200,18 @@
 </div>
 
 <nav class="tabbar">
-  <button id="tabMain" class="active" onclick="showPage('Main')"><span class="ico" data-icon="coin"></span>おさいふ</button>
-  <button id="tabHist" onclick="showPage('Hist')"><span class="ico" data-icon="book"></span>きろく</button>
+  <button id="tabMain" class="active" onclick="showPage('Main')"><span class="ico" data-icon="coin"></span>お財布</button>
+  <button id="tabHist" onclick="showPage('Hist')"><span class="ico" data-icon="book"></span>記録</button>
 </nav>
 
 <!-- 分けるモーダル -->
 <div id="overlay">
   <div class="modal" id="mSplit" style="display:none">
-    <h3><span data-icon="coin"></span>おこづかいを分けよう!</h3>
-    <div class="mnote">きょうのおこづかい <b id="splitAmt"></b> 円を、3つのお財布に分けてね(本人に決めさせるのがコツ!)</div>
-    <div class="split-row"><span class="s-ico" data-icon="jar"></span><span class="s-name">ちょきん</span><input type="number" id="spCho" min="0" value="0" oninput="splitCalc()"></div>
-    <div class="split-row"><span class="s-ico" data-icon="heart"></span><span class="s-name">きふ</span><input type="number" id="spKifu" min="0" value="0" oninput="splitCalc()"></div>
-    <div class="split-row"><span class="s-ico" data-icon="wallet"></span><span class="s-name">すぐつかえる</span><input type="number" id="spSugu" min="0" value="0" oninput="splitCalc()"></div>
+    <h3><span data-icon="coin"></span>お小遣いを分けよう!</h3>
+    <div class="mnote">今日のお小遣い <b id="splitAmt"></b> 円を、3つのお財布に分けてね(本人に決めさせるのがコツ!)</div>
+    <div class="split-row"><span class="s-ico" data-icon="jar"></span><span class="s-name">貯金</span><input type="number" id="spCho" min="0" value="0" oninput="splitCalc()"></div>
+    <div class="split-row"><span class="s-ico" data-icon="heart"></span><span class="s-name">寄付</span><input type="number" id="spKifu" min="0" value="0" oninput="splitCalc()"></div>
+    <div class="split-row"><span class="s-ico" data-icon="wallet"></span><span class="s-name">すぐ使える</span><input type="number" id="spSugu" min="0" value="0" oninput="splitCalc()"></div>
     <div class="split-left" id="splitLeft"></div>
     <div class="btns">
       <button class="m-cancel" onclick="closeModal()">やめる</button>
@@ -223,12 +223,12 @@
   <div class="modal" id="mIO" style="display:none">
     <h3 id="ioTitle"></h3>
     <div class="iomode">
-      <button id="ioOut" onclick="setIOMode('out')">つかった</button>
-      <button id="ioIn" onclick="setIOMode('in')">いれた</button>
+      <button id="ioOut" onclick="setIOMode('out')">使った</button>
+      <button id="ioIn" onclick="setIOMode('in')">入れた</button>
     </div>
     <label>いくら？</label>
     <input type="number" id="ioAmt" min="1" placeholder="例：100">
-    <label id="ioMemoLabel">なにに？（省略OK）</label>
+    <label id="ioMemoLabel">何に？（省略OK）</label>
     <input type="text" id="ioMemo" placeholder="例：おかし、ガチャガチャ">
     <div class="btns">
       <button class="m-cancel" onclick="closeModal()">やめる</button>
@@ -242,7 +242,7 @@
     <div class="mnote">週1回、決まった曜日に「年齢＋50円」（10歳からは＋100円）を渡すよ。誕生日から自動計算!</div>
     <label>誕生日</label>
     <input type="date" id="sBday">
-    <label>おこづかいの日（曜日）</label>
+    <label>お小遣いの日（曜日）</label>
     <select id="sDay">
       <option value="0">日曜日</option><option value="1">月曜日</option><option value="2">火曜日</option>
       <option value="3">水曜日</option><option value="4">木曜日</option><option value="5">金曜日</option>
@@ -276,7 +276,7 @@ function icon(n){ return SVG_OPEN + (ICONS[n]||ICONS.star) + '</svg>'; }
 document.querySelectorAll("[data-icon]").forEach(el=>{ el.innerHTML = icon(el.dataset.icon) + el.innerHTML; });
 document.getElementById("hIcon").innerHTML = icon("coin");
 
-const JARS = { cho:{name:"ちょきん", icon:"jar"}, kifu:{name:"きふ", icon:"heart"}, sugu:{name:"すぐつかえる", icon:"wallet"} };
+const JARS = { cho:{name:"貯金", icon:"jar"}, kifu:{name:"寄付", icon:"heart"}, sugu:{name:"すぐ使える", icon:"wallet"} };
 const WD = ["日","月","火","水","木","金","土"];
 
 /* ---- データ ---- */
@@ -313,7 +313,7 @@ function weeklyAmt(bday, dstr){
   if(a === null || a < 0) return null;
   return a + (a >= 10 ? 100 : 50);
 }
-/* 直近の「おこづかいの日」(今日を含む過去) */
+/* 直近の「お小遣いの日」(今日を含む過去) */
 function lastDue(){
   const t = new Date();
   const diff = (t.getDay() - kd().payDay + 7) % 7;
@@ -339,11 +339,11 @@ function render(){
     ? "毎週" + WD[k.payDay] + "曜日・いま" + ageOn(k.bday, todayStr()) + "歳"
     : "まずは誕生日を設定してね →";
 
-  // おこづかいの日カード
+  // お小遣いの日カード
   const card = document.getElementById("paydayCard");
   if(!k.bday){
     card.className = "payday";
-    card.innerHTML = '<div class="p-title">「✎ 設定」から誕生日とおこづかいの日を入れてね</div>';
+    card.innerHTML = '<div class="p-title">「✎ 設定」から誕生日とお小遣いの日を入れてね</div>';
   }else{
     const due = lastDue();
     const paid = !!k.given[due];
@@ -351,7 +351,7 @@ function render(){
     if(!paid){
       card.className = "payday due";
       const isToday = due === todayStr();
-      card.innerHTML = '<div class="p-title">'+(isToday ? "きょうはおこづかいの日!" : WD[k.payDay]+"曜日の分がまだだよ")+'</div>'
+      card.innerHTML = '<div class="p-title">'+(isToday ? "今日はお小遣いの日!" : WD[k.payDay]+"曜日の分がまだだよ")+'</div>'
         + '<div class="p-amt">'+amt+'<small>円</small></div>'
         + '<div class="p-sub">年齢＋'+(ageOn(k.bday,due)>=10?100:50)+'円　いつも同じ曜日・同じ時間に渡すのがコツ!</div>'
         + '<button onclick="openSplit()">渡した!→ 3つに分ける</button>';
@@ -359,7 +359,7 @@ function render(){
       const g = k.given[due];
       const next = new Date(due); next.setDate(next.getDate()+7);
       card.className = "payday";
-      card.innerHTML = '<div class="p-title">今週の分は渡したよ ✓（ちょきん'+g.cho+'・きふ'+g.kifu+'・すぐ'+g.sugu+'）</div>'
+      card.innerHTML = '<div class="p-title">今週の分は渡したよ ✓（貯金'+g.cho+'・寄付'+g.kifu+'・すぐ'+g.sugu+'）</div>'
         + '<div class="p-sub">つぎは '+(next.getMonth()+1)+'/'+next.getDate()+'（'+WD[kd().payDay]+'）に '
         + weeklyAmt(k.bday, next.getFullYear()+"-"+String(next.getMonth()+1).padStart(2,"0")+"-"+String(next.getDate()).padStart(2,"0"))+'円</div>';
     }
@@ -369,7 +369,7 @@ function render(){
   document.getElementById("amtCho").textContent = b.cho + "円";
   document.getElementById("amtKifu").textContent = b.kifu + "円";
   document.getElementById("amtSugu").textContent = b.sugu + "円";
-  document.getElementById("totalLine").innerHTML = "ぜんぶで <b>" + (b.cho+b.kifu+b.sugu) + "円</b> もってるよ";
+  document.getElementById("totalLine").innerHTML = "全部で <b>" + (b.cho+b.kifu+b.sugu) + "円</b> 持ってるよ";
   renderHist();
 }
 
@@ -377,13 +377,13 @@ function renderHist(){
   const wrap = document.getElementById("histList");
   const items = [];
   Object.entries(kd().given).forEach(([d,g])=>{
-    items.push({d:d, type:"given", label:"おこづかい", sub:"ちょきん"+g.cho+"・きふ"+g.kifu+"・すぐ"+g.sugu, amt:g.cho+g.kifu+g.sugu, icon:"coin", id:"g:"+d});
+    items.push({d:d, type:"given", label:"お小遣い", sub:"貯金"+g.cho+"・寄付"+g.kifu+"・すぐ"+g.sugu, amt:g.cho+g.kifu+g.sugu, icon:"coin", id:"g:"+d});
   });
   kd().recs.forEach(r=>{
-    items.push({d:r.d, type:"rec", label:(r.amt<0?"つかった":"いれた")+"（"+JARS[r.jar].name+"）", sub:r.memo||"", amt:r.amt, icon:JARS[r.jar].icon, id:"r:"+r.id});
+    items.push({d:r.d, type:"rec", label:(r.amt<0?"使った":"入れた")+"（"+JARS[r.jar].name+"）", sub:r.memo||"", amt:r.amt, icon:JARS[r.jar].icon, id:"r:"+r.id});
   });
   if(!items.length){
-    wrap.innerHTML = '<div class="empty">まだ記録がないよ<br>おこづかいを渡したらここに残っていくよ</div>';
+    wrap.innerHTML = '<div class="empty">まだ記録がないよ<br>お小遣いを渡したらここに残っていくよ</div>';
     return;
   }
   items.sort((a,b)=> b.d.localeCompare(a.d));
@@ -439,7 +439,7 @@ function splitCalc(){
   const left = splitTotal - c - f - s;
   const el = document.getElementById("splitLeft");
   el.className = "split-left" + (left<0 ? " over" : "");
-  el.innerHTML = left===0 ? "ぴったり!<b> OK</b>" : (left>0 ? "のこり <b>"+left+"</b> 円" : "<b>"+(-left)+"</b> 円 オーバーしてるよ");
+  el.innerHTML = left===0 ? "ぴったり!<b> OK</b>" : (left>0 ? "残り <b>"+left+"</b> 円" : "<b>"+(-left)+"</b> 円 オーバーしてるよ");
 }
 function saveSplit(){
   const c = +document.getElementById("spCho").value||0;
@@ -465,7 +465,7 @@ function setIOMode(m){
   ioMode = m;
   document.getElementById("ioOut").classList.toggle("on", m==="out");
   document.getElementById("ioIn").classList.toggle("on", m==="in");
-  document.getElementById("ioMemoLabel").textContent = m==="out" ? "なにに？（省略OK）" : "なんのお金？（省略OK・お年玉など）";
+  document.getElementById("ioMemoLabel").textContent = m==="out" ? "何に？（省略OK）" : "何のお金？（省略OK・お年玉など）";
 }
 function saveIO(){
   const a = parseInt(document.getElementById("ioAmt").value);
@@ -480,13 +480,13 @@ function saveIO(){
 function delItem(id){
   if(id.startsWith("g:")){
     const d = id.slice(2);
-    if(confirm(d + " のおこづかいの記録を削除する？")){
+    if(confirm(d + " のお小遣いの記録を削除する？")){
       delete kd().given[d]; save(); render(); toast("削除したよ");
     }
   }else{
     const rid = id.slice(2);
     const r = kd().recs.find(x=>x.id===rid); if(!r) return;
-    if(confirm("この記録（"+(r.amt<0?"つかった":"いれた")+" "+Math.abs(r.amt)+"円）を削除する？")){
+    if(confirm("この記録（"+(r.amt<0?"使った":"入れた")+" "+Math.abs(r.amt)+"円）を削除する？")){
       kd().recs = kd().recs.filter(x=>x.id!==rid);
       save(); render(); toast("削除したよ");
     }
@@ -518,7 +518,7 @@ function celebrate(){
     document.body.appendChild(s);
     setTimeout(()=>s.remove(), 1200);
   }
-  toast("じょうずに分けられたね!");
+  toast("上手に分けられたね!");
 }
 
 /* ---- バックアップ ---- */
@@ -528,7 +528,7 @@ function bkExport(){
   const blob = new Blob([JSON.stringify({__bkx:"okozukai", data:data})], {type:"application/json"});
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = "おこづかい帳_バックアップ_" + todayStr() + ".json";
+  a.download = "お小遣い帳_バックアップ_" + todayStr() + ".json";
   a.click(); URL.revokeObjectURL(a.href);
   toast("書き出したよ");
 }
