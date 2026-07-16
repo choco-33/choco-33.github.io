@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>宿題プランナー</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<meta name="theme-color" content="#8CA9C4">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&family=Yomogi&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#FAF6EE;
+  --card:#FFFFFF;
+  --ink:#5A554E;
+  --ink-light:#9B948A;
+  --blue:#8CA9C4;
+  --blue-pale:#E3EBF3;
+  --green:#9AB797;
+  --green-pale:#E7EFE5;
+  --pink:#E0A8A8;
+  --pink-pale:#F6E7E7;
+  --yellow:#E6C190;
+  --yellow-pale:#F7EEDD;
+  --lavender:#A99BC4;
+  --lavender-pale:#EBE7F2;
+  --accent:var(--blue);
+  --accent-pale:var(--blue-pale);
+  --radius:18px;
+  --shadow:0 2px 10px rgba(90,85,78,.08);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{
+  font-family:'Zen Maru Gothic',sans-serif;
+  background:var(--cream);
+  color:var(--ink);
+  min-height:100vh;
+  padding-bottom:calc(76px + env(safe-area-inset-bottom));
+}
+svg.hd{display:block;}
+svg.hd *{stroke-linecap:round;stroke-linejoin:round;}
+.header{
+  padding:calc(14px + env(safe-area-inset-top)) 16px 10px;
+  background:var(--accent-pale);
+  border-radius:0 0 24px 24px;
+  transition:background .3s;
+}
+.header-top{display:flex;align-items:center;justify-content:space-between;}
+.app-title{font-size:18px;font-weight:700;display:flex;align-items:center;gap:6px;}
+.vac-badge{
+  font-family:'Yomogi',cursive;font-size:13px;background:var(--card);
+  padding:3px 12px;border-radius:99px;box-shadow:var(--shadow);
+}
+.child-tabs{display:flex;gap:8px;margin-top:12px;}
+.child-tab{
+  flex:1;padding:9px 0;border:none;border-radius:14px;font-family:inherit;
+  font-size:15px;font-weight:700;color:var(--ink-light);background:rgba(255,255,255,.55);
+  cursor:pointer;transition:.2s;
+}
+.child-tab.active{background:var(--card);color:var(--ink);box-shadow:var(--shadow);}
+.child-tab.active .dot{opacity:1;}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;opacity:.35;}
+.days-left{
+  text-align:center;font-family:'Yomogi',cursive;font-size:13px;
+  color:var(--ink);margin-top:10px;padding-bottom:2px;
+}
+.days-left b{font-size:19px;font-family:'Zen Maru Gothic';}
+main{padding:16px 16px 0;max-width:560px;margin:0 auto;}
+.card{
+  background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:16px;margin-bottom:12px;
+}
+.section-label{
+  font-family:'Yomogi',cursive;font-size:14px;color:var(--ink-light);
+  margin:4px 2px 8px;
+}
+.rest-banner{
+  background:var(--pink-pale);border-radius:var(--radius);padding:13px 16px;
+  font-family:'Yomogi',cursive;font-size:14px;text-align:center;margin-bottom:12px;
+}
+/* --- 全体進捗 --- */
+.overall{display:flex;align-items:center;gap:14px;}
+.ring{position:relative;width:74px;height:74px;flex-shrink:0;}
+.ring svg{transform:rotate(-90deg);}
+.ring-text{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:17px;
+}
+.overall-info{flex:1;}
+.overall-info .big{font-size:15px;font-weight:700;margin-bottom:3px;}
+.overall-info .sub{font-size:12.5px;color:var(--ink-light);}
+/* --- 今日のリスト --- */
+.today-item{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1.5px dashed var(--cream);}
+.today-item:last-child{border-bottom:none;}
+.hw-icon{width:34px;height:34px;flex-shrink:0;}
+.t-name{flex:1;min-width:0;}
+.t-name .nm{font-weight:700;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.t-name .target{font-size:12px;color:var(--ink-light);}
+.stepper{display:flex;align-items:center;gap:2px;flex-shrink:0;}
+.stepper button{
+  width:36px;height:36px;border:none;border-radius:12px;font-size:19px;font-weight:700;
+  font-family:inherit;cursor:pointer;color:var(--ink);
+}
+.stepper .minus{background:var(--cream);}
+.stepper .plus{background:var(--accent-pale);}
+.stepper .count{min-width:44px;text-align:center;font-weight:700;font-size:16px;}
+.stepper .count small{font-size:10px;color:var(--ink-light);display:block;font-weight:400;}
+.step-check{
+  border:none;border-radius:12px;background:var(--accent-pale);color:var(--ink);
+  font-family:inherit;font-weight:700;font-size:13px;padding:9px 14px;cursor:pointer;flex-shrink:0;
+}
+.step-undo{border:none;background:var(--cream);border-radius:12px;width:36px;height:36px;font-size:15px;cursor:pointer;flex-shrink:0;color:var(--ink-light);}
+.done-chip{font-size:12px;background:var(--green-pale);color:#6d8a6a;padding:3px 10px;border-radius:99px;font-weight:700;flex-shrink:0;}
+.muted-group{opacity:.55;}
+.empty{
+  text-align:center;padding:34px 10px;color:var(--ink-light);
+  font-family:'Yomogi',cursive;font-size:14.5px;line-height:2;
+}
+.empty .emoji{font-size:34px;display:block;margin-bottom:6px;}
+/* --- 宿題リスト --- */
+.hw-card{padding:14px 16px;}
+.hw-top{display:flex;align-items:center;gap:9px;}
+.hw-name{flex:1;font-weight:700;font-size:15px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.hw-edit{border:none;background:none;font-size:16px;cursor:pointer;color:var(--ink-light);padding:4px;}
+.bar{height:12px;background:var(--cream);border-radius:99px;margin:10px 0 6px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:99px;background:var(--accent);transition:width .4s;}
+.hw-meta{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-light);}
+.hw-meta b{color:var(--ink);}
+.tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center;}
+.pace-tag{
+  display:inline-block;font-size:12px;font-weight:700;
+  background:var(--yellow-pale);color:#a8813f;padding:3px 10px;border-radius:99px;
+}
+.pace-tag.ok{background:var(--green-pale);color:#6d8a6a;}
+.day-tag{
+  font-size:11px;background:var(--cream);color:var(--ink-light);
+  padding:3px 9px;border-radius:99px;
+}
+.memo-line{
+  margin-top:8px;font-family:'Yomogi',cursive;font-size:12.5px;color:var(--ink-light);
+  background:var(--cream);border-radius:10px;padding:6px 10px;
+}
+.step-list{margin-top:9px;}
+.step-row{display:flex;align-items:center;gap:8px;font-size:13.5px;padding:4px 0;}
+.step-row .sq{
+  width:19px;height:19px;border:2px solid #D8D2C6;border-radius:6px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;
+}
+.step-row.done .sq{background:var(--green);border-color:var(--green);}
+.step-row.done .st{text-decoration:line-through;color:var(--ink-light);}
+/* --- カレンダー --- */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+.cal-head{text-align:center;font-size:11px;color:var(--ink-light);padding:2px 0;}
+.cal-cell{
+  aspect-ratio:1;border-radius:10px;background:var(--cream);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:11px;color:var(--ink-light);position:relative;
+}
+.cal-cell.lv1{background:var(--accent-pale);}
+.cal-cell.lv2{background:var(--accent);color:#fff;}
+.cal-cell.rest{background:var(--pink-pale);}
+.cal-cell.today{outline:2.5px solid var(--pink);outline-offset:-2.5px;}
+.cal-cell .n{font-weight:700;}
+.cal-cell .c{font-size:9px;}
+.cal-cell .r{font-size:10px;}
+.cal-cell.out{opacity:.28;}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.cal-nav button{border:none;background:var(--cream);border-radius:10px;width:32px;height:32px;font-size:15px;cursor:pointer;color:var(--ink);}
+.cal-nav .m{font-weight:700;}
+/* --- 設定 --- */
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1.5px dashed var(--cream);gap:10px;}
+.set-row:last-child{border-bottom:none;}
+.set-row label{font-size:14px;font-weight:500;flex-shrink:0;}
+.set-row input[type=date],.set-row input[type=text]{
+  font-family:inherit;font-size:14px;border:1.5px solid var(--cream);
+  border-radius:10px;padding:7px 10px;color:var(--ink);background:var(--cream);
+  width:150px;max-width:55%;
+}
+.vac-switch{display:flex;gap:8px;margin-bottom:12px;}
+.vac-btn{
+  flex:1;padding:10px 0;border:2px solid transparent;border-radius:14px;font-family:inherit;
+  font-size:14px;font-weight:700;cursor:pointer;background:var(--card);color:var(--ink-light);box-shadow:var(--shadow);
+}
+.vac-btn.active{border-color:var(--accent);color:var(--ink);background:var(--accent-pale);}
+.rest-add{display:flex;gap:8px;margin-bottom:10px;}
+.rest-add input{
+  flex:1;font-family:inherit;font-size:14px;border:1.5px solid #EDE8DE;
+  border-radius:12px;padding:9px 11px;background:var(--cream);color:var(--ink);
+}
+.rest-add button{
+  border:none;border-radius:12px;background:var(--accent);color:#fff;font-family:inherit;
+  font-weight:700;font-size:14px;padding:0 16px;cursor:pointer;
+}
+.chips{display:flex;flex-wrap:wrap;gap:7px;}
+.chip{
+  display:inline-flex;align-items:center;gap:5px;background:var(--pink-pale);
+  font-size:13px;padding:5px 7px 5px 12px;border-radius:99px;
+}
+.chip button{border:none;background:none;font-size:13px;cursor:pointer;color:#b06a6a;padding:2px;}
+/* --- FAB / bottom sheet --- */
+.fab{
+  position:fixed;right:18px;bottom:calc(90px + env(safe-area-inset-bottom));
+  width:56px;height:56px;border-radius:50%;border:none;background:var(--accent);
+  color:#fff;font-size:26px;box-shadow:0 4px 14px rgba(90,85,78,.25);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:background .3s;z-index:40;
+}
+.sheet-bg{
+  position:fixed;inset:0;background:rgba(90,85,78,.35);z-index:50;
+  opacity:0;pointer-events:none;transition:.25s;
+}
+.sheet-bg.open{opacity:1;pointer-events:auto;}
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;background:var(--card);
+  border-radius:24px 24px 0 0;padding:20px 20px calc(24px + env(safe-area-inset-bottom));
+  transform:translateY(105%);transition:.28s;z-index:60;max-width:560px;margin:0 auto;
+  max-height:88vh;overflow-y:auto;
+}
+.sheet.open{transform:translateY(0);}
+.sheet h3{font-size:16px;margin-bottom:14px;display:flex;align-items:center;gap:6px;}
+.f-group{margin-bottom:13px;}
+.f-group label{display:block;font-size:12.5px;color:var(--ink-light);margin-bottom:5px;}
+.f-group input,.f-group select,.f-group textarea{
+  width:100%;font-family:inherit;font-size:15px;border:1.5px solid #EDE8DE;
+  border-radius:12px;padding:11px 12px;color:var(--ink);background:var(--cream);
+}
+.f-group textarea{resize:none;height:64px;}
+.f-row{display:flex;gap:10px;}
+.f-row .f-group{flex:1;}
+.icon-pick{display:flex;gap:7px;flex-wrap:wrap;}
+.icon-pick button{
+  width:46px;height:46px;border:2px solid transparent;border-radius:12px;
+  background:var(--cream);cursor:pointer;padding:5px;
+}
+.icon-pick button.sel{border-color:var(--accent);background:var(--accent-pale);}
+.type-switch{display:flex;gap:8px;}
+.type-btn{
+  flex:1;padding:10px 0;border:2px solid #EDE8DE;border-radius:12px;background:var(--cream);
+  font-family:inherit;font-size:13.5px;font-weight:700;color:var(--ink-light);cursor:pointer;
+}
+.type-btn.active{border-color:var(--accent);background:var(--accent-pale);color:var(--ink);}
+.dow-pick{display:flex;gap:5px;}
+.dow-pick button{
+  flex:1;aspect-ratio:1;max-width:44px;border:2px solid #EDE8DE;border-radius:50%;
+  background:var(--cream);font-family:inherit;font-size:13px;font-weight:700;
+  color:var(--ink-light);cursor:pointer;
+}
+.dow-pick button.on{border-color:var(--accent);background:var(--accent-pale);color:var(--ink);}
+.pace-mode{display:flex;gap:8px;align-items:center;}
+.pace-mode .type-btn{flex:0 0 auto;padding:10px 14px;}
+.pace-mode input{width:76px;text-align:center;}
+.pace-mode .u{font-size:13px;color:var(--ink-light);}
+.step-editor .se-row{display:flex;gap:7px;margin-bottom:7px;align-items:center;}
+.step-editor .se-row .num{font-size:12px;color:var(--ink-light);width:16px;text-align:center;flex-shrink:0;}
+.step-editor .se-row input{flex:1;}
+.step-editor .se-row .del{
+  border:none;background:var(--cream);border-radius:10px;width:34px;height:34px;
+  cursor:pointer;color:#b06a6a;font-size:14px;flex-shrink:0;
+}
+.step-editor .add-step{
+  width:100%;border:2px dashed #D8D2C6;background:none;border-radius:12px;
+  font-family:inherit;font-size:13px;color:var(--ink-light);padding:9px 0;cursor:pointer;
+}
+.sheet-actions{display:flex;gap:10px;margin-top:18px;}
+.btn{
+  flex:1;padding:13px 0;border:none;border-radius:14px;font-family:inherit;
+  font-size:15px;font-weight:700;cursor:pointer;
+}
+.btn-main{background:var(--accent);color:#fff;transition:background .3s;}
+.btn-sub{background:var(--cream);color:var(--ink);}
+.btn-danger{background:var(--pink-pale);color:#b06a6a;flex:0 0 auto;padding:13px 16px;}
+/* --- bottom nav --- */
+.nav{
+  position:fixed;left:0;right:0;bottom:0;background:var(--card);
+  display:flex;box-shadow:0 -2px 12px rgba(90,85,78,.08);
+  padding-bottom:env(safe-area-inset-bottom);z-index:30;
+}
+.nav button{
+  flex:1;border:none;background:none;font-family:inherit;padding:9px 0 7px;
+  font-size:10.5px;color:var(--ink-light);cursor:pointer;font-weight:500;
+}
+.nav button .ic{display:block;margin-bottom:2px;filter:grayscale(.9);opacity:.55;}
+.nav button .ic svg{width:23px;height:23px;display:block;margin:0 auto;}
+#vacEmoji{display:inline-flex;width:26px;height:26px;}
+#vacEmoji svg{width:100%;height:100%;}
+.vic-s{display:inline-block;width:19px;height:19px;vertical-align:-4px;margin-right:2px;}
+.vic-s svg{width:100%;height:100%;}
+.nav button.active{color:var(--ink);font-weight:700;}
+.nav button.active .ic{filter:none;opacity:1;}
+.toast{
+  position:fixed;left:50%;bottom:calc(100px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(16px);
+  background:var(--card);color:var(--ink);font-size:13.5px;padding:10px 20px;border-radius:99px;
+  border:2px solid var(--accent-pale);box-shadow:0 4px 14px rgba(90,85,78,.18);
+  opacity:0;pointer-events:none;transition:.3s;z-index:80;white-space:nowrap;font-family:'Yomogi',cursive;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.mi{display:inline-block;width:17px;height:17px;vertical-align:-3px;margin-right:3px;}
+.mi svg{width:100%;height:100%;}
+.hw-edit svg{width:19px;height:19px;}
+.empty .eic{display:inline-block;width:46px;height:46px;margin-bottom:6px;}
+.empty .eic svg{width:100%;height:100%;}
+.sheet h3 .mi{width:21px;height:21px;vertical-align:-4px;}
+.pace-tag .mi,.memo-line .mi,.section-label .mi,.toast .mi{width:15px;height:15px;vertical-align:-3px;}
+.cal-cell .r{width:14px;height:14px;display:inline-block;}
+.cal-cell .r svg{width:100%;height:100%;}
+.rest-banner .mi{width:18px;height:18px;vertical-align:-4px;}
+.btn-danger svg{width:20px;height:20px;vertical-align:middle;}
+.hidden{display:none!important;}
+
+  .bkx{margin:18px 14px 100px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:18px;
+    padding:14px 16px;box-shadow:0 4px 12px rgba(0,0,0,.06);font-size:12px;color:#8a8073;line-height:1.7}
+  .bkx h3{font-size:13.5px;color:#5b4636;margin-bottom:4px}
+  .bkx .bkx-btn{border:none;border-radius:12px;padding:9px 16px;font-family:inherit;font-weight:700;
+    font-size:12.5px;color:#fff;background:#a8b89a;margin:8px 8px 0 0;cursor:pointer}
+  .bkx .bkx-btn.sub{background:#c9bfae}
+</style>
+</head>
+<body>
+
+<div class="header" id="header">
+  <div class="header-top">
+    <div class="app-title"><span id="vacEmoji"></span> 宿題プランナー</div>
+    <div class="vac-badge" id="vacBadge">夏休み</div>
+  </div>
+  <div class="child-tabs" id="childTabs"></div>
+  <div class="days-left" id="daysLeft"></div>
+</div>
+
+<main id="main"></main>
+
+<button class="fab" id="fab" onclick="openSheet()">＋</button>
+
+<div class="sheet-bg" id="sheetBg" onclick="closeSheet()"></div>
+<div class="sheet" id="sheet">
+  <h3 id="sheetTitle">宿題を追加</h3>
+  <div class="f-group">
+    <label>アイコン</label>
+    <div class="icon-pick" id="iconPick"></div>
+  </div>
+  <div class="f-group">
+    <label>宿題の名前</label>
+    <input type="text" id="fName" placeholder="算数ドリル">
+  </div>
+  <div class="f-group">
+    <label>タイプ</label>
+    <div class="type-switch">
+      <button class="type-btn" id="typeAmount" onclick="setType('amount')">量で数える(ドリル等)</button>
+      <button class="type-btn" id="typeSteps" onclick="setType('steps')">ステップで進める(自由研究等)</button>
+    </div>
+  </div>
+
+  <div id="amountFields">
+    <div class="f-row">
+      <div class="f-group">
+        <label>全部で</label>
+        <input type="number" id="fTotal" inputmode="numeric" min="1" placeholder="30">
+      </div>
+      <div class="f-group">
+        <label>単位</label>
+        <select id="fUnit">
+          <option>ページ</option><option>枚</option><option>問</option>
+          <option>個</option><option>回</option><option>日分</option>
+        </select>
+      </div>
+    </div>
+    <div class="f-group">
+      <label>1日のペース</label>
+      <div class="pace-mode">
+        <button class="type-btn" id="paceAuto" onclick="setPaceMode('auto')">おまかせ計算</button>
+        <button class="type-btn" id="paceManual" onclick="setPaceMode('manual')">自分で決める</button>
+        <input type="number" id="fManualPace" inputmode="numeric" min="1" placeholder="2" class="hidden">
+        <span class="u hidden" id="paceUnit">ページ/日</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="stepFields" class="hidden">
+    <div class="f-group step-editor">
+      <label>ステップ(やる順番に)</label>
+      <div id="stepRows"></div>
+      <button class="add-step" onclick="addStepRow('')">＋ ステップを追加</button>
+    </div>
+  </div>
+
+  <div class="f-group">
+    <label>やる曜日</label>
+    <div class="dow-pick" id="dowPick"></div>
+  </div>
+  <div class="f-group">
+    <label>終わらせたい日(空欄なら休みの最終日)</label>
+    <input type="date" id="fDue">
+  </div>
+  <div class="f-group">
+    <label>メモ(提出先・材料など)</label>
+    <textarea id="fMemo" placeholder="9/1に学校へ提出"></textarea>
+  </div>
+  <div class="sheet-actions">
+    <button class="btn btn-danger hidden" id="btnDelete" onclick="deleteItem()"><svg viewBox="0 0 48 48" style="transform:rotate(2deg)"><g stroke-linecap="round" stroke-linejoin="round"><path d="M14 17 L34 17 L32.2 39 Q32 41.5 29.5 41.5 L18.5 41.5 Q16 41.5 15.8 39 Z" fill="#F6E7E7" stroke="#5A554E" stroke-width="2.4"/><rect x="11" y="12" width="26" height="5" rx="2.5" fill="#E0A8A8" stroke="#5A554E" stroke-width="2"/><path d="M20 12 Q20 8 24 8 Q28 8 28 12" fill="none" stroke="#5A554E" stroke-width="2.2"/><path d="M20 22 L20.8 36 M28 22 L27.2 36" stroke="#5A554E" stroke-width="1.8"/></g></svg></button>
+    <button class="btn btn-sub" onclick="closeSheet()">キャンセル</button>
+    <button class="btn btn-main" onclick="saveItem()">保存</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="nav">
+  <button data-view="today" class="active" onclick="setView('today')"><span class="ic"><svg viewBox="0 0 48 48" style="transform:rotate(-3deg)"><g stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="24" r="9.5" fill="#E6C190" stroke="#5A554E" stroke-width="2.4"/><path d="M24 7 L24 11 M24 37 L24 41 M7 24 L11 24 M37 24 L41 24 M12 12 L15 15 M33 33 L36 36 M36 12 L33 15 M15 33 L12 36" stroke="#5A554E" stroke-width="2.4"/><circle cx="21" cy="22.5" r="1.3" fill="#5A554E"/><circle cx="27" cy="22.5" r="1.3" fill="#5A554E"/><path d="M21 26.5 Q24 28.8 27 26.5" fill="none" stroke="#5A554E" stroke-width="1.8"/></g></svg></span>今日</button>
+  <button data-view="list" onclick="setView('list')"><span class="ic"><svg viewBox="0 0 48 48" style="transform:rotate(2deg)"><g stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="28" width="32" height="10" rx="3.5" fill="#E3EBF3" stroke="#5A554E" stroke-width="2.4"/><rect x="12" y="18" width="26" height="10" rx="3.5" fill="#F6E7E7" stroke="#5A554E" stroke-width="2.4"/><rect x="15" y="8" width="20" height="10" rx="3.5" fill="#E7EFE5" stroke="#5A554E" stroke-width="2.4"/><path d="M14 33 L20 33 M18 23 L24 23 M21 13 L27 13" stroke="#5A554E" stroke-width="1.8"/></g></svg></span>宿題</button>
+  <button data-view="cal" onclick="setView('cal')"><span class="ic"><svg viewBox="0 0 48 48" style="transform:rotate(-2deg)"><g stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="11" width="32" height="30" rx="5" fill="#FFF" stroke="#5A554E" stroke-width="2.4"/><path d="M8 20 L40 20" stroke="#5A554E" stroke-width="2.2"/><path d="M16 7 L16 14 M32 7 L32 14" stroke="#5A554E" stroke-width="2.6"/><circle cx="17" cy="27" r="2.2" fill="#8CA9C4"/><circle cx="24" cy="27" r="2.2" fill="#9AB797"/><circle cx="31" cy="27" r="2.2" fill="#E0A8A8"/><path d="M15 34.5 L17.5 37 L21.5 32.5" fill="none" stroke="#9AB797" stroke-width="2.4"/></g></svg></span>カレンダー</button>
+  <button data-view="set" onclick="setView('set')"><span class="ic"><svg viewBox="0 0 48 48" style="transform:rotate(3deg)"><g stroke-linecap="round" stroke-linejoin="round"><path d="M24 8 L24 13 M24 35 L24 40 M8 24 L13 24 M35 24 L40 24 M12.7 12.7 L16.2 16.2 M31.8 31.8 L35.3 35.3 M35.3 12.7 L31.8 16.2 M16.2 31.8 L12.7 35.3" stroke="#5A554E" stroke-width="4"/><circle cx="24" cy="24" r="9.5" fill="#EBE7F2" stroke="#5A554E" stroke-width="2.4"/><circle cx="24" cy="24" r="3.4" fill="#FFF" stroke="#5A554E" stroke-width="2"/></g></svg></span>設定</button>
+</div>
+
+<script>
+/* ===== 手描き風SVGアイコン ===== */
+function hd(inner, deg){
+  return `<svg class="hd" viewBox="0 0 48 48" width="100%" height="100%" style="transform:rotate(${deg||0}deg)">${inner}</svg>`;
+}
+const INK = '#5A554E';
+const ICONS = {
+  drill: hd(`<rect x="9" y="7" width="30" height="35" rx="5" fill="#E3EBF3" stroke="${INK}" stroke-width="2.4"/>
+    <path d="M9 16 Q24 14.5 39 16" fill="none" stroke="${INK}" stroke-width="2"/>
+    <text x="24" y="32" text-anchor="middle" font-size="12" font-weight="700" fill="${INK}" font-family="'Zen Maru Gothic'">1+2</text>
+    <circle cx="17" cy="11.5" r="1.4" fill="${INK}"/><circle cx="31" cy="11.5" r="1.4" fill="${INK}"/>
+    <path d="M20 12.5 Q24 15 28 12.5" fill="none" stroke="${INK}" stroke-width="1.8"/>`, -3),
+  kanji: hd(`<rect x="8" y="8" width="32" height="32" rx="6" fill="#F7EEDD" stroke="${INK}" stroke-width="2.4"/>
+    <text x="24" y="31" text-anchor="middle" font-size="17" font-weight="700" fill="${INK}" font-family="'Zen Maru Gothic'">漢</text>`, 2),
+  ondoku: hd(`<path d="M24 12 Q15 7 7 11 L7 37 Q15 33 24 38 Q33 33 41 37 L41 11 Q33 7 24 12 Z" fill="#FFF" stroke="${INK}" stroke-width="2.4"/>
+    <path d="M24 12 L24 38" stroke="${INK}" stroke-width="2"/>
+    <path d="M12 18 Q17 16.5 20 18 M12 24 Q17 22.5 20 24 M28 18 Q33 16.5 36 18" fill="none" stroke="#9B948A" stroke-width="1.8"/>
+    <circle cx="31" cy="27" r="2.6" fill="#E0A8A8"/><path d="M33.6 27 L33.6 19.5 Q35.5 20.5 36.8 19" fill="none" stroke="#E0A8A8" stroke-width="2.2"/>`, 0),
+  sakubun: hd(`<rect x="10" y="6" width="28" height="36" rx="3.5" fill="#FFF" stroke="${INK}" stroke-width="2.4"/>
+    <path d="M16 6.5 L16 41.5 M22 6.5 L22 41.5 M28 6.5 L28 41.5 M34 6.5 L34 41.5" stroke="#E0A8A8" stroke-width="1.3"/>
+    <path d="M30 34 L40 22 L44 26 L34 38 L29 39 Z" fill="#E6C190" stroke="${INK}" stroke-width="2"/>`, 3),
+  art: hd(`<path d="M24 8 Q40 8 41 21 Q42 32 32 31 Q27 30.5 27 34.5 Q27 40 20 40 Q7 40 7 25 Q7 8 24 8 Z" fill="#FFF" stroke="${INK}" stroke-width="2.4"/>
+    <circle cx="17" cy="17" r="3" fill="#8CA9C4"/><circle cx="29" cy="15" r="3" fill="#E0A8A8"/>
+    <circle cx="14" cy="27" r="3" fill="#9AB797"/><circle cx="22" cy="33" r="2.6" fill="#E6C190"/>`, -4),
+  diary: hd(`<circle cx="34" cy="13" r="6" fill="#E6C190" stroke="${INK}" stroke-width="2"/>
+    <path d="M34 4 L34 6 M41 13 L43 13 M39.5 7.5 L41 6 M39.5 18.5 L41 20" stroke="${INK}" stroke-width="1.8"/>
+    <rect x="7" y="16" width="26" height="26" rx="5" fill="#E7EFE5" stroke="${INK}" stroke-width="2.4"/>
+    <path d="M12 25 Q20 23.5 28 25 M12 31 Q20 29.5 28 31 M12 37 Q17 35.8 21 37" fill="none" stroke="#9B948A" stroke-width="1.8"/>`, 2),
+  science: hd(`<path d="M20 7 L20 19 L11 35 Q9 40 14 40 L34 40 Q39 40 37 35 L28 19 L28 7" fill="#FFF" stroke="${INK}" stroke-width="2.4"/>
+    <path d="M17 7 L31 7" stroke="${INK}" stroke-width="2.4"/>
+    <path d="M15.5 30 L32.5 30 L36 36.5 Q37 39 34 39 L14 39 Q11 39 12.5 36 Z" fill="#E3EBF3"/>
+    <circle cx="21" cy="25" r="1.7" fill="#8CA9C4"/><circle cx="26" cy="21" r="1.3" fill="#8CA9C4"/>`, -2),
+  plant: hd(`<path d="M14 30 L34 30 L31.5 42 L16.5 42 Z" fill="#E0A8A8" stroke="${INK}" stroke-width="2.4"/>
+    <path d="M24 30 L24 16" stroke="#9AB797" stroke-width="2.6"/>
+    <path d="M24 21 Q15 21 13 12 Q22 11 24 21 Z" fill="#9AB797" stroke="${INK}" stroke-width="2"/>
+    <path d="M24 18 Q33 18 35 9 Q26 8 24 18 Z" fill="#9AB797" stroke="${INK}" stroke-width="2"/>
+    <circle cx="30" cy="26" r="3.4" fill="#E0A8A8" stroke="${INK}" stroke-width="1.8"/>`, 2),
+  piano: hd(`<rect x="7" y="12" width="34" height="24" rx="4" fill="#FFF" stroke="${INK}" stroke-width="2.4"/>
+    <path d="M15.5 12.5 L15.5 35.5 M24 12.5 L24 35.5 M32.5 12.5 L32.5 35.5" stroke="${INK}" stroke-width="1.8"/>
+    <rect x="12.5" y="12.5" width="5.5" height="13" rx="1.5" fill="${INK}"/>
+    <rect x="21" y="12.5" width="5.5" height="13" rx="1.5" fill="${INK}"/>
+    <rect x="29.5" y="12.5" width="5.5" height="13" rx="1.5" fill="${INK}"/>
+    <path d="M38 8 Q41 5 43 7.5" fill="none" stroke="#E0A8A8" stroke-width="2"/>`, -3),
+  pool: hd(`<circle cx="24" cy="18" r="7.5" fill="#F7EEDD" stroke="${INK}" stroke-width="2.4"/>
+    <circle cx="21.5" cy="17" r="1.2" fill="${INK}"/><circle cx="26.5" cy="17" r="1.2" fill="${INK}"/>
+    <path d="M21.5 20.5 Q24 22.5 26.5 20.5" fill="none" stroke="${INK}" stroke-width="1.7"/>
+    <path d="M6 33 Q11 29.5 16 33 Q21 36.5 26 33 Q31 29.5 36 33 Q40 36 42 33.5" fill="none" stroke="#8CA9C4" stroke-width="2.8"/>
+    <path d="M8 40 Q13 36.5 18 40 Q23 43.5 28 40 Q33 36.5 38 40" fill="none" stroke="#8CA9C4" stroke-width="2.8"/>`, 0),
+  dokusho: hd(`<rect x="11" y="7" width="27" height="34" rx="4" fill="#EBE7F2" stroke="${INK}" stroke-width="2.4"/>
+    <path d="M17 7 L17 41" stroke="${INK}" stroke-width="2"/>
+    <path d="M28 7 L28 19 L32 15.5 L36 19 L36 7" fill="#E0A8A8" stroke="${INK}" stroke-width="1.8"/>
+    <path d="M21 28 Q28 26.5 34 28 M21 33 Q27 31.8 31 33" fill="none" stroke="#9B948A" stroke-width="1.8"/>`, 3),
+  print: hd(`<path d="M11 7 L37 7 L37 41 L32 38 L27 41 L22 38 L16 41 L11 38 Z" fill="#FFF" stroke="${INK}" stroke-width="2.4"/>
+    <path d="M16 15 Q24 13.5 32 15 M16 21 Q24 19.5 32 21 M16 27 Q22 25.8 26 27" fill="none" stroke="#9B948A" stroke-width="1.8"/>
+    <path d="M30 29 L31.4 32 L34.6 32.3 L32.2 34.4 L33 37.5 L30 35.8 L27 37.5 L27.8 34.4 L25.4 32.3 L28.6 32 Z" fill="#E6C190" stroke="${INK}" stroke-width="1.4"/>`, -2),
+  keisan: hd(`<rect x="10" y="6" width="28" height="36" rx="5" fill="#E7EFE5" stroke="${INK}" stroke-width="2.4"/>
+    <rect x="15" y="11" width="18" height="8" rx="2" fill="#FFF" stroke="${INK}" stroke-width="1.8"/>
+    <circle cx="17.5" cy="26" r="2.6" fill="${INK}"/><circle cx="24" cy="26" r="2.6" fill="${INK}"/><circle cx="30.5" cy="26" r="2.6" fill="${INK}"/>
+    <circle cx="17.5" cy="34" r="2.6" fill="${INK}"/><circle cx="24" cy="34" r="2.6" fill="${INK}"/><circle cx="30.5" cy="34" r="2.6" fill="#E0A8A8"/>`, 2)
+};
+const ICON_KEYS = Object.keys(ICONS);
+/* ===== UI用ミニアイコン(手描き風) ===== */
+const MI = {
+  pencil: hd(`<path d="M13 29 L29 10 L38 17 L22 36 Z" fill="#E6C190" stroke="${INK}" stroke-width="2.2"/>
+    <path d="M29 10 L33 5.5 L42 12.5 L38 17 Z" fill="#E0A8A8" stroke="${INK}" stroke-width="2"/>
+    <path d="M13 29 L22 36 L9 40.5 Z" fill="#FAF6EE" stroke="${INK}" stroke-width="2"/>
+    <path d="M11.5 35 L9 40.5 L14.5 39 Z" fill="${INK}"/>
+    <path d="M24.5 16.5 L31.5 22" stroke="${INK}" stroke-width="1.6" stroke-linecap="round"/>`, -2),
+  books: hd(`<g stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="28" width="32" height="10" rx="3.5" fill="#E3EBF3" stroke="${INK}" stroke-width="2.4"/><rect x="12" y="18" width="26" height="10" rx="3.5" fill="#F6E7E7" stroke="${INK}" stroke-width="2.4"/><rect x="15" y="8" width="20" height="10" rx="3.5" fill="#E7EFE5" stroke="${INK}" stroke-width="2.4"/><path d="M14 33 L20 33 M18 23 L24 23 M21 13 L27 13" stroke="${INK}" stroke-width="1.8"/></g>`, 2),
+  sun: hd(`<g stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="24" r="9.5" fill="#E6C190" stroke="${INK}" stroke-width="2.4"/><path d="M24 7 L24 11 M24 37 L24 41 M7 24 L11 24 M37 24 L41 24 M12 12 L15 15 M33 33 L36 36 M36 12 L33 15 M15 33 L12 36" stroke="${INK}" stroke-width="2.4"/><circle cx="21" cy="22.5" r="1.3" fill="${INK}"/><circle cx="27" cy="22.5" r="1.3" fill="${INK}"/><path d="M21 26.5 Q24 28.8 27 26.5" fill="none" stroke="${INK}" stroke-width="1.8"/></g>`, -3),
+  cal: hd(`<g stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="11" width="32" height="30" rx="5" fill="#FFF" stroke="${INK}" stroke-width="2.4"/><path d="M8 20 L40 20" stroke="${INK}" stroke-width="2.2"/><path d="M16 7 L16 14 M32 7 L32 14" stroke="${INK}" stroke-width="2.6"/><circle cx="17" cy="27" r="2.2" fill="#8CA9C4"/><circle cx="24" cy="27" r="2.2" fill="#9AB797"/><circle cx="31" cy="27" r="2.2" fill="#E0A8A8"/><path d="M15 34.5 L17.5 37 L21.5 32.5" fill="none" stroke="#9AB797" stroke-width="2.4"/></g>`, -2),
+  gear: hd(`<g stroke-linecap="round" stroke-linejoin="round"><path d="M24 8 L24 13 M24 35 L24 40 M8 24 L13 24 M35 24 L40 24 M12.7 12.7 L16.2 16.2 M31.8 31.8 L35.3 35.3 M35.3 12.7 L31.8 16.2 M16.2 31.8 L12.7 35.3" stroke="${INK}" stroke-width="4"/><circle cx="24" cy="24" r="9.5" fill="#EBE7F2" stroke="${INK}" stroke-width="2.4"/><circle cx="24" cy="24" r="3.4" fill="#FFF" stroke="${INK}" stroke-width="2"/></g>`, 3)
+};
+function mi(k){ return `<span class="mi">${MI[k]}</span>`; }
+MI.parasol = hd(`<g stroke-linecap="round" stroke-linejoin="round"><path d="M24 7 Q40 8 42 23 L6 23 Q8 8 24 7 Z" fill="#E0A8A8" stroke="${INK}" stroke-width="2.2"/><path d="M15 9.5 L12.5 23 M24 7 L24 23 M33 9.5 L35.5 23" stroke="${INK}" stroke-width="1.7"/><path d="M24 23 L24 38 Q24 41.5 20.5 41" fill="none" stroke="${INK}" stroke-width="2.4"/><path d="M8 41.5 Q16 39.5 24 41.5 Q32 43.5 40 41.5" fill="none" stroke="#E6C190" stroke-width="2.2"/></g>`, -3);
+MI.party = hd(`<g stroke-linecap="round" stroke-linejoin="round"><path d="M9 39 L17 17 L31 31 Z" fill="#E6C190" stroke="${INK}" stroke-width="2.2"/><path d="M13.5 27 L21 34.5 M11 33.5 L15 37.5" stroke="${INK}" stroke-width="1.6"/><path d="M20 14 Q22 9 19 5.5" fill="none" stroke="#8CA9C4" stroke-width="2.2"/><path d="M27 21 Q33 20 35 14.5" fill="none" stroke="#9AB797" stroke-width="2.2"/><path d="M33 27 Q38 28 41.5 25" fill="none" stroke="#E0A8A8" stroke-width="2.2"/><circle cx="27" cy="8" r="2" fill="#E0A8A8"/><circle cx="39" cy="11" r="2" fill="#E6C190"/><circle cx="41" cy="34" r="2" fill="#8CA9C4"/><circle cx="34" cy="40" r="1.7" fill="#9AB797"/></g>`, 2);
+MI.zzz = hd(`<g fill="none" stroke="#A99BC4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 22 L21 22 L10 34 L21 34" stroke-width="3"/><path d="M26 14 L34 14 L26 22.5 L34 22.5" stroke-width="2.6"/><path d="M36 28 L42 28 L36 34.5 L42 34.5" stroke-width="2.2"/></g>`, -3);
+MI.memo = hd(`<g stroke-linecap="round" stroke-linejoin="round"><path d="M11 7 L31 7 L38 14 L38 41 L11 41 Z" fill="#FFF" stroke="${INK}" stroke-width="2.4"/><path d="M31 7 L31 14 L38 14" fill="#F7EEDD" stroke="${INK}" stroke-width="2"/><path d="M16 20 Q24 18.5 32 20 M16 26 Q24 24.5 32 26 M16 32 Q21 30.8 25 32" fill="none" stroke="#9B948A" stroke-width="1.8"/></g>`, 2);
+MI.tea = hd(`<g stroke-linecap="round" stroke-linejoin="round"><path d="M10 20 L34 20 L32.5 34 Q32 38.5 26.5 38.5 L17.5 38.5 Q12 38.5 11.5 34 Z" fill="#E7EFE5" stroke="${INK}" stroke-width="2.4"/><path d="M34 22 Q40 22 39.5 27 Q39 31.5 32.8 31" fill="none" stroke="${INK}" stroke-width="2.2"/><path d="M17 15 Q15.5 11.5 18 8.5 M25 15 Q23.5 11.5 26 8.5" fill="none" stroke="#9B948A" stroke-width="2"/><path d="M13 42.5 Q22 44 31 42.5" fill="none" stroke="${INK}" stroke-width="2"/></g>`, -2);
+MI.trash = hd(`<g stroke-linecap="round" stroke-linejoin="round"><path d="M14 17 L34 17 L32.2 39 Q32 41.5 29.5 41.5 L18.5 41.5 Q16 41.5 15.8 39 Z" fill="#F6E7E7" stroke="${INK}" stroke-width="2.4"/><rect x="11" y="12" width="26" height="5" rx="2.5" fill="#E0A8A8" stroke="${INK}" stroke-width="2"/><path d="M20 12 Q20 8 24 8 Q28 8 28 12" fill="none" stroke="${INK}" stroke-width="2.2"/><path d="M20 22 L20.8 36 M28 22 L27.2 36" stroke="${INK}" stroke-width="1.8"/></g>`, 2);
+MI.palette = ICONS.art;
+
+
+function iconOf(it){
+  if(it.icon && ICONS[it.icon]) return ICONS[it.icon];
+  if(it.emoji) return `<span style="font-size:24px;line-height:34px;">${it.emoji}</span>`;
+  return ICONS.drill;
+}
+
+/* ===== ストレージアダプタ(Claude内: window.storage / 単体: localStorage) ===== */
+const KEY = 'shukudai-plan-v1';
+const store = (() => {
+  const hasWS = typeof window.storage !== 'undefined' && window.storage && typeof window.storage.get === 'function';
+  if (hasWS) {
+    return {
+      async load(){ try{ const r = await window.storage.get(KEY); return r ? JSON.parse(r.value) : null; }catch(e){ return null; } },
+      async save(d){ try{ await window.storage.set(KEY, JSON.stringify(d)); }catch(e){ console.error(e); } }
+    };
+  }
+  return {
+    async load(){ try{ const v = localStorage.getItem(KEY); return v ? JSON.parse(v) : null; }catch(e){ return null; } },
+    async save(d){ try{ localStorage.setItem(KEY, JSON.stringify(d)); }catch(e){ console.error(e); } }
+  };
+})();
+
+/* ===== 状態 ===== */
+const THEMES = {
+  natsu: { accent:'#8CA9C4', pale:'#E3EBF3', label:'夏休み', svg:`<svg viewBox="0 0 48 48" style="transform:rotate(-4deg)"><g stroke-linecap="round" stroke-linejoin="round"><g fill="#E6C190" stroke="#5A554E" stroke-width="1.8"><ellipse cx="24" cy="9" rx="4.6" ry="6.2"/><ellipse cx="24" cy="39" rx="4.6" ry="6.2"/><ellipse cx="9" cy="24" rx="6.2" ry="4.6"/><ellipse cx="39" cy="24" rx="6.2" ry="4.6"/><ellipse cx="13.5" cy="13.5" rx="5.4" ry="4.2" transform="rotate(-45 13.5 13.5)"/><ellipse cx="34.5" cy="34.5" rx="5.4" ry="4.2" transform="rotate(-45 34.5 34.5)"/><ellipse cx="34.5" cy="13.5" rx="5.4" ry="4.2" transform="rotate(45 34.5 13.5)"/><ellipse cx="13.5" cy="34.5" rx="5.4" ry="4.2" transform="rotate(45 13.5 34.5)"/></g><circle cx="24" cy="24" r="9" fill="#B08D6A" stroke="#5A554E" stroke-width="2.2"/><circle cx="21" cy="22.5" r="1.3" fill="#5A554E"/><circle cx="27" cy="22.5" r="1.3" fill="#5A554E"/><path d="M21 26 Q24 28.4 27 26" fill="none" stroke="#5A554E" stroke-width="1.8"/></g></svg>` },
+  fuyu:  { accent:'#A99BC4', pale:'#EBE7F2', label:'冬休み', svg:`<svg viewBox="0 0 48 48" style="transform:rotate(3deg)"><g stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="31" r="11" fill="#FFF" stroke="#5A554E" stroke-width="2.4"/><circle cx="24" cy="14.5" r="8.5" fill="#FFF" stroke="#5A554E" stroke-width="2.4"/><circle cx="21" cy="13" r="1.3" fill="#5A554E"/><circle cx="27" cy="13" r="1.3" fill="#5A554E"/><path d="M21.5 17 Q24 19.2 26.5 17" fill="none" stroke="#5A554E" stroke-width="1.8"/><path d="M16.5 21.5 Q24 25.5 31.5 21.5 L32.5 24.5 Q24 28.5 15.5 24.5 Z" fill="#E0A8A8" stroke="#5A554E" stroke-width="1.8"/><circle cx="24" cy="30" r="1.5" fill="#8CA9C4"/><circle cx="24" cy="36" r="1.5" fill="#8CA9C4"/><path d="M13 8 Q17 4.5 21 7" fill="none" stroke="#8CA9C4" stroke-width="2"/></g></svg>` }
+};
+const CHILD_COLORS = { c1:'#8CA9C4', c2:'#9AB797' };
+const DOW = ['日','月','火','水','木','金','土'];
+
+let state = null;
+let view = 'today';
+let calMonth = null;
+let editingId = null;
+let selIcon = ICON_KEYS[0];
+let fType = 'amount';
+let fPaceMode = 'auto';
+let fDays = [0,1,2,3,4,5,6];
+let fSteps = [];
+
+function defaultState(){
+  const y = new Date().getFullYear();
+  return {
+    currentVacation:'natsu',
+    currentChild:'c1',
+    children:{ c1:{name:'Saku'}, c2:{name:'Ao'} },
+    vacations:{
+      natsu:{ start:`${y}-07-18`, end:`${y}-08-31`, restDays:[] },
+      fuyu:{ start:`${y}-12-25`, end:`${y+1}-01-07`, restDays:[] }
+    },
+    items:{}
+  };
+}
+
+/* ===== ユーティリティ ===== */
+const $ = id => document.getElementById(id);
+function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function parseD(s){ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+function fmtMD(s){ const [y,m,d]=s.split('-').map(Number); return `${m}/${d}`; }
+function daysBetween(a,b){ return Math.round((parseD(b)-parseD(a))/86400000); }
+function esc(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function vacNow(){ return state.vacations[state.currentVacation]; }
+function restDays(){ const v = vacNow(); if(!v.restDays) v.restDays = []; return v.restDays; }
+function itemsNow(){
+  const v = state.currentVacation, c = state.currentChild;
+  if(!state.items[v]) state.items[v] = {};
+  if(!state.items[v][c]) state.items[v][c] = [];
+  return state.items[v][c];
+}
+function itemDays(it){ return (it.days && it.days.length) ? it.days : [0,1,2,3,4,5,6]; }
+function totalOf(it){ return it.type==='steps' ? (it.steps||[]).length : it.total; }
+function doneOf(it){
+  if(it.type==='steps') return (it.steps||[]).filter(s=>s.done).length;
+  return Object.values(it.log||{}).reduce((a,b)=>a+b,0);
+}
+function isRest(d){ return restDays().includes(d); }
+function isScheduledToday(it){
+  const t = todayStr();
+  return !isRest(t) && itemDays(it).includes(parseD(t).getDay());
+}
+/* 今日〜締切のあいだの「やる日」の数(お休み日・曜日を考慮) */
+function workingDays(it){
+  const end = it.due || vacNow().end;
+  const t = todayStr();
+  if(t > end) return 1;
+  const days = itemDays(it);
+  const rest = restDays();
+  let count = 0;
+  const cur = parseD(t);
+  const e = parseD(end);
+  while(cur <= e){
+    const ds = cur.getFullYear()+'-'+String(cur.getMonth()+1).padStart(2,'0')+'-'+String(cur.getDate()).padStart(2,'0');
+    if(days.includes(cur.getDay()) && !rest.includes(ds)) count++;
+    cur.setDate(cur.getDate()+1);
+  }
+  return Math.max(1, count);
+}
+function paceOf(it){
+  const done = doneOf(it);
+  const remain = Math.max(0, totalOf(it) - done);
+  if(remain === 0) return { remain:0, pace:0, wd:0 };
+  const wd = workingDays(it);
+  if(it.type==='amount' && it.paceMode==='manual' && it.manualPace > 0){
+    return { remain, pace: it.manualPace, wd, manual:true };
+  }
+  return { remain, pace: Math.ceil(remain/wd), wd };
+}
+function toast(msg){
+  const t = $('toast'); t.innerHTML = msg; t.classList.add('show');
+  clearTimeout(t._tm); t._tm = setTimeout(()=>t.classList.remove('show'), 1800);
+}
+async function persist(){ await store.save(state); }
+
+/* ===== テーマ・ヘッダー ===== */
+function applyTheme(){
+  const th = THEMES[state.currentVacation];
+  document.documentElement.style.setProperty('--accent', th.accent);
+  document.documentElement.style.setProperty('--accent-pale', th.pale);
+  $('vacEmoji').innerHTML = th.svg;
+  $('vacBadge').textContent = th.label;
+  const meta = document.querySelector('meta[name=theme-color]');
+  if(meta) meta.setAttribute('content', th.accent);
+}
+function renderHeader(){
+  applyTheme();
+  const tabs = $('childTabs');
+  tabs.innerHTML = '';
+  for(const [id,ch] of Object.entries(state.children)){
+    const b = document.createElement('button');
+    b.className = 'child-tab' + (state.currentChild===id ? ' active' : '');
+    b.innerHTML = `<span class="dot" style="background:${CHILD_COLORS[id]||'#ccc'}"></span>${esc(ch.name)}`;
+    b.onclick = () => { state.currentChild = id; persist(); renderAll(); };
+    tabs.appendChild(b);
+  }
+  const vac = vacNow();
+  const left = daysBetween(todayStr(), vac.end);
+  const dl = $('daysLeft');
+  if(left > 0) dl.innerHTML = `お休み終了まで あと <b>${left}</b> 日`;
+  else if(left === 0) dl.innerHTML = `今日でお休みは最後の日!`;
+  else dl.innerHTML = `お休みは終わったよ(お疲れさま!)`;
+}
+
+/* ===== 今日 ===== */
+function todayItemRow(it){
+  const p = paceOf(it);
+  const t = todayStr();
+  if(it.type==='steps'){
+    const next = (it.steps||[]).find(s=>!s.done);
+    const doneToday = (it.steps||[]).filter(s=>s.done && s.doneDate===t).length;
+    return `<div class="today-item">
+      <span class="hw-icon">${iconOf(it)}</span>
+      <div class="t-name">
+        <div class="nm">${esc(it.name)}</div>
+        <div class="target">つぎ: ${esc(next.name)}(残り${p.remain}ステップ)</div>
+      </div>
+      ${doneToday>0 ? `<button class="step-undo" onclick="undoStep('${it.id}')">↩</button>` : ''}
+      <button class="step-check" onclick="checkStep('${it.id}')">できた!</button>
+    </div>`;
+  }
+  const td = (it.log||{})[t] || 0;
+  const cleared = td >= p.pace;
+  return `<div class="today-item">
+    <span class="hw-icon">${iconOf(it)}</span>
+    <div class="t-name">
+      <div class="nm">${esc(it.name)}</div>
+      <div class="target">今日の目安: ${p.pace}${esc(it.unit)}(残り${p.remain})</div>
+    </div>
+    ${cleared ? '<span class="done-chip">クリア!</span>' : ''}
+    <div class="stepper">
+      <button class="minus" onclick="addLog('${it.id}',-1)">−</button>
+      <div class="count">${td}<small>${esc(it.unit)}</small></div>
+      <button class="plus" onclick="addLog('${it.id}',1)">＋</button>
+    </div>
+  </div>`;
+}
+function renderToday(){
+  const items = itemsNow();
+  const t = todayStr();
+  let html = '';
+
+  const totalAll = items.reduce((a,i)=>a+totalOf(i),0);
+  const doneAll  = items.reduce((a,i)=>a+doneOf(i),0);
+  const pct = totalAll ? Math.round(doneAll/totalAll*100) : 0;
+  const r = 32, circ = 2*Math.PI*r;
+  html += `<div class="card overall">
+    <div class="ring">
+      <svg width="74" height="74"><circle cx="37" cy="37" r="${r}" fill="none" stroke="var(--cream)" stroke-width="9"/>
+      <circle cx="37" cy="37" r="${r}" fill="none" stroke="var(--accent)" stroke-width="9" stroke-linecap="round"
+        stroke-dasharray="${circ}" stroke-dashoffset="${circ*(1-pct/100)}"/></svg>
+      <div class="ring-text">${pct}%</div>
+    </div>
+    <div class="overall-info">
+      <div class="big">${esc(state.children[state.currentChild].name)}の宿題</div>
+      <div class="sub">全部で ${totalAll} のうち ${doneAll} 終わったよ</div>
+    </div>
+  </div>`;
+
+  if(isRest(t)){
+    html += `<div class="rest-banner">${mi('parasol')}今日はお休みの日!ゆっくりしてね<br><small>(やった分はもちろん記録できるよ)</small></div>`;
+  }
+
+  const active = items.filter(i => doneOf(i) < totalOf(i));
+  const scheduled = active.filter(i => isScheduledToday(i));
+  const offToday  = active.filter(i => !isScheduledToday(i));
+
+  html += `<div class="section-label">${mi('sun')}今日の目標</div>`;
+
+  if(items.length === 0){
+    html += `<div class="card empty"><span class="eic">${MI.books}</span><br>まだ宿題がないよ<br>右下の「＋」から登録してね</div>`;
+  } else if(active.length === 0){
+    html += `<div class="card empty"><span class="eic">${MI.party}</span><br>全部終わったー!!<br>すごい!あとは遊ぶだけ!</div>`;
+  } else {
+    if(scheduled.length > 0){
+      html += '<div class="card">' + scheduled.map(todayItemRow).join('') + '</div>';
+    } else {
+      html += `<div class="card empty"><span class="eic">${MI.tea}</span><br>今日やる予定の宿題はないよ</div>`;
+    }
+    if(offToday.length > 0){
+      html += `<div class="section-label">${mi('zzz')}今日はやらない予定の宿題</div>`;
+      html += '<div class="card muted-group">' + offToday.map(todayItemRow).join('') + '</div>';
+    }
+  }
+  return html;
+}
+
+/* ===== 宿題リスト ===== */
+function dayTag(it){
+  const d = itemDays(it);
+  if(d.length === 7) return '';
+  return `<span class="day-tag">${d.map(i=>DOW[i]).join('・')}</span>`;
+}
+function renderList(){
+  const items = itemsNow();
+  let html = `<div class="section-label">${mi('books')}登録した宿題</div>`;
+  if(items.length === 0){
+    html += `<div class="card empty"><span class="eic">${MI.pencil}</span><br>「＋」ボタンで宿題を<br>登録しよう</div>`;
+    return html;
+  }
+  for(const it of items){
+    const done = doneOf(it), total = totalOf(it);
+    const pct = total ? Math.min(100, Math.round(done/total*100)) : 0;
+    const p = paceOf(it);
+    const due = it.due || vacNow().end;
+    const finished = done >= total && total > 0;
+    let paceTag;
+    if(finished) paceTag = `<span class="pace-tag ok">${mi('party')}完了!</span>`;
+    else if(it.type==='steps') paceTag = `<span class="pace-tag">残り${p.remain}ステップ / やる日はあと${p.wd}日</span>`;
+    else if(p.manual) paceTag = `<span class="pace-tag ok">1日 ${p.pace}${esc(it.unit)}(自分で設定)</span>`;
+    else paceTag = `<span class="pace-tag ${p.pace<=1?'ok':''}">1日 ${p.pace}${esc(it.unit)}ずつで間に合うよ</span>`;
+
+    let stepsHtml = '';
+    if(it.type==='steps'){
+      stepsHtml = '<div class="step-list">' + (it.steps||[]).map((s,i)=>
+        `<div class="step-row ${s.done?'done':''}"><span class="sq">${s.done?'✓':''}</span><span class="st">${esc(s.name)}</span></div>`
+      ).join('') + '</div>';
+    }
+    html += `<div class="card hw-card">
+      <div class="hw-top">
+        <span class="hw-icon">${iconOf(it)}</span>
+        <span class="hw-name">${esc(it.name)}</span>
+        <button class="hw-edit" onclick="openSheet('${it.id}')">${MI.pencil}</button>
+      </div>
+      <div class="bar"><div class="bar-fill" style="width:${pct}%;${finished?'background:var(--green);':''}"></div></div>
+      <div class="hw-meta"><span><b>${done}</b> / ${total}${it.type==='steps'?'ステップ':esc(it.unit)}</span><span>〆 ${fmtMD(due)}</span></div>
+      ${stepsHtml}
+      <div class="tag-row">${paceTag}${dayTag(it)}</div>
+      ${it.memo ? `<div class="memo-line">${mi('memo')}${esc(it.memo)}</div>` : ''}
+    </div>`;
+  }
+  return html;
+}
+
+/* ===== カレンダー ===== */
+function renderCal(){
+  const items = itemsNow();
+  const daily = {};
+  for(const it of items){
+    for(const [d,n] of Object.entries(it.log||{})) daily[d]=(daily[d]||0)+n;
+    for(const s of (it.steps||[])) if(s.done && s.doneDate) daily[s.doneDate]=(daily[s.doneDate]||0)+1;
+  }
+  if(!calMonth) calMonth = todayStr().slice(0,7);
+  const [y,m] = calMonth.split('-').map(Number);
+  const startDow = new Date(y, m-1, 1).getDay();
+  const daysInMonth = new Date(y, m, 0).getDate();
+  const vac = vacNow();
+  const rest = restDays();
+  const today = todayStr();
+  const max = Math.max(1, ...Object.values(daily));
+
+  let html = `<div class="section-label">${mi('cal')}頑張りカレンダー</div><div class="card">
+    <div class="cal-nav">
+      <button onclick="moveCal(-1)">‹</button>
+      <span class="m">${y}年${m}月</span>
+      <button onclick="moveCal(1)">›</button>
+    </div><div class="cal-grid">`;
+  for(const w of DOW) html += `<div class="cal-head">${w}</div>`;
+  for(let i=0;i<startDow;i++) html += `<div></div>`;
+  for(let d=1; d<=daysInMonth; d++){
+    const ds = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const n = daily[ds]||0;
+    const inVac = ds >= vac.start && ds <= vac.end;
+    const r = rest.includes(ds);
+    let cls = 'cal-cell';
+    if(n > 0) cls += (n >= max*0.6 ? ' lv2' : ' lv1');
+    else if(r) cls += ' rest';
+    if(ds === today) cls += ' today';
+    if(!inVac) cls += ' out';
+    html += `<div class="${cls}"><span class="n">${d}</span>${n>0?`<span class="c">${n}</span>`:(r?`<span class="r">${MI.parasol}</span>`:'')}</div>`;
+  }
+  html += `</div></div>
+  <div class="section-label" style="text-align:center;">やった日が色づいていくよ ${mi('palette')}(${mi('parasol')}はお休みの日)</div>`;
+  return html;
+}
+function moveCal(dir){
+  let [y,m] = calMonth.split('-').map(Number);
+  m += dir; if(m<1){m=12;y--;} if(m>12){m=1;y++;}
+  calMonth = `${y}-${String(m).padStart(2,'0')}`;
+  renderAll();
+}
+
+/* ===== 設定 ===== */
+function renderSet(){
+  const v = state.vacations;
+  const th = THEMES[state.currentVacation];
+  const rest = restDays().slice().sort();
+  return `<div class="section-label">${mi('gear')}設定</div>
+  <div class="vac-switch">
+    <button class="vac-btn ${state.currentVacation==='natsu'?'active':''}" onclick="switchVac('natsu')"><span class="vic-s">${THEMES.natsu.svg}</span>夏休み</button>
+    <button class="vac-btn ${state.currentVacation==='fuyu'?'active':''}" onclick="switchVac('fuyu')"><span class="vic-s">${THEMES.fuyu.svg}</span>冬休み</button>
+  </div>
+  <div class="card">
+    <div class="set-row"><label><span class="vic-s">${THEMES.natsu.svg}</span>夏休み 開始</label><input type="date" value="${v.natsu.start}" onchange="setVacDate('natsu','start',this.value)"></div>
+    <div class="set-row"><label><span class="vic-s">${THEMES.natsu.svg}</span>夏休み 終了</label><input type="date" value="${v.natsu.end}" onchange="setVacDate('natsu','end',this.value)"></div>
+    <div class="set-row"><label><span class="vic-s">${THEMES.fuyu.svg}</span>冬休み 開始</label><input type="date" value="${v.fuyu.start}" onchange="setVacDate('fuyu','start',this.value)"></div>
+    <div class="set-row"><label><span class="vic-s">${THEMES.fuyu.svg}</span>冬休み 終了</label><input type="date" value="${v.fuyu.end}" onchange="setVacDate('fuyu','end',this.value)"></div>
+  </div>
+  <div class="section-label">${mi('parasol')}宿題お休みの日(${th.label})〜 旅行の日など</div>
+  <div class="card">
+    <div class="rest-add">
+      <input type="date" id="restDate">
+      <button onclick="addRest()">追加</button>
+    </div>
+    ${rest.length
+      ? `<div class="chips">${rest.map(d=>`<span class="chip">${fmtMD(d)}<button onclick="removeRest('${d}')">✕</button></span>`).join('')}</div>`
+      : `<div style="font-size:12.5px;color:var(--ink-light);">お休みの日はまだないよ。この日は「1日の目安」の計算から外れます。</div>`}
+  </div>
+  <div class="card">
+    <div class="set-row"><label>お兄ちゃんの名前</label><input type="text" value="${esc(state.children.c1.name)}" onchange="setName('c1',this.value)"></div>
+    <div class="set-row"><label>弟の名前</label><input type="text" value="${esc(state.children.c2.name)}" onchange="setName('c2',this.value)"></div>
+  </div>
+  <div class="section-label" style="text-align:center;">夏と冬で宿題は別々に記録されます</div>`;
+}
+function switchVac(v){ state.currentVacation = v; calMonth = null; persist(); renderAll(); }
+function setVacDate(v,k,val){ if(val){ state.vacations[v][k]=val; persist(); renderAll(); } }
+function setName(id,val){ const nm = val.trim(); if(nm){ state.children[id].name = nm; persist(); renderAll(); } }
+async function addRest(){
+  const d = $('restDate').value;
+  if(!d){ toast('日にちを選んでね'); return; }
+  const r = restDays();
+  if(!r.includes(d)) r.push(d);
+  await persist(); renderAll();
+}
+async function removeRest(d){
+  const v = vacNow();
+  v.restDays = restDays().filter(x=>x!==d);
+  await persist(); renderAll();
+}
+
+/* ===== 記録(量タイプ) ===== */
+async function addLog(id, delta){
+  const it = itemsNow().find(i=>i.id===id);
+  if(!it) return;
+  const t = todayStr();
+  if(!it.log) it.log = {};
+  const cur = it.log[t]||0;
+  if(delta > 0 && doneOf(it) >= totalOf(it)) return;
+  const next = cur + delta;
+  if(next < 0) return;
+  if(next === 0) delete it.log[t]; else it.log[t] = next;
+  await persist();
+  renderAll();
+  if(delta > 0 && doneOf(it) >= totalOf(it)) toast(`${mi('party')}「${esc(it.name)}」全部終わった!すごい!`);
+}
+
+/* ===== 記録(ステップタイプ) ===== */
+async function checkStep(id){
+  const it = itemsNow().find(i=>i.id===id);
+  if(!it || it.type!=='steps') return;
+  const next = (it.steps||[]).find(s=>!s.done);
+  if(!next) return;
+  next.done = true;
+  next.doneDate = todayStr();
+  await persist();
+  renderAll();
+  if(it.steps.every(s=>s.done)) toast(`${mi('party')}「${esc(it.name)}」全部終わった!すごい!`);
+  else toast(`✓ 「${esc(next.name)}」できた!`);
+}
+async function undoStep(id){
+  const it = itemsNow().find(i=>i.id===id);
+  if(!it || it.type!=='steps') return;
+  const t = todayStr();
+  const doneToday = (it.steps||[]).filter(s=>s.done && s.doneDate===t);
+  if(doneToday.length === 0) return;
+  const last = doneToday[doneToday.length-1];
+  last.done = false;
+  last.doneDate = null;
+  await persist();
+  renderAll();
+}
+
+/* ===== シート(追加・編集) ===== */
+function renderIconPick(){
+  const box = $('iconPick'); box.innerHTML='';
+  for(const k of ICON_KEYS){
+    const b = document.createElement('button');
+    b.innerHTML = ICONS[k];
+    b.className = k===selIcon ? 'sel' : '';
+    b.onclick = ()=>{ selIcon=k; renderIconPick(); };
+    box.appendChild(b);
+  }
+}
+function renderDowPick(){
+  const box = $('dowPick'); box.innerHTML='';
+  DOW.forEach((w,i)=>{
+    const b = document.createElement('button');
+    b.textContent = w;
+    b.className = fDays.includes(i) ? 'on' : '';
+    b.onclick = ()=>{
+      if(fDays.includes(i)){
+        if(fDays.length === 1){ toast('最低1つは選んでね'); return; }
+        fDays = fDays.filter(x=>x!==i);
+      } else fDays.push(i);
+      renderDowPick();
+    };
+    box.appendChild(b);
+  });
+}
+function setType(t){
+  fType = t;
+  $('typeAmount').classList.toggle('active', t==='amount');
+  $('typeSteps').classList.toggle('active', t==='steps');
+  $('amountFields').classList.toggle('hidden', t!=='amount');
+  $('stepFields').classList.toggle('hidden', t!=='steps');
+  if(t==='steps' && $('stepRows').children.length===0){
+    addStepRow(''); addStepRow(''); addStepRow('');
+  }
+}
+function setPaceMode(m){
+  fPaceMode = m;
+  $('paceAuto').classList.toggle('active', m==='auto');
+  $('paceManual').classList.toggle('active', m==='manual');
+  $('fManualPace').classList.toggle('hidden', m!=='manual');
+  $('paceUnit').classList.toggle('hidden', m!=='manual');
+  $('paceUnit').textContent = $('fUnit').value + '/日';
+}
+function addStepRow(val){
+  const rows = $('stepRows');
+  const div = document.createElement('div');
+  div.className = 'se-row';
+  const n = rows.children.length + 1;
+  div.innerHTML = `<span class="num">${n}</span><input type="text" placeholder="ステップ${n}" value="${esc(val)}"><button class="del">✕</button>`;
+  div.querySelector('.del').onclick = ()=>{
+    div.remove();
+    Array.from(rows.children).forEach((r,i)=>{ r.querySelector('.num').textContent = i+1; });
+  };
+  rows.appendChild(div);
+}
+function openSheet(id){
+  editingId = id || null;
+  $('stepRows').innerHTML = '';
+  if(editingId){
+    const it = itemsNow().find(i=>i.id===editingId);
+    if(!it) return;
+    $('sheetTitle').innerHTML = mi('pencil') + '宿題を編集';
+    $('fName').value = it.name;
+    $('fMemo').value = it.memo || '';
+    $('fDue').value = it.due || '';
+    selIcon = (it.icon && ICONS[it.icon]) ? it.icon : ICON_KEYS[0];
+    fDays = itemDays(it).slice();
+    setType(it.type==='steps' ? 'steps' : 'amount');
+    if(it.type==='steps'){
+      (it.steps||[]).forEach(s=>addStepRow(s.name));
+      if((it.steps||[]).length===0){ addStepRow(''); addStepRow(''); addStepRow(''); }
+    } else {
+      $('fTotal').value = it.total;
+      $('fUnit').value = it.unit;
+      setPaceMode(it.paceMode==='manual' ? 'manual' : 'auto');
+      $('fManualPace').value = it.manualPace || '';
+    }
+    $('btnDelete').classList.remove('hidden');
+  } else {
+    $('sheetTitle').innerHTML = mi('pencil') + '宿題を追加';
+    $('fName').value=''; $('fTotal').value=''; $('fDue').value=''; $('fMemo').value='';
+    $('fUnit').value='ページ'; $('fManualPace').value='';
+    selIcon = ICON_KEYS[0];
+    fDays = [0,1,2,3,4,5,6];
+    setType('amount');
+    setPaceMode('auto');
+    $('btnDelete').classList.add('hidden');
+  }
+  renderIconPick();
+  renderDowPick();
+  $('sheetBg').classList.add('open'); $('sheet').classList.add('open');
+}
+function closeSheet(){ $('sheetBg').classList.remove('open'); $('sheet').classList.remove('open'); }
+async function saveItem(){
+  const name = $('fName').value.trim();
+  if(!name){ toast('名前を入れてね'); return; }
+  const base = {
+    icon: selIcon, name,
+    memo: $('fMemo').value.trim(),
+    due: $('fDue').value || null,
+    days: fDays.slice().sort(),
+    type: fType
+  };
+  if(fType === 'amount'){
+    const total = parseInt($('fTotal').value, 10);
+    if(!total || total < 1){ toast('「全部で」の数を入れてね'); return; }
+    base.total = total;
+    base.unit = $('fUnit').value;
+    base.paceMode = fPaceMode;
+    if(fPaceMode==='manual'){
+      const mp = parseInt($('fManualPace').value, 10);
+      if(!mp || mp < 1){ toast('1日のペースを入れてね'); return; }
+      base.manualPace = mp;
+    }
+  } else {
+    const names = Array.from($('stepRows').querySelectorAll('input')).map(i=>i.value.trim()).filter(Boolean);
+    if(names.length === 0){ toast('ステップを1つは入れてね'); return; }
+    base.steps = names;   // 後で done 状態とマージ
+  }
+  const items = itemsNow();
+  if(editingId){
+    const it = items.find(i=>i.id===editingId);
+    if(fType === 'steps'){
+      const old = it.steps || [];
+      base.steps = base.steps.map((nm,i)=>({
+        name:nm,
+        done: old[i] ? !!old[i].done : false,
+        doneDate: old[i] ? (old[i].doneDate||null) : null
+      }));
+      delete it.total; delete it.unit; delete it.paceMode; delete it.manualPace;
+    } else {
+      delete it.steps;
+      if(!it.log) it.log = {};
+    }
+    Object.assign(it, base);
+  } else {
+    if(fType === 'steps'){
+      base.steps = base.steps.map(nm=>({name:nm, done:false, doneDate:null}));
+    } else {
+      base.log = {};
+    }
+    items.push({ id:'hw'+Date.now(), ...base });
+  }
+  await persist();
+  closeSheet(); renderAll();
+}
+async function deleteItem(){
+  if(!editingId) return;
+  if(!confirm('この宿題を消してもいい?(記録も消えます)')) return;
+  const v=state.currentVacation, c=state.currentChild;
+  state.items[v][c] = itemsNow().filter(i=>i.id!==editingId);
+  await persist();
+  closeSheet(); renderAll();
+}
+
+/* ===== ビュー ===== */
+function setView(v){
+  view = v;
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active', b.dataset.view===v));
+  $('fab').classList.toggle('hidden', v==='cal' || v==='set');
+  renderAll();
+}
+function renderAll(){
+  renderHeader();
+  const main = $('main');
+  if(view==='today') main.innerHTML = renderToday();
+  else if(view==='list') main.innerHTML = renderList();
+  else if(view==='cal') main.innerHTML = renderCal();
+  else main.innerHTML = renderSet();
+}
+
+/* ===== 起動 ===== */
+(async () => {
+  const saved = await store.load();
+  state = saved || defaultState();
+  const def = defaultState();
+  state.children = state.children || def.children;
+  state.vacations = state.vacations || def.vacations;
+  for(const k of ['natsu','fuyu']){
+    if(!state.vacations[k]) state.vacations[k] = def.vacations[k];
+    if(!state.vacations[k].restDays) state.vacations[k].restDays = [];
+  }
+  state.items = state.items || {};
+  // 旧データ移行: type未設定はamount扱い
+  for(const v of Object.values(state.items))
+    for(const arr of Object.values(v))
+      for(const it of arr){
+        if(!it.type) it.type = 'amount';
+        if(!it.days) it.days = [0,1,2,3,4,5,6];
+      }
+  renderAll();
+})();
+</script>
+
+<div class="bkx">
+  <h3>データのバックアップ</h3>
+  記録はこの端末のブラウザ内に保存されています。ときどきファイルに書き出しておくと、機種変更やアプリのお引っ越しでも安心です。<br>
+  <button class="bkx-btn" id="bkxExp">書き出す</button><button class="bkx-btn sub" id="bkxImpBtn">読み込む</button>
+  <input type="file" id="bkxImp" accept=".json" style="display:none">
+</div>
+<script>
+(function(){
+  var APP="shukudai";
+  document.getElementById("bkxExp").addEventListener("click",function(){
+    var data={};
+    for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);data[k]=localStorage.getItem(k);}
+    var blob=new Blob([JSON.stringify({__bkx:APP,data:data},null,2)],{type:"application/json"});
+    var a=document.createElement("a");a.href=URL.createObjectURL(blob);
+    var d=new Date();
+    a.download=APP+"-backup-"+d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")+".json";
+    a.click();URL.revokeObjectURL(a.href);
+  });
+  document.getElementById("bkxImpBtn").addEventListener("click",function(){document.getElementById("bkxImp").click();});
+  document.getElementById("bkxImp").addEventListener("change",function(){
+    var f=this.files[0];if(!f)return;
+    var r=new FileReader();
+    r.onload=function(){
+      try{
+        var j=JSON.parse(r.result);
+        var data=j.__bkx?j.data:j;
+        Object.keys(data).forEach(function(k){localStorage.setItem(k,data[k]);});
+        alert("読み込みました。ページを再読み込みします。");location.reload();
+      }catch(e){alert("読み込めませんでした");}
+    };
+    r.readAsText(f);this.value="";
+  });
+})();
+</script>
+</body>
+</html>
