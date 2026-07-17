@@ -71,6 +71,8 @@
   .t-btns button.minus{background:#d8cabb; flex:0 0 74px}
   .task.comp .t-btns button.plus{background:#8fc9a8}
   .t-done-mark{font-size:11px; color:#67ab86; font-weight:bold; margin-left:4px}
+  .t-due{display:block; font-size:10.5px; color:var(--sub); font-weight:normal; margin-top:1px}
+  .t-due.close{color:#e8837e; font-weight:bold}
 
   .add-card{background:var(--card); border-radius:16px; box-shadow:var(--shadow); padding:12px 14px; margin:14px 0 20px}
   .add-card .f-label{font-size:11.5px; color:var(--sub); margin:8px 0 4px}
@@ -104,6 +106,8 @@
   .cell .st svg{width:100%; height:100%}
   .cell.done{background:#fdf3f0}
   body.ao .cell.done{background:#eef4f6}
+  .cell.dueday{border:2px dashed #ef8a80}
+  .cell.dueday .dn{color:#e8837e; font-weight:bold}
   .cal-month{font-size:13px; font-weight:bold; color:var(--sub); margin:10px 4px 6px}
 
   .tabbar{
@@ -172,7 +176,7 @@
 </div>
 
 <div class="stats">
-  <div class="box"><div class="num" id="statLeft">--</div><div class="label">休みはあと</div></div>
+  <div class="box"><div class="num" id="statLeft">--</div><div class="label" id="statLeftLabel">休みはあと</div></div>
   <div class="box"><div class="num" id="statProg">0%</div><div class="label">宿題ぜんぶの進み</div></div>
   <div class="box"><div class="num" id="statStamp">0</div><div class="label">がんばりスタンプ</div></div>
 </div>
@@ -186,6 +190,8 @@
       <div><div class="f-label">ぜんぶで（数）</div><input type="number" id="tTotal" min="1" placeholder="例：30"></div>
       <div><div class="f-label">単位</div><input type="text" id="tUnit" placeholder="ページ・こ・まい"></div>
     </div>
+    <div class="f-label">提出日（この宿題のしめ切り・なくてもOK）</div>
+    <input type="date" id="tDue">
     <button onclick="addTask()">宿題を追加する</button>
   </div>
   <div class="hint">※「読書感想文」みたいに1回で終わるものは、数を空っぽのままでOK（できた!ボタンになるよ）。宿題を消したいときは×をタップ。</div>
@@ -193,7 +199,7 @@
 
 <div id="pageCal" class="page">
   <div id="calWrap"></div>
-  <div class="hint">※その日の分をがんばれたら、日にちをタップしてお花スタンプをおしてね。もう一回タップで取り消し。</div>
+  <div class="hint">※その日の分をがんばれたら、日にちをタップしてお花スタンプをおしてね。もう一回タップで取り消し。赤い旗の日が課題の提出日だよ。</div>
   <div class="bkx">
     <h3><span data-icon="save"></span>データのバックアップ</h3>
     記録はこの端末のブラウザ内に保存されています。ときどきファイルに書き出しておくと安心です。<br>
@@ -240,7 +246,8 @@ const ICONS = {
   book:'<path d="M24 10 Q16 6 8 8 V38 Q16 36 24 40 Q32 36 40 38 V8 Q32 6 24 10 Z" fill="#fdfaf2"/><path d="M24 10 V40"/>',
   flower:'<circle cx="24" cy="24" r="5.5" fill="#f6c771"/><g fill="#f0a8a0" stroke-width="2.5"><ellipse cx="24" cy="12" rx="5" ry="6.5"/><ellipse cx="24" cy="36" rx="5" ry="6.5"/><ellipse cx="12" cy="24" rx="6.5" ry="5"/><ellipse cx="36" cy="24" rx="6.5" ry="5"/></g>',
   save:'<rect x="8" y="8" width="32" height="32" rx="4" fill="#fdfaf2"/><path d="M16 8 V20 H32 V8"/><rect x="20" y="26" width="12" height="14" rx="1.5" fill="#cfe8f5"/>',
-  star:'<path d="M24 6 L29 18 L42 19 L32 28 L35 41 L24 34 L13 41 L16 28 L6 19 L19 18 Z" fill="#f6c771"/>'
+  star:'<path d="M24 6 L29 18 L42 19 L32 28 L35 41 L24 34 L13 41 L16 28 L6 19 L19 18 Z" fill="#f6c771"/>',
+  flag:'<path d="M12 6 V42" stroke-width="3.4"/><path d="M12 8 H36 L29 15 L36 22 H12 Z" fill="#ef8a80"/>'
 };
 function icon(n){ return SVG_OPEN + (ICONS[n]||ICONS.star) + '</svg>'; }
 document.querySelectorAll("[data-icon]").forEach(el=>{ el.innerHTML = icon(el.dataset.icon) + el.innerHTML; });
@@ -272,13 +279,18 @@ function render(){
   const v = db.vac;
   document.getElementById("vacName").textContent =
     v.start ? v.name+"（"+fmtMD(v.start)+"〜"+fmtMD(v.end)+"）" : "まずは期間を設定してね →";
-  // stats
+  // stats：まだ終わってない宿題のうち、いちばん近い提出日を優先して表示
   const t = todayStr();
-  let left = "--";
-  if(v.end && t <= v.end){
-    left = Math.round((new Date(v.end) - new Date(t)) / 86400000) + "日";
-  }else if(v.end && t > v.end){ left = "0日"; }
+  let left = "--", leftLabel = "休みはあと";
+  const dues = kd().tasks.filter(x=>x.due && x.done < x.total).map(x=>x.due).sort();
+  if(dues.length){
+    leftLabel = "次の提出まであと";
+    left = (t <= dues[0]) ? Math.round((new Date(dues[0]) - new Date(t)) / 86400000) + "日" : "0日";
+  }else if(v.end){
+    left = (t <= v.end) ? Math.round((new Date(v.end) - new Date(t)) / 86400000) + "日" : "0日";
+  }
   document.getElementById("statLeft").textContent = left;
+  document.getElementById("statLeftLabel").textContent = leftLabel;
   const tasks = kd().tasks;
   let tot=0, done=0;
   tasks.forEach(x=>{ tot+=x.total; done+=Math.min(x.done,x.total); });
@@ -296,13 +308,26 @@ function renderTasks(){
     wrap.innerHTML = '<div class="hint" style="text-align:center;padding:26px 0">下から宿題を追加してね</div>';
     return;
   }
-  wrap.innerHTML = tasks.map(x=>{
+  const t = todayStr();
+  const sorted = tasks.slice().sort((a,b)=>{
+    const ac = a.done>=a.total, bc = b.done>=b.total;
+    if(ac!==bc) return ac?1:-1;                    // 終わったものは下へ
+    return (a.due||"9999").localeCompare(b.due||"9999");  // 提出日が近い順
+  });
+  wrap.innerHTML = sorted.map(x=>{
     const comp = x.done >= x.total;
     const pct = Math.min(100, Math.floor(x.done/x.total*100));
     const isCheck = x.total===1;
+    let dueTxt = "";
+    if(x.due && !comp){
+      const dd = Math.round((new Date(x.due) - new Date(t)) / 86400000);
+      if(dd > 0) dueTxt = '<span class="t-due'+(dd<=5?' close':'')+'">'+fmtMD(x.due)+'まで・あと'+dd+'日</span>';
+      else if(dd === 0) dueTxt = '<span class="t-due close">きょうが提出日!</span>';
+      else dueTxt = '<span class="t-due close">提出日すぎてるよ!</span>';
+    }
     return '<div class="task'+(comp?' comp':'')+'">'
       + '<div class="t-top"><span class="t-ico">'+icon(comp?"flower":"book")+'</span>'
-      + '<span class="t-name">'+esc(x.name)+(comp?'<span class="t-done-mark">おわった!</span>':'')+'</span>'
+      + '<span class="t-name">'+esc(x.name)+(comp?'<span class="t-done-mark">おわった!</span>':'')+dueTxt+'</span>'
       + '<button class="t-del" onclick="delTask(\''+x.id+'\')">✕</button></div>'
       + '<div class="t-mid"><div class="bar"><div class="fill" style="width:'+pct+'%"></div></div>'
       + '<span class="t-cnt">'+(isCheck ? (comp?"できた!":"まだ") : x.done+" / "+x.total+" "+esc(x.unit))+'</span></div>'
@@ -345,9 +370,10 @@ function renderCal(){
       for(let i=0;i<pad;i++) cells += '<div class="cell out"></div>';
     }
     const done = days[ds];
-    cells += '<div class="cell'+(done?' done':'')+(ds===t?' today':'')+'" onclick="stamp(\''+ds+'\')">'
+    const isDue = kd().tasks.some(x=>x.due===ds);
+    cells += '<div class="cell'+(done?' done':'')+(ds===t?' today':'')+(isDue?' dueday':'')+'" onclick="stamp(\''+ds+'\')">'
       + '<span class="dn">'+d.getDate()+'</span>'
-      + (done ? '<span class="st">'+icon("flower")+'</span>' : '')
+      + (done ? '<span class="st">'+icon("flower")+'</span>' : (isDue ? '<span class="st">'+icon("flag")+'</span>' : ''))
       + '</div>';
     d.setDate(d.getDate()+1);
   }
@@ -364,9 +390,10 @@ function addTask(){
   let total = parseInt(document.getElementById("tTotal").value);
   if(isNaN(total) || total<1) total = 1;
   let unit = document.getElementById("tUnit").value.trim() || "ページ";
-  kd().tasks.push({ id: Date.now()+""+Math.floor(Math.random()*1000), name:name, total:total, done:0, unit:unit });
+  const due = document.getElementById("tDue").value || "";
+  kd().tasks.push({ id: Date.now()+""+Math.floor(Math.random()*1000), name:name, total:total, done:0, unit:unit, due:due });
   save();
-  document.getElementById("tName").value=""; document.getElementById("tTotal").value=""; document.getElementById("tUnit").value="";
+  document.getElementById("tName").value=""; document.getElementById("tTotal").value=""; document.getElementById("tUnit").value=""; document.getElementById("tDue").value="";
   render(); toast("追加したよ");
 }
 function step(id, dir){
