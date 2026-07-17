@@ -74,6 +74,27 @@
   .t-due{display:block; font-size:10.5px; color:var(--sub); font-weight:normal; margin-top:1px}
   .t-due.close{color:#e8837e; font-weight:bold}
 
+  /* やる日 */
+  .t-plan{display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-top:9px}
+  .p-chip{
+    border:none; background:#f2ecdf; color:#8a7a5f; border-radius:999px;
+    padding:5px 11px; font-family:inherit; font-size:11.5px; font-weight:bold;
+  }
+  .p-chip .x{color:#c9b89a; margin-left:4px}
+  .p-add{
+    border:1.5px dashed var(--line); background:none; color:var(--sub); border-radius:999px;
+    padding:5px 11px; font-family:inherit; font-size:11.5px;
+  }
+  .cell.planday .dn{font-weight:bold; color:#8a7a5f}
+  .plan-card{background:var(--card); border-radius:16px; box-shadow:var(--shadow);
+    padding:12px 15px; margin:4px 0 12px}
+  .plan-card h3{font-size:13px; color:var(--sub); margin-bottom:6px; display:flex; align-items:center; gap:6px}
+  .plan-card h3 svg{width:17px; height:17px}
+  .plan-row{display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px dashed #f0e8db; font-size:13px}
+  .plan-row:last-child{border-bottom:none}
+  .plan-row .pd{color:#8a7a5f; font-weight:bold; width:78px; flex-shrink:0; font-size:12.5px}
+  .plan-row.past{opacity:.5}
+
   .add-card{background:var(--card); border-radius:16px; box-shadow:var(--shadow); padding:12px 14px; margin:14px 0 20px}
   .add-card .f-label{font-size:11.5px; color:var(--sub); margin:8px 0 4px}
   .add-card .f-label:first-child{margin-top:0}
@@ -121,9 +142,9 @@
   .tabbar button .ico svg{width:22px; height:22px}
   .tabbar button.active{color:var(--accent-dark); font-weight:bold}
 
-  #overlay{display:none; position:fixed; inset:0; background:rgba(80,70,50,.35); z-index:20;
+  #overlay, #overlay2, #overlay3{display:none; position:fixed; inset:0; background:rgba(80,70,50,.35); z-index:20;
     align-items:center; justify-content:center; padding:20px}
-  #overlay.show{display:flex}
+  #overlay.show, #overlay2.show, #overlay3.show{display:flex}
   .modal{background:var(--card); border-radius:20px; padding:20px; width:100%; max-width:340px;
     box-shadow:0 10px 40px rgba(0,0,0,.2)}
   .modal h3{font-size:15px; margin-bottom:6px; display:flex; align-items:center; gap:6px}
@@ -199,7 +220,7 @@
 
 <div id="pageCal" class="page">
   <div id="calWrap"></div>
-  <div class="hint">※その日の分をがんばれたら、日にちをタップしてお花スタンプをおしてね。もう一回タップで取り消し。赤い旗の日が課題の提出日だよ。</div>
+  <div class="hint">※その日の分をがんばれたら、日にちをタップしてお花スタンプをおしてね。もう一回タップで取り消し。赤い旗は提出日、えんぴつのマークは「この日にやる!」って決めた宿題の日だよ。</div>
   <div class="bkx">
     <h3><span data-icon="save"></span>データのバックアップ</h3>
     記録はこの端末のブラウザ内に保存されています。ときどきファイルに書き出しておくと安心です。<br>
@@ -229,6 +250,36 @@
     <div class="btns">
       <button class="m-cancel" onclick="closeVac()">やめる</button>
       <button class="m-save" onclick="saveVac()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div id="overlay2">
+  <div class="modal">
+    <h3><span data-icon="pencil"></span><span id="pTitle">やる日を決める</span></h3>
+    <label>いつやる？</label>
+    <input type="date" id="pDate">
+    <div class="btns">
+      <button class="m-cancel" onclick="closePlan()">やめる</button>
+      <button class="m-save" onclick="savePlan()">この日にやる!</button>
+    </div>
+  </div>
+</div>
+
+<div id="overlay3">
+  <div class="modal">
+    <h3><span data-icon="pencil"></span>宿題を変更する</h3>
+    <label>宿題の名前</label>
+    <input type="text" id="eName">
+    <label>ぜんぶで（数）</label>
+    <input type="number" id="eTotal" min="1">
+    <label>単位</label>
+    <input type="text" id="eUnit">
+    <label>提出日（なくてもOK）</label>
+    <input type="date" id="eDue">
+    <div class="btns">
+      <button class="m-cancel" onclick="closeEdit()">やめる</button>
+      <button class="m-save" onclick="saveEdit()">保存</button>
     </div>
   </div>
 </div>
@@ -328,12 +379,17 @@ function renderTasks(){
     return '<div class="task'+(comp?' comp':'')+'">'
       + '<div class="t-top"><span class="t-ico">'+icon(comp?"flower":"book")+'</span>'
       + '<span class="t-name">'+esc(x.name)+(comp?'<span class="t-done-mark">おわった!</span>':'')+dueTxt+'</span>'
+      + '<button class="t-del" onclick="editTask(\''+x.id+'\')">✎</button>'
       + '<button class="t-del" onclick="delTask(\''+x.id+'\')">✕</button></div>'
       + '<div class="t-mid"><div class="bar"><div class="fill" style="width:'+pct+'%"></div></div>'
       + '<span class="t-cnt">'+(isCheck ? (comp?"できた!":"まだ") : x.done+" / "+x.total+" "+esc(x.unit))+'</span></div>'
       + '<div class="t-btns">'
       + '<button class="minus" onclick="step(\''+x.id+'\',-1)">−</button>'
       + '<button class="plus" onclick="step(\''+x.id+'\',1)">'+(isCheck?(comp?"やっぱりまだ":"できた!"):"＋すすんだ!")+'</button>'
+      + '</div>'
+      + '<div class="t-plan">'
+      + (x.plan||[]).map(p=>'<button class="p-chip" onclick="removePlan(\''+x.id+'\',\''+p+'\')">'+fmtMD(p)+'にやる<span class="x">✕</span></button>').join("")
+      + '<button class="p-add" onclick="openPlan(\''+x.id+'\')">＋やる日を決める</button>'
       + '</div></div>';
   }).join("");
 }
@@ -371,13 +427,29 @@ function renderCal(){
     }
     const done = days[ds];
     const isDue = kd().tasks.some(x=>x.due===ds);
-    cells += '<div class="cell'+(done?' done':'')+(ds===t?' today':'')+(isDue?' dueday':'')+'" onclick="stamp(\''+ds+'\')">'
+    const isPlan = kd().tasks.some(x=>(x.plan||[]).indexOf(ds)>=0);
+    cells += '<div class="cell'+(done?' done':'')+(ds===t?' today':'')+(isDue?' dueday':'')+(isPlan?' planday':'')+'" onclick="stamp(\''+ds+'\')">'
       + '<span class="dn">'+d.getDate()+'</span>'
-      + (done ? '<span class="st">'+icon("flower")+'</span>' : (isDue ? '<span class="st">'+icon("flag")+'</span>' : ''))
+      + (done ? '<span class="st">'+icon("flower")+'</span>'
+         : (isDue ? '<span class="st">'+icon("flag")+'</span>'
+         : (isPlan ? '<span class="st">'+icon("pencil")+'</span>' : '')))
       + '</div>';
     d.setDate(d.getDate()+1);
   }
   flushMonth();
+  // 日にちを決めた宿題のリスト
+  const YB=["日","月","火","水","木","金","土"];
+  const items = [];
+  kd().tasks.forEach(x=>{ (x.plan||[]).forEach(p=>items.push({d:p, name:x.name})); });
+  if(items.length){
+    items.sort((a,b)=>a.d.localeCompare(b.d));
+    html += '<div class="plan-card"><h3><span style="display:inline-block;width:17px;height:17px">'+icon("pencil")+'</span>日にちを決めた宿題</h3>'
+      + items.map(it=>{
+          const w = YB[new Date(it.d).getDay()];
+          return '<div class="plan-row'+(it.d<t?' past':'')+'"><span class="pd">'+fmtMD(it.d)+'（'+w+'）</span><span>'+esc(it.name)+'</span></div>';
+        }).join("")
+      + '</div>';
+  }
   wrap.innerHTML = html;
 }
 
@@ -433,6 +505,58 @@ function celebrate(){
     setTimeout(()=>s.remove(), 1200);
   }
   toast("おわった!すごい!");
+}
+
+/* ---- 宿題の変更 ---- */
+let editTarget = null;
+function editTask(id){
+  const x = kd().tasks.find(a=>a.id===id); if(!x) return;
+  editTarget = id;
+  document.getElementById("eName").value = x.name;
+  document.getElementById("eTotal").value = x.total;
+  document.getElementById("eUnit").value = x.unit;
+  document.getElementById("eDue").value = x.due || "";
+  document.getElementById("overlay3").classList.add("show");
+}
+function closeEdit(){ document.getElementById("overlay3").classList.remove("show"); editTarget=null; }
+function saveEdit(){
+  const x = kd().tasks.find(a=>a.id===editTarget); if(!x) return;
+  const name = document.getElementById("eName").value.trim();
+  if(!name){ toast("名前を入れてね"); return; }
+  let total = parseInt(document.getElementById("eTotal").value);
+  if(isNaN(total) || total<1) total = 1;
+  x.name = name;
+  x.total = total;
+  x.done = Math.min(x.done, total);
+  x.unit = document.getElementById("eUnit").value.trim() || "ページ";
+  x.due = document.getElementById("eDue").value || "";
+  save(); closeEdit(); render(); toast("変更したよ");
+}
+
+/* ---- やる日 ---- */
+let planTarget = null;
+function openPlan(id){
+  const x = kd().tasks.find(a=>a.id===id); if(!x) return;
+  planTarget = id;
+  document.getElementById("pTitle").textContent = "「"+x.name+"」をやる日";
+  document.getElementById("pDate").value = todayStr();
+  document.getElementById("overlay2").classList.add("show");
+}
+function closePlan(){ document.getElementById("overlay2").classList.remove("show"); planTarget=null; }
+function savePlan(){
+  const x = kd().tasks.find(a=>a.id===planTarget); if(!x) return;
+  const d = document.getElementById("pDate").value;
+  if(!d){ toast("日にちを選んでね"); return; }
+  x.plan = x.plan || [];
+  if(x.plan.indexOf(d)<0){ x.plan.push(d); x.plan.sort(); }
+  save(); closePlan(); render(); toast(fmtMD(d)+"にやる!って決めたよ");
+}
+function removePlan(id, d){
+  const x = kd().tasks.find(a=>a.id===id); if(!x || !x.plan) return;
+  if(confirm(fmtMD(d)+"の「"+x.name+"」の予定をやめる？")){
+    x.plan = x.plan.filter(p=>p!==d);
+    save(); render(); toast("予定を消したよ");
+  }
 }
 
 /* ---- 期間設定 ---- */
