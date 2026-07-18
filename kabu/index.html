@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>持ち株メモ</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#a8c4a0">
+<style>
+@font-face{font-family:"Azuki";src:url("../azukiP.ttf") format("truetype");font-display:swap;}
+  :root{
+    --bg:#f4f7f0; --card:#ffffff; --text:#42493d; --sub:#96a08e; --line:#dde6d6;
+    --accent:#8fb37e; --accent-dark:#729662;
+    --shin:#8fb37e; --kyu:#c9a86a; --tokutei:#94a8c4;
+    --shadow:0 2px 10px rgba(110,140,95,.12);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    font-family:"Azuki","Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif;
+    background:var(--bg); color:var(--text);
+    max-width:480px; margin:0 auto; min-height:100vh; padding-bottom:84px;
+  }
+  header{text-align:center; padding:18px 16px 6px}
+  header h1{font-size:20px; letter-spacing:2px; display:flex; align-items:center; justify-content:center; gap:8px}
+  header h1 svg{width:27px; height:27px}
+  .set-line{font-size:12px; color:var(--sub); margin-top:3px}
+  .set-line button{border:none; background:none; color:var(--accent-dark); font-family:inherit; font-size:12px; text-decoration:underline}
+
+  .brokers{display:flex; gap:8px; padding:10px 16px 4px}
+  .broker{
+    flex:1; border:2px solid var(--line); background:var(--card); border-radius:16px;
+    padding:10px 4px; font-family:inherit; font-size:14px; font-weight:bold; color:var(--sub);
+  }
+  .broker.on{border-color:var(--accent); background:#eef4ea; color:var(--text);
+    box-shadow:0 2px 8px rgba(110,140,95,.15)}
+
+  .sum-line{text-align:center; font-size:12px; color:var(--sub); padding:8px 0 4px}
+  .sum-line b{color:var(--accent-dark); font-size:14px}
+
+  .page{display:none; padding:0 14px}
+  .page.active{display:block}
+
+  .kubun-label{
+    font-size:13px; font-weight:bold; margin:14px 4px 8px; letter-spacing:1px;
+    display:flex; align-items:center; gap:7px;
+  }
+  .kubun-label .kdot{width:10px; height:10px; border-radius:4px}
+  .kubun-label.shin{color:#5f7d50} .kubun-label.shin .kdot{background:var(--shin)}
+  .kubun-label.kyu{color:#9a7c3e} .kubun-label.kyu .kdot{background:var(--kyu)}
+  .kubun-label.tokutei{color:#5b7291} .kubun-label.tokutei .kdot{background:var(--tokutei)}
+  .kubun-label .kcnt{font-size:11px; color:var(--sub); font-weight:normal}
+
+  .stock{
+    background:var(--card); border-radius:16px; box-shadow:var(--shadow);
+    padding:12px 15px; margin-bottom:8px; display:flex; align-items:center; gap:10px;
+    border-left:5px solid var(--line);
+  }
+  .stock.shin{border-left-color:var(--shin)}
+  .stock.kyu{border-left-color:var(--kyu)}
+  .stock.tokutei{border-left-color:var(--tokutei)}
+  .stock .smain{flex:1; min-width:0}
+  .stock .sname{font-size:14.5px; font-weight:bold}
+  .stock .spurpose{
+    display:inline-block; font-size:10.5px; color:#7c8873; background:#eff4ea;
+    border-radius:999px; padding:2px 9px; margin-top:3px;
+  }
+  .stock .smemo{font-size:10.5px; color:var(--sub); margin-top:2px}
+  .stock .sshares{font-size:17px; font-weight:bold; color:var(--accent-dark); flex-shrink:0; text-align:right}
+  .stock .sshares small{font-size:11px; color:var(--sub)}
+  .empty{text-align:center; color:var(--sub); font-size:13px; padding:34px 0; line-height:2}
+  .sec-note{font-size:11px; color:var(--sub); line-height:1.8; margin:8px 4px 20px}
+
+  .add-card{background:var(--card); border-radius:16px; box-shadow:var(--shadow); padding:13px 15px; margin:16px 0 20px}
+  .add-card h3{font-size:13.5px; margin-bottom:4px; display:flex; align-items:center; gap:6px}
+  .add-card h3 svg{width:18px; height:18px}
+  .f-label{font-size:11.5px; color:var(--sub); margin:9px 0 4px}
+  .add-card input{
+    width:100%; border:2px solid var(--line); border-radius:12px; padding:9px 12px;
+    font-family:inherit; font-size:13.5px; background:#fcfdfb; color:var(--text); outline:none;
+  }
+  .add-card input:focus{border-color:var(--accent)}
+  .row2{display:flex; gap:8px}
+  .row2 > div{flex:1}
+  .kubun-row{display:flex; gap:7px}
+  .kubun-row button{
+    flex:1; border:2px solid var(--line); background:#fcfdfb; border-radius:12px;
+    padding:9px 0; font-family:inherit; font-size:12px; color:var(--sub); font-weight:bold;
+  }
+  .kubun-row button.on.shin{border-color:var(--shin); background:#eef4ea; color:#5f7d50}
+  .kubun-row button.on.kyu{border-color:var(--kyu); background:#f8f2e5; color:#9a7c3e}
+  .kubun-row button.on.tokutei{border-color:var(--tokutei); background:#edf1f7; color:#5b7291}
+  .add-card > button.add-btn{
+    width:100%; border:none; background:var(--accent); color:#fff; font-family:inherit;
+    font-weight:bold; font-size:14px; padding:11px 0; border-radius:12px; margin-top:12px;
+    box-shadow:0 3px 0 var(--accent-dark);
+  }
+  .add-card > button.add-btn:active{transform:translateY(2px); box-shadow:0 1px 0 var(--accent-dark)}
+
+  .tabbar{
+    position:fixed; bottom:0; left:0; right:0; max-width:480px; margin:0 auto;
+    display:flex; background:var(--card); box-shadow:0 -2px 10px rgba(110,140,95,.15);
+    padding-bottom:env(safe-area-inset-bottom); z-index:5;
+  }
+  .tabbar button{flex:1; border:none; background:none; padding:11px 0 9px;
+    font-size:12px; color:var(--sub); font-family:inherit}
+  .tabbar button .ico{display:flex; justify-content:center; margin-bottom:3px}
+  .tabbar button .ico svg{width:22px; height:22px}
+  .tabbar button.active{color:var(--accent-dark); font-weight:bold}
+
+  #overlay, #overlay2{display:none; position:fixed; inset:0; background:rgba(60,75,55,.35); z-index:20;
+    align-items:center; justify-content:center; padding:20px}
+  #overlay.show, #overlay2.show{display:flex}
+  .modal{background:var(--card); border-radius:20px; padding:20px; width:100%; max-width:350px;
+    box-shadow:0 10px 40px rgba(0,0,0,.2); max-height:88vh; overflow:auto}
+  .modal h3{font-size:15px; margin-bottom:6px; display:flex; align-items:center; gap:6px}
+  .modal h3 svg{width:20px; height:20px}
+  .modal label{font-size:12px; color:var(--sub); display:block; margin:10px 0 4px}
+  .modal input{width:100%; border:2px solid var(--line); border-radius:12px; padding:10px 12px;
+    font-family:inherit; font-size:14px; background:#fcfdfb; color:var(--text); outline:none}
+  .modal input:focus{border-color:var(--accent)}
+  .modal .btns{display:flex; gap:8px; margin-top:16px}
+  .modal .btns button{flex:1; border:none; border-radius:12px; padding:11px 0; font-family:inherit;
+    font-size:13.5px; font-weight:bold}
+  .m-save{background:var(--accent); color:#fff}
+  .m-cancel{background:#ecefe7; color:var(--sub)}
+  .m-del{background:#f0e3e2; color:#c4756f}
+
+  #toast{position:fixed; left:50%; bottom:92px; transform:translateX(-50%) translateY(20px);
+    background:var(--text); color:#fff; font-size:14px; padding:12px 22px; border-radius:999px;
+    opacity:0; pointer-events:none; transition:.3s; white-space:nowrap; z-index:30}
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+  .bkx{margin:18px 0 30px; background:#fff; border:1px solid rgba(0,0,0,.08); border-radius:18px;
+    padding:14px 16px; box-shadow:0 4px 12px rgba(0,0,0,.06); font-size:12px; color:#828c7a; line-height:1.7}
+  .bkx h3{font-size:13.5px; color:#4b5544; margin-bottom:4px; display:flex; align-items:center; gap:6px}
+  .bkx h3 svg{width:18px; height:18px}
+  .bkx .bkx-btn{border:none; border-radius:12px; padding:9px 16px; font-family:inherit; font-weight:700;
+    font-size:12.5px; color:#fff; background:#a8b89a; margin:8px 8px 0 0; cursor:pointer}
+  .bkx .bkx-btn.sub{background:#c9bfae}
+</style>
+</head>
+<body>
+<header>
+  <h1><span id="hIcon"></span>持ち株メモ</h1>
+  <div class="set-line">銘柄と株数と目的の整理帳 <button onclick="openSet()">✎ 証券会社名</button></div>
+</header>
+
+<div class="brokers">
+  <button class="broker on" id="brA" onclick="setBroker('a')"></button>
+  <button class="broker" id="brB" onclick="setBroker('b')"></button>
+</div>
+<div class="sum-line" id="sumLine"></div>
+
+<div id="pageMain" class="page active">
+  <div id="stockList"></div>
+
+  <div class="add-card">
+    <h3><span data-icon="sprout"></span>銘柄を追加</h3>
+    <div class="f-label">銘柄名（会社名・投資信託名）</div>
+    <input type="text" id="fName" placeholder="例：〇〇ホールディングス">
+    <div class="row2">
+      <div><div class="f-label">株数（口数）</div><input type="number" id="fShares" min="0" step="any" placeholder="例：100"></div>
+      <div><div class="f-label">目的（なんのため？）</div>
+        <input type="text" id="fPurpose" list="purposeList" placeholder="選ぶか自由に入力">
+        <datalist id="purposeList">
+          <option value="配当ねらい"></option>
+          <option value="株主優待"></option>
+          <option value="長期でコツコツ"></option>
+          <option value="教育資金"></option>
+          <option value="老後資金"></option>
+          <option value="応援したい会社"></option>
+        </datalist>
+      </div>
+    </div>
+    <div class="f-label">口座の区分</div>
+    <div class="kubun-row">
+      <button id="kbShin" class="shin on" onclick="setKubun('shin')">新NISA</button>
+      <button id="kbKyu" class="kyu" onclick="setKubun('kyu')">旧NISA</button>
+      <button id="kbTokutei" class="tokutei" onclick="setKubun('tokutei')">特定口座</button>
+    </div>
+    <div class="f-label">メモ（省略OK）</div>
+    <input type="text" id="fMemo" placeholder="例：優待は3月、つみたて中">
+    <button class="add-btn" onclick="addStock()">追加する</button>
+  </div>
+  <div class="sec-note">※銘柄をタップすると、株数や目的の変更・削除ができるよ。株数を整理する用のメモだから、金額や損益は出ない安心設計!</div>
+</div>
+
+<div id="pageSave" class="page">
+  <div class="bkx">
+    <h3><span data-icon="save"></span>データのバックアップ</h3>
+    記録はこの端末のブラウザ内に保存されています。ときどきファイルに書き出しておくと安心です。<br>
+    <button class="bkx-btn" onclick="bkExport()">書き出す</button>
+    <button class="bkx-btn sub" onclick="document.getElementById('bkFile').click()">読み込む</button>
+    <input type="file" id="bkFile" accept=".json,application/json" style="display:none" onchange="bkImport(this)">
+  </div>
+</div>
+
+<nav class="tabbar">
+  <button id="tabMain" class="active" onclick="showPage('Main')"><span class="ico" data-icon="sprout"></span>持ち株</button>
+  <button id="tabSave" onclick="showPage('Save')"><span class="ico" data-icon="save"></span>保存</button>
+</nav>
+
+<!-- 編集モーダル -->
+<div id="overlay">
+  <div class="modal">
+    <h3><span data-icon="sprout"></span>銘柄の変更</h3>
+    <label>銘柄名</label>
+    <input type="text" id="eName">
+    <label>株数（口数）</label>
+    <input type="number" id="eShares" min="0" step="any">
+    <label>目的</label>
+    <input type="text" id="ePurpose" list="purposeList">
+    <label>口座の区分</label>
+    <div class="kubun-row">
+      <button id="ekbShin" class="shin" onclick="setEKubun('shin')">新NISA</button>
+      <button id="ekbKyu" class="kyu" onclick="setEKubun('kyu')">旧NISA</button>
+      <button id="ekbTokutei" class="tokutei" onclick="setEKubun('tokutei')">特定口座</button>
+    </div>
+    <label>メモ</label>
+    <input type="text" id="eMemo">
+    <div class="btns">
+      <button class="m-del" onclick="delStock()">削除</button>
+      <button class="m-cancel" onclick="closeEdit()">やめる</button>
+      <button class="m-save" onclick="saveEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 証券会社名モーダル -->
+<div id="overlay2">
+  <div class="modal">
+    <h3><span data-icon="gear"></span>証券会社の名前</h3>
+    <label>1つめ</label>
+    <input type="text" id="sBrA" placeholder="例：SBI証券">
+    <label>2つめ</label>
+    <input type="text" id="sBrB" placeholder="例：楽天証券">
+    <div class="btns">
+      <button class="m-cancel" onclick="closeSet()">やめる</button>
+      <button class="m-save" onclick="saveSet()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const KEY = "kabu-memo-v1";
+
+/* 手描き風SVGアイコン */
+const SVG_OPEN = '<svg viewBox="0 0 48 48" fill="none" stroke="#5c6653" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">';
+const ICONS = {
+  sprout:'<path d="M24 42 V24" stroke-width="3.4"/><path d="M24 26 Q10 26 8 12 Q22 12 24 24 Z" fill="#a8cf96"/><path d="M24 20 Q26 8 40 8 Q38 22 24 24 Z" fill="#8fb37e"/>',
+  save:'<rect x="8" y="8" width="32" height="32" rx="4" fill="#f6f8f3"/><path d="M16 8 V20 H32 V8"/><rect x="20" y="26" width="12" height="14" rx="1.5" fill="#d7e6cf"/>',
+  gear:'<circle cx="24" cy="24" r="7" fill="#f6f8f3"/><path d="M24 9 V14 M24 34 V39 M9 24 H14 M34 24 H39 M13.5 13.5 L17 17 M31 31 L34.5 34.5 M34.5 13.5 L31 17 M17 31 L13.5 34.5" stroke-width="2.8"/>'
+};
+function icon(n){ return SVG_OPEN + (ICONS[n]||ICONS.sprout) + '</svg>'; }
+document.querySelectorAll("[data-icon]").forEach(el=>{ el.innerHTML = icon(el.dataset.icon) + el.innerHTML; });
+document.getElementById("hIcon").innerHTML = icon("sprout");
+
+const KUBUN = { shin:"新NISA", kyu:"旧NISA", tokutei:"特定口座" };
+
+/* ---- データ ---- */
+let db = load();
+function load(){
+  try{ const d = JSON.parse(localStorage.getItem(KEY)); if(d && d.brokers) return d; }catch(e){}
+  return {
+    cur:"a",
+    brokers:{
+      a:{ name:"証券①", items:[] },
+      b:{ name:"証券②", items:[] }
+    }
+  };
+}
+function save(){ localStorage.setItem(KEY, JSON.stringify(db)); }
+function br(){ return db.brokers[db.cur]; }
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function fmtShares(n){ return (n % 1 === 0) ? n.toLocaleString() : String(n); }
+
+/* ---- 表示 ---- */
+function render(){
+  document.getElementById("brA").textContent = db.brokers.a.name;
+  document.getElementById("brB").textContent = db.brokers.b.name;
+  document.getElementById("brA").classList.toggle("on", db.cur==="a");
+  document.getElementById("brB").classList.toggle("on", db.cur==="b");
+
+  const items = br().items;
+  const cnt = { shin:0, kyu:0, tokutei:0 };
+  items.forEach(x=>cnt[x.kubun]++);
+  document.getElementById("sumLine").innerHTML = items.length
+    ? esc(br().name) + "：ぜんぶで <b>" + items.length + "</b> 銘柄"
+    : esc(br().name) + "：まだ銘柄がないよ";
+
+  const wrap = document.getElementById("stockList");
+  if(!items.length){
+    wrap.innerHTML = '<div class="empty">下から持ってる銘柄を追加してね</div>';
+    return;
+  }
+  let html = "";
+  ["shin","kyu","tokutei"].forEach(k=>{
+    const group = items.filter(x=>x.kubun===k);
+    if(!group.length) return;
+    html += '<div class="kubun-label '+k+'"><span class="kdot"></span>'+KUBUN[k]
+      + '<span class="kcnt">'+group.length+'銘柄</span></div>';
+    group.forEach(x=>{
+      html += '<div class="stock '+k+'" onclick="openEdit(\''+x.id+'\')">'
+        + '<div class="smain"><div class="sname">'+esc(x.name)+'</div>'
+        + (x.purpose ? '<span class="spurpose">'+esc(x.purpose)+'</span>' : '')
+        + (x.memo ? '<div class="smemo">'+esc(x.memo)+'</div>' : '')
+        + '</div>'
+        + '<div class="sshares">'+fmtShares(x.shares)+'<small> 株</small></div>'
+        + '</div>';
+    });
+  });
+  wrap.innerHTML = html;
+}
+
+/* ---- 操作 ---- */
+function setBroker(k){ db.cur=k; save(); render(); }
+function showPage(p){
+  ["Main","Save"].forEach(x=>{
+    document.getElementById("page"+x).classList.toggle("active", x===p);
+    document.getElementById("tab"+x).classList.toggle("active", x===p);
+  });
+}
+
+let curKubun = "shin";
+function setKubun(k){
+  curKubun = k;
+  ["Shin","Kyu","Tokutei"].forEach(n=>{
+    document.getElementById("kb"+n).classList.toggle("on", n.toLowerCase()===k);
+  });
+}
+function addStock(){
+  const name = document.getElementById("fName").value.trim();
+  if(!name){ toast("銘柄名を入れてね"); return; }
+  const shares = parseFloat(document.getElementById("fShares").value);
+  if(isNaN(shares) || shares < 0){ toast("株数を入れてね"); return; }
+  br().items.push({
+    id: Date.now()+""+Math.floor(Math.random()*1000),
+    name: name,
+    shares: shares,
+    kubun: curKubun,
+    purpose: document.getElementById("fPurpose").value.trim(),
+    memo: document.getElementById("fMemo").value.trim()
+  });
+  save();
+  document.getElementById("fName").value=""; document.getElementById("fShares").value="";
+  document.getElementById("fPurpose").value=""; document.getElementById("fMemo").value="";
+  render(); toast("追加したよ");
+}
+
+/* ---- 編集 ---- */
+let editTarget = null, eKubun = "shin";
+function openEdit(id){
+  const x = br().items.find(a=>a.id===id); if(!x) return;
+  editTarget = id;
+  document.getElementById("eName").value = x.name;
+  document.getElementById("eShares").value = x.shares;
+  document.getElementById("ePurpose").value = x.purpose || "";
+  document.getElementById("eMemo").value = x.memo || "";
+  setEKubun(x.kubun);
+  document.getElementById("overlay").classList.add("show");
+}
+function setEKubun(k){
+  eKubun = k;
+  ["Shin","Kyu","Tokutei"].forEach(n=>{
+    document.getElementById("ekb"+n).classList.toggle("on", n.toLowerCase()===k);
+  });
+}
+function closeEdit(){ document.getElementById("overlay").classList.remove("show"); editTarget=null; }
+function saveEdit(){
+  const x = br().items.find(a=>a.id===editTarget); if(!x) return;
+  const name = document.getElementById("eName").value.trim();
+  if(!name){ toast("銘柄名を入れてね"); return; }
+  const shares = parseFloat(document.getElementById("eShares").value);
+  if(isNaN(shares) || shares < 0){ toast("株数を入れてね"); return; }
+  x.name = name; x.shares = shares; x.kubun = eKubun;
+  x.purpose = document.getElementById("ePurpose").value.trim();
+  x.memo = document.getElementById("eMemo").value.trim();
+  save(); closeEdit(); render(); toast("変更したよ");
+}
+function delStock(){
+  const x = br().items.find(a=>a.id===editTarget); if(!x) return;
+  if(confirm("「"+x.name+"」を削除する？")){
+    br().items = br().items.filter(a=>a.id!==editTarget);
+    save(); closeEdit(); render(); toast("削除したよ");
+  }
+}
+
+/* ---- 証券会社名 ---- */
+function openSet(){
+  document.getElementById("sBrA").value = db.brokers.a.name;
+  document.getElementById("sBrB").value = db.brokers.b.name;
+  document.getElementById("overlay2").classList.add("show");
+}
+function closeSet(){ document.getElementById("overlay2").classList.remove("show"); }
+function saveSet(){
+  db.brokers.a.name = document.getElementById("sBrA").value.trim() || "証券①";
+  db.brokers.b.name = document.getElementById("sBrB").value.trim() || "証券②";
+  save(); closeSet(); render(); toast("保存したよ");
+}
+
+/* ---- バックアップ ---- */
+function bkExport(){
+  const data = {};
+  for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); data[k]=localStorage.getItem(k); }
+  const t = new Date();
+  const ds = t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0");
+  const blob = new Blob([JSON.stringify({__bkx:"kabu", data:data})], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "持ち株メモ_バックアップ_" + ds + ".json";
+  a.click(); URL.revokeObjectURL(a.href);
+  toast("書き出したよ");
+}
+function bkImport(inp){
+  const f = inp.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = ()=>{
+    try{
+      const j = JSON.parse(rd.result);
+      const data = j.__bkx ? j.data : j;
+      Object.keys(data).forEach(k=>localStorage.setItem(k, data[k]));
+      db = load(); render(); toast("読み込んだよ");
+    }catch(e){ toast("読み込めなかった…ファイルを確認してね"); }
+  };
+  rd.readAsText(f);
+  inp.value = "";
+}
+
+/* ---- toast ---- */
+let toastTimer;
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove("show"), 1800);
+}
+
+render();
+</script>
+</body>
+</html>
