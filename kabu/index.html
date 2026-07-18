@@ -162,7 +162,7 @@
     <div class="f-label">銘柄名（会社名・投資信託名）</div>
     <input type="text" id="fName" placeholder="例：〇〇ホールディングス">
     <div class="row2">
-      <div><div class="f-label">株数（口数）</div><input type="number" id="fShares" min="0" step="any" placeholder="例：100"></div>
+      <div><div class="f-label">株数（インデックス投資なら空欄でOK）</div><input type="number" id="fShares" min="0" step="any" placeholder="例：100"></div>
       <div><div class="f-label">目的（なんのため？）</div>
         <input type="text" id="fPurpose" list="purposeList" placeholder="選ぶか自由に入力">
         <datalist id="purposeList">
@@ -175,12 +175,13 @@
         </datalist>
       </div>
     </div>
-    <div class="f-label">口座の区分</div>
-    <div class="kubun-row">
-      <button id="kbShin" class="shin on" onclick="setKubun('shin')">新NISA</button>
-      <button id="kbKyu" class="kyu" onclick="setKubun('kyu')">旧NISA</button>
-      <button id="kbTokutei" class="tokutei" onclick="setKubun('tokutei')">特定口座</button>
-    </div>
+    <div class="f-label">口座の区分（選ぶか自由に書いてOK）</div>
+    <input type="text" id="fKubun" list="kubunList" placeholder="例：新NISA、iDeCo など">
+    <datalist id="kubunList">
+      <option value="新NISA"></option>
+      <option value="旧NISA"></option>
+      <option value="特定口座"></option>
+    </datalist>
     <div class="f-label">メモ（省略OK）</div>
     <input type="text" id="fMemo" placeholder="例：優待は3月、つみたて中">
     <button class="add-btn" onclick="addStock()">追加する</button>
@@ -209,16 +210,12 @@
     <h3><span data-icon="sprout"></span>銘柄の変更</h3>
     <label>銘柄名</label>
     <input type="text" id="eName">
-    <label>株数（口数）</label>
+    <label>株数（空欄でもOK）</label>
     <input type="number" id="eShares" min="0" step="any">
     <label>目的</label>
     <input type="text" id="ePurpose" list="purposeList">
     <label>口座の区分</label>
-    <div class="kubun-row">
-      <button id="ekbShin" class="shin" onclick="setEKubun('shin')">新NISA</button>
-      <button id="ekbKyu" class="kyu" onclick="setEKubun('kyu')">旧NISA</button>
-      <button id="ekbTokutei" class="tokutei" onclick="setEKubun('tokutei')">特定口座</button>
-    </div>
+    <input type="text" id="eKubun" list="kubunList">
     <label>メモ</label>
     <input type="text" id="eMemo">
     <div class="btns">
@@ -260,12 +257,21 @@ function icon(n){ return SVG_OPEN + (ICONS[n]||ICONS.sprout) + '</svg>'; }
 document.querySelectorAll("[data-icon]").forEach(el=>{ el.innerHTML = icon(el.dataset.icon) + el.innerHTML; });
 document.getElementById("hIcon").innerHTML = icon("sprout");
 
-const KUBUN = { shin:"新NISA", kyu:"旧NISA", tokutei:"特定口座" };
+const KUBUN_STYLE = { "新NISA":"shin", "旧NISA":"kyu", "特定口座":"tokutei" };
+const KUBUN_ORDER = ["新NISA","旧NISA","特定口座"];
 
 /* ---- データ ---- */
 let db = load();
 function load(){
-  try{ const d = JSON.parse(localStorage.getItem(KEY)); if(d && d.brokers) return d; }catch(e){}
+  try{
+    const d = JSON.parse(localStorage.getItem(KEY));
+    if(d && d.brokers){
+      // 旧データの区分キーを日本語へ移行
+      const map = { shin:"新NISA", kyu:"旧NISA", tokutei:"特定口座" };
+      Object.values(d.brokers).forEach(b=>(b.items||[]).forEach(x=>{ if(map[x.kubun]) x.kubun = map[x.kubun]; }));
+      return d;
+    }
+  }catch(e){}
   return {
     cur:"a",
     brokers:{
@@ -287,8 +293,6 @@ function render(){
   document.getElementById("brB").classList.toggle("on", db.cur==="b");
 
   const items = br().items;
-  const cnt = { shin:0, kyu:0, tokutei:0 };
-  items.forEach(x=>cnt[x.kubun]++);
   document.getElementById("sumLine").innerHTML = items.length
     ? esc(br().name) + "：ぜんぶで <b>" + items.length + "</b> 銘柄"
     : esc(br().name) + "：まだ銘柄がないよ";
@@ -298,19 +302,24 @@ function render(){
     wrap.innerHTML = '<div class="empty">下から持ってる銘柄を追加してね</div>';
     return;
   }
+  // 区分ごとにグループ化（新NISA・旧NISA・特定口座を先頭に、あとは登場順）
+  const kubuns = [];
+  KUBUN_ORDER.forEach(k=>{ if(items.some(x=>x.kubun===k)) kubuns.push(k); });
+  items.forEach(x=>{ if(kubuns.indexOf(x.kubun)<0) kubuns.push(x.kubun); });
   let html = "";
-  ["shin","kyu","tokutei"].forEach(k=>{
+  kubuns.forEach(k=>{
     const group = items.filter(x=>x.kubun===k);
-    if(!group.length) return;
-    html += '<div class="kubun-label '+k+'"><span class="kdot"></span>'+KUBUN[k]
+    const style = KUBUN_STYLE[k] || "";
+    html += '<div class="kubun-label '+style+'"><span class="kdot"></span>'+esc(k)
       + '<span class="kcnt">'+group.length+'銘柄</span></div>';
     group.forEach(x=>{
-      html += '<div class="stock '+k+'" onclick="openEdit(\''+x.id+'\')">'
+      const hasShares = (x.shares !== null && x.shares !== undefined && x.shares !== "");
+      html += '<div class="stock '+style+'" onclick="openEdit(\''+x.id+'\')">'
         + '<div class="smain"><div class="sname">'+esc(x.name)+'</div>'
         + (x.purpose ? '<span class="spurpose">'+esc(x.purpose)+'</span>' : '')
         + (x.memo ? '<div class="smemo">'+esc(x.memo)+'</div>' : '')
         + '</div>'
-        + '<div class="sshares">'+fmtShares(x.shares)+'<small> 株</small></div>'
+        + (hasShares ? '<div class="sshares">'+fmtShares(x.shares)+'<small> 株</small></div>' : '')
         + '</div>';
     });
   });
@@ -326,58 +335,52 @@ function showPage(p){
   });
 }
 
-let curKubun = "shin";
-function setKubun(k){
-  curKubun = k;
-  ["Shin","Kyu","Tokutei"].forEach(n=>{
-    document.getElementById("kb"+n).classList.toggle("on", n.toLowerCase()===k);
-  });
-}
 function addStock(){
   const name = document.getElementById("fName").value.trim();
   if(!name){ toast("銘柄名を入れてね"); return; }
-  const shares = parseFloat(document.getElementById("fShares").value);
-  if(isNaN(shares) || shares < 0){ toast("株数を入れてね"); return; }
+  const sv = document.getElementById("fShares").value;
+  const shares = sv === "" ? null : parseFloat(sv);
+  if(shares !== null && (isNaN(shares) || shares < 0)){ toast("株数がへんだよ"); return; }
+  const kubun = document.getElementById("fKubun").value.trim();
+  if(!kubun){ toast("口座の区分を入れてね（新NISAなど）"); return; }
   br().items.push({
     id: Date.now()+""+Math.floor(Math.random()*1000),
     name: name,
     shares: shares,
-    kubun: curKubun,
+    kubun: kubun,
     purpose: document.getElementById("fPurpose").value.trim(),
     memo: document.getElementById("fMemo").value.trim()
   });
   save();
   document.getElementById("fName").value=""; document.getElementById("fShares").value="";
   document.getElementById("fPurpose").value=""; document.getElementById("fMemo").value="";
+  document.getElementById("fKubun").value="";
   render(); toast("追加したよ");
 }
 
 /* ---- 編集 ---- */
-let editTarget = null, eKubun = "shin";
+let editTarget = null;
 function openEdit(id){
   const x = br().items.find(a=>a.id===id); if(!x) return;
   editTarget = id;
   document.getElementById("eName").value = x.name;
-  document.getElementById("eShares").value = x.shares;
+  document.getElementById("eShares").value = (x.shares===null||x.shares===undefined) ? "" : x.shares;
   document.getElementById("ePurpose").value = x.purpose || "";
   document.getElementById("eMemo").value = x.memo || "";
-  setEKubun(x.kubun);
+  document.getElementById("eKubun").value = x.kubun || "";
   document.getElementById("overlay").classList.add("show");
-}
-function setEKubun(k){
-  eKubun = k;
-  ["Shin","Kyu","Tokutei"].forEach(n=>{
-    document.getElementById("ekb"+n).classList.toggle("on", n.toLowerCase()===k);
-  });
 }
 function closeEdit(){ document.getElementById("overlay").classList.remove("show"); editTarget=null; }
 function saveEdit(){
   const x = br().items.find(a=>a.id===editTarget); if(!x) return;
   const name = document.getElementById("eName").value.trim();
   if(!name){ toast("銘柄名を入れてね"); return; }
-  const shares = parseFloat(document.getElementById("eShares").value);
-  if(isNaN(shares) || shares < 0){ toast("株数を入れてね"); return; }
-  x.name = name; x.shares = shares; x.kubun = eKubun;
+  const sv = document.getElementById("eShares").value;
+  const shares = sv === "" ? null : parseFloat(sv);
+  if(shares !== null && (isNaN(shares) || shares < 0)){ toast("株数がへんだよ"); return; }
+  const kubun = document.getElementById("eKubun").value.trim();
+  if(!kubun){ toast("口座の区分を入れてね"); return; }
+  x.name = name; x.shares = shares; x.kubun = kubun;
   x.purpose = document.getElementById("ePurpose").value.trim();
   x.memo = document.getElementById("eMemo").value.trim();
   save(); closeEdit(); render(); toast("変更したよ");
