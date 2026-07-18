@@ -220,7 +220,7 @@
     <input type="date" id="tDue">
     <button onclick="addTask()">宿題を追加する</button>
   </div>
-  <div class="hint">※「読書感想文」みたいに1回で終わるものは、数を空っぽのままでOK（できた!ボタンになるよ）。宿題を消したいときは×をタップ。</div>
+  <div class="hint">※「読書感想文」みたいに1回で終わるものは、数を空っぽのままでOK（できた!ボタンになるよ）。▲▼で順番の入れかえ、✎で内容の変更、✕で削除だよ。</div>
 </div>
 
 <div id="pageCal" class="page">
@@ -368,8 +368,7 @@ function renderTasks(){
   const t = todayStr();
   const sorted = tasks.slice().sort((a,b)=>{
     const ac = a.done>=a.total, bc = b.done>=b.total;
-    if(ac!==bc) return ac?1:-1;                    // 終わったものは下へ
-    return (a.due||"9999").localeCompare(b.due||"9999");  // 提出日が近い順
+    return (ac===bc) ? 0 : (ac ? 1 : -1);   // 終わったものだけ下へ。あとは自分で決めた順番のまま
   });
   wrap.innerHTML = sorted.map(x=>{
     const comp = x.done >= x.total;
@@ -385,6 +384,8 @@ function renderTasks(){
     return '<div class="task'+(comp?' comp':'')+'">'
       + '<div class="t-top"><span class="t-ico">'+icon(comp?"gcheck":"book")+'</span>'
       + '<span class="t-name">'+esc(x.name)+(comp?'<span class="t-done-mark">おわった!</span>':'')+dueTxt+'</span>'
+      + (comp ? '' : '<button class="t-del" onclick="moveTask(\''+x.id+'\',-1)">▲</button>'
+                   + '<button class="t-del" onclick="moveTask(\''+x.id+'\',1)">▼</button>')
       + '<button class="t-del" onclick="editTask(\''+x.id+'\')">✎</button>'
       + '<button class="t-del" onclick="delTask(\''+x.id+'\')">✕</button></div>'
       + '<div class="t-mid"><div class="bar"><div class="fill" style="width:'+pct+'%"></div></div>'
@@ -480,6 +481,17 @@ function step(id, dir){
   x.done = Math.max(0, Math.min(x.total, x.done+dir));
   save(); render();
   if(!was && x.done>=x.total) celebrate();
+}
+function moveTask(id, dir){
+  const arr = kd().tasks;
+  const incomp = arr.filter(x=>x.done < x.total).map(x=>x.id);
+  const pos = incomp.indexOf(id);
+  const tgt = pos + dir;
+  if(pos < 0 || tgt < 0 || tgt >= incomp.length) return;
+  const i = arr.findIndex(x=>x.id===id);
+  const j = arr.findIndex(x=>x.id===incomp[tgt]);
+  const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+  save(); render();
 }
 function delTask(id){
   const x = kd().tasks.find(a=>a.id===id); if(!x) return;
