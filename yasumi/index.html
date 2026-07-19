@@ -132,6 +132,8 @@
   .cell .st svg{width:100%; height:100%}
   .cell.done{background:#fdf3f0}
   body.ao .cell.done{background:#eef4f6}
+  .cell.rest{background:#e9f1f6}
+  .cell .mdot{position:absolute; bottom:3px; width:5px; height:5px; border-radius:50%; background:#c9a86a}
   .cell.dueday{border:2px dashed #ef8a80}
   .cell.dueday .dn{color:#e8837e; font-weight:bold}
   .cal-month{font-size:13px; font-weight:bold; color:var(--sub); margin:10px 4px 6px}
@@ -147,9 +149,15 @@
   .tabbar button .ico svg{width:22px; height:22px}
   .tabbar button.active{color:var(--accent-dark); font-weight:bold}
 
-  #overlay, #overlay2, #overlay3{display:none; position:fixed; inset:0; background:rgba(80,70,50,.35); z-index:20;
+  #overlay, #overlay2, #overlay3, #overlay4{display:none; position:fixed; inset:0; background:rgba(80,70,50,.35); z-index:20;
     align-items:center; justify-content:center; padding:20px}
-  #overlay.show, #overlay2.show, #overlay3.show{display:flex}
+  #overlay.show, #overlay2.show, #overlay3.show, #overlay4.show{display:flex}
+  .stamp-row{display:flex; gap:7px}
+  .stamp-row button{flex:1; border:2px solid var(--line); background:#fffefb; border-radius:12px;
+    padding:8px 0 6px; font-family:inherit; font-size:11.5px; color:var(--sub); font-weight:bold}
+  .stamp-row button .sic{display:block; width:26px; height:26px; margin:0 auto 2px}
+  .stamp-row button .sic svg{width:100%; height:100%}
+  .stamp-row button.on{border-color:var(--accent); background:#eef4f6; color:var(--text)}
   .modal{background:var(--card); border-radius:20px; padding:20px; width:100%; max-width:340px;
     box-shadow:0 10px 40px rgba(0,0,0,.2)}
   .modal h3{font-size:15px; margin-bottom:6px; display:flex; align-items:center; gap:6px}
@@ -225,7 +233,7 @@
 
 <div id="pageCal" class="page">
   <div id="calWrap"></div>
-  <div class="hint">※その日の分をがんばれたら、日にちをタップしてお花スタンプをおしてね。もう一回タップで取り消し。赤い旗は提出日、えんぴつのマークは「この日にやる!」って決めた宿題の日だよ。</div>
+  <div class="hint">※日にちをタップすると、スタンプ（できた!のお花・旅行などのおやすみのひこうき）と、その日のメモ（学童でやることなど）が書けるよ。茶色い点はメモのある日。赤い旗は提出日、えんぴつは「この日にやる!」の宿題だよ。</div>
   <div class="bkx">
     <h3><span data-icon="save"></span>データのバックアップ</h3>
     記録はこの端末のブラウザ内に保存されています。ときどきファイルに書き出しておくと安心です。<br>
@@ -271,6 +279,24 @@
   </div>
 </div>
 
+<div id="overlay4">
+  <div class="modal">
+    <h3><span data-icon="cal"></span><span id="dayTitle"></span></h3>
+    <label>スタンプ</label>
+    <div class="stamp-row">
+      <button id="stHana" onclick="setDaySt('hana')"><span class="sic" id="sicHana"></span>できた!</button>
+      <button id="stRest" onclick="setDaySt('rest')"><span class="sic" id="sicRest"></span>おやすみ</button>
+      <button id="stNone" onclick="setDaySt('')">なし</button>
+    </div>
+    <label>この日のメモ（学童でやることなど）</label>
+    <input type="text" id="dayMemo" placeholder="例：学童で算数ドリル3ページ">
+    <div class="btns">
+      <button class="m-cancel" onclick="closeDay()">やめる</button>
+      <button class="m-save" onclick="saveDay()">保存</button>
+    </div>
+  </div>
+</div>
+
 <div id="overlay3">
   <div class="modal">
     <h3><span data-icon="pencil"></span>宿題を変更する</h3>
@@ -304,16 +330,30 @@ const ICONS = {
   save:'<rect x="8" y="8" width="32" height="32" rx="4" fill="#fdfaf2"/><path d="M16 8 V20 H32 V8"/><rect x="20" y="26" width="12" height="14" rx="1.5" fill="#cfe8f5"/>',
   star:'<path d="M24 6 L29 18 L42 19 L32 28 L35 41 L24 34 L13 41 L16 28 L6 19 L19 18 Z" fill="#f6c771"/>',
   flag:'<path d="M12 6 V42" stroke-width="3.4"/><path d="M12 8 H36 L29 15 L36 22 H12 Z" fill="#ef8a80"/>',
-  gcheck:'<circle cx="24" cy="24" r="16" fill="#e4dfd7" stroke="#b8b0a5"/><path d="M16 24 L22 30 L33 18" stroke="#9b9288" stroke-width="3.6"/>'
+  gcheck:'<circle cx="24" cy="24" r="16" fill="#e4dfd7" stroke="#b8b0a5"/><path d="M16 24 L22 30 L33 18" stroke="#9b9288" stroke-width="3.6"/>',
+  plane:'<path d="M6 28 L42 16 L34 30 L22 33 Z" fill="#a9cbe0" stroke-width="2.6"/><path d="M22 33 L18 40 L16 32 Z" fill="#a9cbe0" stroke-width="2.6"/><path d="M10 12 L13 15 M16 8 L16 12 M6 18 L10 18" stroke="#c9a86a" stroke-width="2"/>',
+  memo:'<path d="M12 6 H32 L38 12 V42 H12 Z" fill="#fdfaf2"/><path d="M32 6 V12 H38"/><path d="M18 20 H32 M18 27 H32 M18 34 H27"/>'
 };
 function icon(n){ return SVG_OPEN + (ICONS[n]||ICONS.star) + '</svg>'; }
 document.querySelectorAll("[data-icon]").forEach(el=>{ el.innerHTML = icon(el.dataset.icon) + el.innerHTML; });
 document.getElementById("hIcon").innerHTML = icon("pencil");
+document.getElementById("sicHana").innerHTML = icon("flower");
+document.getElementById("sicRest").innerHTML = icon("plane");
 
 /* ---- データ ---- */
 let db = load();
 function load(){
-  try{ const d = JSON.parse(localStorage.getItem(KEY)); if(d && d.kids) return d; }catch(e){}
+  try{
+    const d = JSON.parse(localStorage.getItem(KEY));
+    if(d && d.kids){
+      // 旧データ移行：days の 1 → {st:"hana", memo:""}
+      Object.values(d.kids).forEach(k=>{
+        const days = k.days || {};
+        Object.keys(days).forEach(ds=>{ if(days[ds]===1) days[ds] = { st:"hana", memo:"" }; });
+      });
+      return d;
+    }
+  }catch(e){}
   return {
     cur:"saku",
     vac:{ name:"夏休み", start:"", end:"" },
@@ -352,7 +392,7 @@ function render(){
   let tot=0, done=0;
   tasks.forEach(x=>{ tot+=x.total; done+=Math.min(x.done,x.total); });
   document.getElementById("statProg").textContent = tot ? Math.floor(done/tot*100)+"%" : "0%";
-  document.getElementById("statStamp").textContent = Object.keys(kd().days).length;
+  document.getElementById("statStamp").textContent = Object.values(kd().days).filter(v=>v && v.st==="hana").length;
   renderTasks();
   renderCal();
 }
@@ -432,14 +472,18 @@ function renderCal(){
       let pad = (d.getDay()+6)%7; // 月曜はじまり
       for(let i=0;i<pad;i++) cells += '<div class="cell out"></div>';
     }
-    const done = days[ds];
+    const rec = days[ds];
+    const st = rec && rec.st;
+    const hasMemo = rec && rec.memo;
     const isDue = kd().tasks.some(x=>x.due===ds);
     const isPlan = kd().tasks.some(x=>(x.plan||[]).indexOf(ds)>=0);
-    cells += '<div class="cell'+(done?' done':'')+(ds===t?' today':'')+(isDue?' dueday':'')+(isPlan?' planday':'')+'" onclick="stamp(\''+ds+'\')">'
+    cells += '<div class="cell'+(st==="hana"?' done':'')+(st==="rest"?' rest':'')+(ds===t?' today':'')+(isDue?' dueday':'')+(isPlan?' planday':'')+'" onclick="openDay(\''+ds+'\')">'
       + '<span class="dn">'+d.getDate()+'</span>'
-      + (done ? '<span class="st">'+icon("flower")+'</span>'
+      + (st==="hana" ? '<span class="st">'+icon("flower")+'</span>'
+         : (st==="rest" ? '<span class="st">'+icon("plane")+'</span>'
          : (isDue ? '<span class="st">'+icon("flag")+'</span>'
-         : (isPlan ? '<span class="st">'+icon("pencil")+'</span>' : '')))
+         : (isPlan ? '<span class="st">'+icon("pencil")+'</span>' : ''))))
+      + (hasMemo ? '<span class="mdot"></span>' : '')
       + '</div>';
     d.setDate(d.getDate()+1);
   }
@@ -454,6 +498,21 @@ function renderCal(){
       + items.map(it=>{
           const w = YB[new Date(it.d).getDay()];
           return '<div class="plan-row'+(it.d<t?' past':'')+'"><span class="pd">'+fmtMD(it.d)+'（'+w+'）</span><span>'+esc(it.name)+'</span></div>';
+        }).join("")
+      + '</div>';
+  }
+  // 日ごとのメモ一覧
+  const memos = [];
+  Object.keys(kd().days).forEach(ds=>{
+    const r = kd().days[ds];
+    if(r && r.memo) memos.push({d:ds, memo:r.memo, rest:r.st==="rest"});
+  });
+  if(memos.length){
+    memos.sort((a,b)=>a.d.localeCompare(b.d));
+    html += '<div class="plan-card"><h3><span style="display:inline-block;width:17px;height:17px">'+icon("memo")+'</span>日にちのメモ</h3>'
+      + memos.map(it=>{
+          const w = YB[new Date(it.d).getDay()];
+          return '<div class="plan-row'+(it.d<t?' past':'')+'"><span class="pd">'+fmtMD(it.d)+'（'+w+'）</span><span>'+esc(it.memo)+'</span></div>';
         }).join("")
       + '</div>';
   }
@@ -500,10 +559,32 @@ function delTask(id){
     save(); render(); toast("消したよ");
   }
 }
-function stamp(ds){
-  const days = kd().days;
-  if(days[ds]){ delete days[ds]; } else { days[ds]=1; }
-  save(); render();
+/* ---- 日のスタンプ＆メモ ---- */
+let dayTarget = null, daySt = "";
+const YOBI7 = ["日","月","火","水","木","金","土"];
+function openDay(ds){
+  dayTarget = ds;
+  const rec = kd().days[ds] || { st:"", memo:"" };
+  daySt = rec.st || "";
+  document.getElementById("dayTitle").textContent = fmtMD(ds) + "（" + YOBI7[new Date(ds).getDay()] + "）の記録";
+  document.getElementById("dayMemo").value = rec.memo || "";
+  paintDaySt();
+  document.getElementById("overlay4").classList.add("show");
+}
+function setDaySt(s){ daySt = (daySt===s) ? "" : s; paintDaySt(); }
+function paintDaySt(){
+  document.getElementById("stHana").classList.toggle("on", daySt==="hana");
+  document.getElementById("stRest").classList.toggle("on", daySt==="rest");
+  document.getElementById("stNone").classList.toggle("on", daySt==="");
+}
+function closeDay(){ document.getElementById("overlay4").classList.remove("show"); dayTarget=null; }
+function saveDay(){
+  if(!dayTarget) return;
+  const memo = document.getElementById("dayMemo").value.trim();
+  if(!daySt && !memo){ delete kd().days[dayTarget]; }
+  else { kd().days[dayTarget] = { st:daySt, memo:memo }; }
+  save(); closeDay(); render();
+  toast(daySt==="hana" ? "お花スタンプおしたよ" : daySt==="rest" ? "おやすみの日にしたよ" : "保存したよ");
 }
 function showPage(p){
   ["Task","Cal"].forEach(x=>{
