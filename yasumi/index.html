@@ -130,8 +130,8 @@
   .cell .dn{font-size:11px; line-height:1}
   .cell .st{width:22px; height:22px; margin-top:1px}
   .cell .st svg{width:100%; height:100%}
-  .cell.done{background:#fdf3f0}
-  body.ao .cell.done{background:#eef4f6}
+  .cell.done{background:#fdf6e8}
+  body.ao .cell.done{background:#fdf6e8}
   .cell.rest{background:#e9f1f6}
   .cell.gakudo{background:#f9efed}
   .cell .mdot{position:absolute; bottom:3px; width:5px; height:5px; border-radius:50%; background:#c9a86a}
@@ -234,7 +234,7 @@
 
 <div id="pageCal" class="page">
   <div id="calWrap"></div>
-  <div class="hint">※日にちをタップすると、スタンプとメモが書けるよ。お花=できた!、車=旅行などのおやすみ、休のはんこ=学童を休んだ日。茶色い点はメモのある日。赤い旗は提出日、えんぴつは「この日にやる!」の宿題だよ。</div>
+  <div class="hint">※日にちをタップすると、スタンプとメモが書けるよ。OK!=その日の分できた!、車=旅行などのおやすみ、休のはんこ=学童を休んだ日。茶色い点はメモのある日。赤い旗は提出日、えんぴつは「この日にやる!」の宿題だよ。</div>
   <div class="bkx">
     <h3><span data-icon="save"></span>データのバックアップ</h3>
     記録はこの端末のブラウザ内に保存されています。ときどきファイルに書き出しておくと安心です。<br>
@@ -335,12 +335,13 @@ const ICONS = {
   gcheck:'<circle cx="24" cy="24" r="16" fill="#e4dfd7" stroke="#b8b0a5"/><path d="M16 24 L22 30 L33 18" stroke="#9b9288" stroke-width="3.6"/>',
   car:'<path d="M6 30 L9 22 Q10 19 13 19 H29 Q32 19 34 22 L38 27 H41 Q43 27 43 29 V33 Q43 35 41 35 H6 Q4 35 4 33 V32 Q4 30 6 30 Z" fill="#a9cbe0" stroke-width="2.6"/><rect x="13" y="22" width="8" height="5" rx="1.5" fill="#fdfaf2" stroke-width="2"/><rect x="24" y="22" width="8" height="5" rx="1.5" fill="#fdfaf2" stroke-width="2"/><circle cx="13" cy="36" r="4" fill="#fdfaf2" stroke-width="2.6"/><circle cx="34" cy="36" r="4" fill="#fdfaf2" stroke-width="2.6"/>',
   kyu:'<circle cx="24" cy="24" r="17" stroke="#d98a80" stroke-width="2.8" fill="#fdf5f3"/><text x="24" y="31" text-anchor="middle" font-size="20" fill="#c4756f" stroke="none">休</text>',
+  ok:'<circle cx="24" cy="24" r="17" stroke="#e8a04b" stroke-width="2.8" fill="#fdf8ec"/><text x="24" y="30" text-anchor="middle" font-size="15" fill="#d9962e" stroke="none" font-weight="bold">OK!</text>',
   memo:'<path d="M12 6 H32 L38 12 V42 H12 Z" fill="#fdfaf2"/><path d="M32 6 V12 H38"/><path d="M18 20 H32 M18 27 H32 M18 34 H27"/>'
 };
 function icon(n){ return SVG_OPEN + (ICONS[n]||ICONS.star) + '</svg>'; }
 document.querySelectorAll("[data-icon]").forEach(el=>{ el.innerHTML = icon(el.dataset.icon) + el.innerHTML; });
 document.getElementById("hIcon").innerHTML = icon("pencil");
-document.getElementById("sicHana").innerHTML = icon("flower");
+document.getElementById("sicHana").innerHTML = icon("ok");
 document.getElementById("sicRest").innerHTML = icon("car");
 document.getElementById("sicKyu").innerHTML = icon("kyu");
 
@@ -483,7 +484,7 @@ function renderCal(){
     const isPlan = kd().tasks.some(x=>(x.plan||[]).indexOf(ds)>=0);
     cells += '<div class="cell'+(st==="hana"?' done':'')+(st==="rest"?' rest':'')+(st==="gakudo"?' gakudo':'')+(ds===t?' today':'')+(isDue?' dueday':'')+(isPlan?' planday':'')+'" onclick="openDay(\''+ds+'\')">'
       + '<span class="dn">'+d.getDate()+'</span>'
-      + (st==="hana" ? '<span class="st">'+icon("flower")+'</span>'
+      + (st==="hana" ? '<span class="st">'+icon("ok")+'</span>'
          : (st==="rest" ? '<span class="st">'+icon("car")+'</span>'
          : (st==="gakudo" ? '<span class="st">'+icon("kyu")+'</span>'
          : (isDue ? '<span class="st">'+icon("flag")+'</span>'
@@ -590,7 +591,7 @@ function saveDay(){
   if(!daySt && !memo){ delete kd().days[dayTarget]; }
   else { kd().days[dayTarget] = { st:daySt, memo:memo }; }
   save(); closeDay(); render();
-  toast(daySt==="hana" ? "お花スタンプおしたよ" : daySt==="rest" ? "おやすみの日にしたよ" : daySt==="gakudo" ? "学童おやすみにしたよ" : "保存したよ");
+  toast(daySt==="hana" ? "OK!スタンプおしたよ" : daySt==="rest" ? "おやすみの日にしたよ" : daySt==="gakudo" ? "学童おやすみにしたよ" : "保存したよ");
 }
 function showPage(p){
   ["Task","Cal"].forEach(x=>{
