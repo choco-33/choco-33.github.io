@@ -133,6 +133,7 @@
   .cell.done{background:#fdf3f0}
   body.ao .cell.done{background:#eef4f6}
   .cell.rest{background:#e9f1f6}
+  .cell.gakudo{background:#f9efed}
   .cell .mdot{position:absolute; bottom:3px; width:5px; height:5px; border-radius:50%; background:#c9a86a}
   .cell.dueday{border:2px dashed #ef8a80}
   .cell.dueday .dn{color:#e8837e; font-weight:bold}
@@ -233,7 +234,7 @@
 
 <div id="pageCal" class="page">
   <div id="calWrap"></div>
-  <div class="hint">※日にちをタップすると、スタンプ（できた!のお花・旅行などのおやすみのひこうき）と、その日のメモ（学童でやることなど）が書けるよ。茶色い点はメモのある日。赤い旗は提出日、えんぴつは「この日にやる!」の宿題だよ。</div>
+  <div class="hint">※日にちをタップすると、スタンプとメモが書けるよ。お花=できた!、車=旅行などのおやすみ、休のはんこ=学童を休んだ日。茶色い点はメモのある日。赤い旗は提出日、えんぴつは「この日にやる!」の宿題だよ。</div>
   <div class="bkx">
     <h3><span data-icon="save"></span>データのバックアップ</h3>
     記録はこの端末のブラウザ内に保存されています。ときどきファイルに書き出しておくと安心です。<br>
@@ -286,6 +287,7 @@
     <div class="stamp-row">
       <button id="stHana" onclick="setDaySt('hana')"><span class="sic" id="sicHana"></span>できた!</button>
       <button id="stRest" onclick="setDaySt('rest')"><span class="sic" id="sicRest"></span>おやすみ</button>
+      <button id="stKyu" onclick="setDaySt('gakudo')"><span class="sic" id="sicKyu"></span>学童休み</button>
       <button id="stNone" onclick="setDaySt('')">なし</button>
     </div>
     <label>この日のメモ（学童でやることなど）</label>
@@ -331,14 +333,16 @@ const ICONS = {
   star:'<path d="M24 6 L29 18 L42 19 L32 28 L35 41 L24 34 L13 41 L16 28 L6 19 L19 18 Z" fill="#f6c771"/>',
   flag:'<path d="M12 6 V42" stroke-width="3.4"/><path d="M12 8 H36 L29 15 L36 22 H12 Z" fill="#ef8a80"/>',
   gcheck:'<circle cx="24" cy="24" r="16" fill="#e4dfd7" stroke="#b8b0a5"/><path d="M16 24 L22 30 L33 18" stroke="#9b9288" stroke-width="3.6"/>',
-  plane:'<path d="M6 28 L42 16 L34 30 L22 33 Z" fill="#a9cbe0" stroke-width="2.6"/><path d="M22 33 L18 40 L16 32 Z" fill="#a9cbe0" stroke-width="2.6"/><path d="M10 12 L13 15 M16 8 L16 12 M6 18 L10 18" stroke="#c9a86a" stroke-width="2"/>',
+  car:'<path d="M6 30 L9 22 Q10 19 13 19 H29 Q32 19 34 22 L38 27 H41 Q43 27 43 29 V33 Q43 35 41 35 H6 Q4 35 4 33 V32 Q4 30 6 30 Z" fill="#a9cbe0" stroke-width="2.6"/><rect x="13" y="22" width="8" height="5" rx="1.5" fill="#fdfaf2" stroke-width="2"/><rect x="24" y="22" width="8" height="5" rx="1.5" fill="#fdfaf2" stroke-width="2"/><circle cx="13" cy="36" r="4" fill="#fdfaf2" stroke-width="2.6"/><circle cx="34" cy="36" r="4" fill="#fdfaf2" stroke-width="2.6"/>',
+  kyu:'<circle cx="24" cy="24" r="17" stroke="#d98a80" stroke-width="2.8" fill="#fdf5f3"/><text x="24" y="31" text-anchor="middle" font-size="20" fill="#c4756f" stroke="none">休</text>',
   memo:'<path d="M12 6 H32 L38 12 V42 H12 Z" fill="#fdfaf2"/><path d="M32 6 V12 H38"/><path d="M18 20 H32 M18 27 H32 M18 34 H27"/>'
 };
 function icon(n){ return SVG_OPEN + (ICONS[n]||ICONS.star) + '</svg>'; }
 document.querySelectorAll("[data-icon]").forEach(el=>{ el.innerHTML = icon(el.dataset.icon) + el.innerHTML; });
 document.getElementById("hIcon").innerHTML = icon("pencil");
 document.getElementById("sicHana").innerHTML = icon("flower");
-document.getElementById("sicRest").innerHTML = icon("plane");
+document.getElementById("sicRest").innerHTML = icon("car");
+document.getElementById("sicKyu").innerHTML = icon("kyu");
 
 /* ---- データ ---- */
 let db = load();
@@ -477,12 +481,13 @@ function renderCal(){
     const hasMemo = rec && rec.memo;
     const isDue = kd().tasks.some(x=>x.due===ds);
     const isPlan = kd().tasks.some(x=>(x.plan||[]).indexOf(ds)>=0);
-    cells += '<div class="cell'+(st==="hana"?' done':'')+(st==="rest"?' rest':'')+(ds===t?' today':'')+(isDue?' dueday':'')+(isPlan?' planday':'')+'" onclick="openDay(\''+ds+'\')">'
+    cells += '<div class="cell'+(st==="hana"?' done':'')+(st==="rest"?' rest':'')+(st==="gakudo"?' gakudo':'')+(ds===t?' today':'')+(isDue?' dueday':'')+(isPlan?' planday':'')+'" onclick="openDay(\''+ds+'\')">'
       + '<span class="dn">'+d.getDate()+'</span>'
       + (st==="hana" ? '<span class="st">'+icon("flower")+'</span>'
-         : (st==="rest" ? '<span class="st">'+icon("plane")+'</span>'
+         : (st==="rest" ? '<span class="st">'+icon("car")+'</span>'
+         : (st==="gakudo" ? '<span class="st">'+icon("kyu")+'</span>'
          : (isDue ? '<span class="st">'+icon("flag")+'</span>'
-         : (isPlan ? '<span class="st">'+icon("pencil")+'</span>' : ''))))
+         : (isPlan ? '<span class="st">'+icon("pencil")+'</span>' : '')))))
       + (hasMemo ? '<span class="mdot"></span>' : '')
       + '</div>';
     d.setDate(d.getDate()+1);
@@ -575,6 +580,7 @@ function setDaySt(s){ daySt = (daySt===s) ? "" : s; paintDaySt(); }
 function paintDaySt(){
   document.getElementById("stHana").classList.toggle("on", daySt==="hana");
   document.getElementById("stRest").classList.toggle("on", daySt==="rest");
+  document.getElementById("stKyu").classList.toggle("on", daySt==="gakudo");
   document.getElementById("stNone").classList.toggle("on", daySt==="");
 }
 function closeDay(){ document.getElementById("overlay4").classList.remove("show"); dayTarget=null; }
@@ -584,7 +590,7 @@ function saveDay(){
   if(!daySt && !memo){ delete kd().days[dayTarget]; }
   else { kd().days[dayTarget] = { st:daySt, memo:memo }; }
   save(); closeDay(); render();
-  toast(daySt==="hana" ? "お花スタンプおしたよ" : daySt==="rest" ? "おやすみの日にしたよ" : "保存したよ");
+  toast(daySt==="hana" ? "お花スタンプおしたよ" : daySt==="rest" ? "おやすみの日にしたよ" : daySt==="gakudo" ? "学童おやすみにしたよ" : "保存したよ");
 }
 function showPage(p){
   ["Task","Cal"].forEach(x=>{
