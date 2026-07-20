@@ -164,8 +164,8 @@
   .modal h3{font-size:15px; margin-bottom:6px; display:flex; align-items:center; gap:6px}
   .modal h3 svg{width:20px; height:20px}
   .modal label{font-size:12px; color:var(--sub); display:block; margin:10px 0 4px}
-  .modal input{width:100%; border:2px solid var(--line); border-radius:12px; padding:10px 12px;
-    font-family:inherit; font-size:14px; background:#fffefb; color:var(--text); outline:none}
+  .modal input, .modal textarea{width:100%; border:2px solid var(--line); border-radius:12px; padding:10px 12px;
+    font-family:inherit; font-size:14px; background:#fffefb; color:var(--text); outline:none; resize:none}
   .season-row{display:flex; gap:8px}
   .season-row button{flex:1; border:2px solid var(--line); background:#fffefb; border-radius:12px;
     padding:9px 0; font-family:inherit; font-size:13.5px; color:var(--sub); font-weight:bold}
@@ -290,8 +290,8 @@
       <button id="stKyu" onclick="setDaySt('gakudo')"><span class="sic" id="sicKyu"></span>学童休み</button>
       <button id="stNone" onclick="setDaySt('')">なし</button>
     </div>
-    <label>この日のメモ（学童でやることなど）</label>
-    <input type="text" id="dayMemo" placeholder="例：学童で算数ドリル3ページ">
+    <label>この日のメモ（学童でやることなど・改行OK）</label>
+    <textarea id="dayMemo" rows="3" placeholder="例：学童で算数ドリル3ページ&#10;音読もやる"></textarea>
     <div class="btns">
       <button class="m-cancel" onclick="closeDay()">やめる</button>
       <button class="m-save" onclick="saveDay()">保存</button>
@@ -494,34 +494,21 @@ function renderCal(){
     d.setDate(d.getDate()+1);
   }
   flushMonth();
-  // 日にちを決めた宿題のリスト
+  // きょうの分だけ表示
   const YB=["日","月","火","水","木","金","土"];
-  const items = [];
-  kd().tasks.forEach(x=>{ (x.plan||[]).forEach(p=>items.push({d:p, name:x.name})); });
-  if(items.length){
-    items.sort((a,b)=>a.d.localeCompare(b.d));
-    html += '<div class="plan-card"><h3><span style="display:inline-block;width:17px;height:17px">'+icon("pencil")+'</span>日にちを決めた宿題</h3>'
-      + items.map(it=>{
-          const w = YB[new Date(it.d).getDay()];
-          return '<div class="plan-row'+(it.d<t?' past':'')+'"><span class="pd">'+fmtMD(it.d)+'（'+w+'）</span><span>'+esc(it.name)+'</span></div>';
-        }).join("")
-      + '</div>';
-  }
-  // 日ごとのメモ一覧
-  const memos = [];
-  Object.keys(kd().days).forEach(ds=>{
-    const r = kd().days[ds];
-    if(r && r.memo) memos.push({d:ds, memo:r.memo, rest:r.st==="rest"});
+  const todayPlans = kd().tasks.filter(x=>(x.plan||[]).indexOf(t)>=0).map(x=>x.name);
+  const todayRec = kd().days[t];
+  const todayMemo = todayRec && todayRec.memo;
+  let inner = "";
+  todayPlans.forEach(n=>{
+    inner += '<div class="plan-row"><span class="pd">やる宿題</span><span>'+esc(n)+'</span></div>';
   });
-  if(memos.length){
-    memos.sort((a,b)=>a.d.localeCompare(b.d));
-    html += '<div class="plan-card"><h3><span style="display:inline-block;width:17px;height:17px">'+icon("memo")+'</span>日にちのメモ</h3>'
-      + memos.map(it=>{
-          const w = YB[new Date(it.d).getDay()];
-          return '<div class="plan-row'+(it.d<t?' past':'')+'"><span class="pd">'+fmtMD(it.d)+'（'+w+'）</span><span>'+esc(it.memo)+'</span></div>';
-        }).join("")
-      + '</div>';
+  if(todayMemo){
+    inner += '<div class="plan-row"><span class="pd">メモ</span><span style="white-space:pre-line">'+esc(todayMemo)+'</span></div>';
   }
+  if(!inner) inner = '<div class="plan-row"><span style="color:var(--sub)">きょうの予定やメモはまだないよ</span></div>';
+  html += '<div class="plan-card"><h3><span style="display:inline-block;width:17px;height:17px">'+icon("memo")+'</span>きょう '
+    + fmtMD(t) + '（' + YB[new Date(t).getDay()] + '）</h3>' + inner + '</div>';
   wrap.innerHTML = html;
 }
 
