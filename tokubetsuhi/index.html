@@ -51,6 +51,8 @@
   .chip{font-family:inherit;font-size:13px;font-weight:700;color:var(--ink-soft);background:var(--cream);
     border:1.5px solid var(--line);border-radius:99px;padding:9px 13px;cursor:pointer;transition:.15s;}
   .chip.sel{background:var(--sage-deep);border-color:var(--sage-deep);color:#fff;}
+  .chip.add{border-style:dashed;font-weight:400;}
+  .chip.editing{border-color:#d9a9a4;color:#c4756f;}
   .chip:active{transform:scale(.95);}
   .yen-row{position:relative;}
   .yen-row::after{content:"円";position:absolute;right:14px;top:50%;transform:translateY(-50%);
@@ -208,8 +210,9 @@
 const KEY="tokubetsuhi_app_v2";
 const CATS=["行事・イベント","車・住まい","保険・税金","こども","帰省・旅行","プレゼント","その他"];
 
-let state={records:[],budgets:{}};   /* record: {id,date:"YYYY-MM-DD",name,cat,amt} / budgets: {"2026":600000} */
-let selCat=0;
+let state={records:[],budgets:{},cats:null};   /* record: {id,date,name,cat(名前),amt} */
+let selCat="";
+let editCats=false;
 let mRef=new Date(), yRef=new Date().getFullYear();
 
 async function storeGet(k){
@@ -224,6 +227,10 @@ async function load(){
   try{const v=await storeGet(KEY);if(v)state=Object.assign(state,JSON.parse(v));}catch(e){}
   if(!Array.isArray(state.records))state.records=[];
   if(!state.budgets||typeof state.budgets!=="object")state.budgets={};
+  if(!Array.isArray(state.cats)||!state.cats.length)state.cats=CATS.slice();
+  /* 記録のカテゴリを番号 → 名前に移行 */
+  state.records.forEach(r=>{ if(typeof r.cat==="number") r.cat = CATS[r.cat] || "その他"; });
+  selCat = state.cats[0] || "";
   /* v1（予定型）からの引き継ぎ：支払い済みの予定を記録として取り込む */
   try{
     const old=await storeGet("tokubetsuhi_app_v1");
@@ -263,11 +270,43 @@ document.getElementById("fDate").value=todayStr();
 
 function renderCatChips(){
   const w=document.getElementById("catChips");w.innerHTML="";
-  CATS.forEach((n,i)=>{
-    const b=document.createElement("button");b.className="chip"+(i===selCat?" sel":"");b.textContent=n;
-    b.addEventListener("click",()=>{selCat=i;renderCatChips();});
+  state.cats.forEach((n)=>{
+    const b=document.createElement("button");
+    b.className="chip"+(n===selCat&&!editCats?" sel":"")+(editCats?" editing":"");
+    b.textContent=n+(editCats?" ×":"");
+    b.addEventListener("click",async()=>{
+      if(editCats){
+        const used=state.records.filter(r=>r.cat===n).length;
+        const msg=used?("「"+n+"」を消す？\n（記録"+used+"件は「その他」になるよ）"):("「"+n+"」を消す？");
+        if(!confirm(msg))return;
+        if(used){
+          if(state.cats.indexOf("その他")<0)state.cats.push("その他");
+          state.records.forEach(r=>{ if(r.cat===n) r.cat="その他"; });
+        }
+        state.cats=state.cats.filter(x=>x!==n);
+        if(selCat===n)selCat=state.cats[0]||"";
+        await save();renderAll();
+      }else{
+        selCat=n;renderCatChips();
+      }
+    });
     w.appendChild(b);
   });
+  const add=document.createElement("button");
+  add.className="chip add";add.textContent="＋ 追加";
+  add.addEventListener("click",async()=>{
+    const n=(prompt("新しいカテゴリの名前は？")||"").trim();
+    if(!n)return;
+    if(state.cats.indexOf(n)>=0){toast("もうあるよ");return;}
+    state.cats.push(n);selCat=n;editCats=false;
+    await save();renderAll();toast("「"+n+"」を追加したよ");
+  });
+  w.appendChild(add);
+  const ed=document.createElement("button");
+  ed.className="chip add"+(editCats?" sel":"");
+  ed.textContent=editCats?"完了":"編集";
+  ed.addEventListener("click",()=>{editCats=!editCats;renderCatChips();});
+  w.appendChild(ed);
 }
 function renderNameList(){
   const dl=document.getElementById("nameList");dl.innerHTML="";
@@ -284,6 +323,7 @@ document.getElementById("saveBtn").addEventListener("click",async()=>{
   if(!date){toast("日付を選んでね");return;}
   if(!name){toast("何に使ったか入力してね");return;}
   if(!amt||amt<1){toast("金額を入力してね");return;}
+  if(!selCat){toast("カテゴリを選んでね");return;}
   state.records.push({id:Date.now(),date:date,name:name,cat:selCat,amt:amt});
   await save();
   document.getElementById("fName").value="";document.getElementById("fAmt").value="";
@@ -304,7 +344,7 @@ function renderList(){
     const el=document.createElement("div");el.className="rec";
     const d=r.date.slice(8,10).replace(/^0/,"")+"日";
     el.innerHTML='<div class="r-mid"><div class="r-name">'+esc(r.name)+'</div>'
-      +'<div class="r-meta">'+d+'　<span class="r-cat">'+(CATS[r.cat]||"")+'</span></div></div>'
+      +'<div class="r-meta">'+d+'　<span class="r-cat">'+esc(r.cat||"")+'</span></div></div>'
       +'<span class="r-amt">'+yen(r.amt)+'円</span>'
       +'<button class="del" data-id="'+r.id+'">×</button>';
     list.appendChild(el);
@@ -359,11 +399,13 @@ function renderSummary(){
 
   /* category totals */
   const cs=document.getElementById("catSum");cs.innerHTML="";
-  CATS.forEach((n,i)=>{
-    const ci=recs.filter(x=>x.cat===i);if(ci.length===0)return;
+  const names=state.cats.slice();
+  recs.forEach(r=>{ if(r.cat&&names.indexOf(r.cat)<0)names.push(r.cat); });
+  names.forEach((n)=>{
+    const ci=recs.filter(x=>x.cat===n);if(ci.length===0)return;
     const t=ci.reduce((s,x)=>s+x.amt,0);
     const el=document.createElement("div");el.className="cs";
-    el.innerHTML='<span class="c-name">'+n+'</span><span class="c-cnt">'+ci.length+'件</span><span class="c-amt">'+yen(t)+'円</span>';
+    el.innerHTML='<span class="c-name">'+esc(n)+'</span><span class="c-cnt">'+ci.length+'件</span><span class="c-amt">'+yen(t)+'円</span>';
     cs.appendChild(el);
   });
   if(cs.innerHTML==="")cs.innerHTML='<div class="empty">まだ記録がないよ ✎</div>';
