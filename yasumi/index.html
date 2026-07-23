@@ -301,7 +301,8 @@
       <button id="stNone" onclick="setDaySt('')">なし</button>
     </div>
     <label>この日のメモ（学童でやることなど・改行OK）</label>
-    <textarea id="dayMemo" rows="3" placeholder="例：学童で算数ドリル3ページ&#10;音読もやる"></textarea>
+    <textarea id="dayMemo" rows="3" placeholder="例：学童で算数ドリル3ページ&#10;音読もやる" oninput="renderDayChecks()"></textarea>
+    <div id="dayChecks"></div>
     <div class="btns">
       <button class="m-cancel" onclick="closeDay()">やめる</button>
       <button class="m-save" onclick="saveDay()">保存</button>
@@ -572,16 +573,38 @@ function delTask(id){
   }
 }
 /* ---- 日のスタンプ＆メモ ---- */
-let dayTarget = null, daySt = "";
+let dayTarget = null, daySt = "", dayChecksWork = {};
 const YOBI7 = ["日","月","火","水","木","金","土"];
 function openDay(ds){
   dayTarget = ds;
-  const rec = kd().days[ds] || { st:"", memo:"" };
+  const rec = kd().days[ds] || { st:"", memo:"", checks:{} };
   daySt = rec.st || "";
+  dayChecksWork = Object.assign({}, rec.checks || {});
   document.getElementById("dayTitle").textContent = fmtMD(ds) + "（" + YOBI7[new Date(ds).getDay()] + "）の記録";
   document.getElementById("dayMemo").value = rec.memo || "";
   paintDaySt();
+  renderDayChecks();
   document.getElementById("overlay4").classList.add("show");
+}
+function renderDayChecks(){
+  const memo = document.getElementById("dayMemo").value;
+  const lines = memo.split("\n").filter(l=>l.trim()!=="");
+  const wrap = document.getElementById("dayChecks");
+  if(!lines.length){ wrap.innerHTML = ""; return; }
+  wrap.innerHTML = '<div class="chk-hint" style="margin:8px 2px 2px">できたらタップでチェック✓</div>'
+    + lines.map((l,i)=>{
+      const done = !!dayChecksWork[l];
+      return '<div class="chk-row'+(done?' done':'')+'" onclick="toggleDayCheck('+i+')">'
+        + '<span class="chk-box">'+(done?icon("check"):"")+'</span>'
+        + '<span class="chk-txt">'+esc(l)+'</span></div>';
+    }).join("");
+}
+function toggleDayCheck(idx){
+  const lines = document.getElementById("dayMemo").value.split("\n").filter(l=>l.trim()!=="");
+  const line = lines[idx]; if(line===undefined) return;
+  if(dayChecksWork[line]) delete dayChecksWork[line];
+  else dayChecksWork[line] = true;
+  renderDayChecks();
 }
 function setDaySt(s){ daySt = (daySt===s) ? "" : s; paintDaySt(); }
 function paintDaySt(){
@@ -594,11 +617,10 @@ function closeDay(){ document.getElementById("overlay4").classList.remove("show"
 function saveDay(){
   if(!dayTarget) return;
   const memo = document.getElementById("dayMemo").value.trim();
-  const prev = kd().days[dayTarget] || {};
   // メモの行に残ってるチェックだけ引き継ぐ
   const lines = memo.split("\n").map(l=>l.trim());
   const checks = {};
-  if(prev.checks) Object.keys(prev.checks).forEach(k=>{ if(prev.checks[k] && lines.indexOf(k.trim())>=0) checks[k]=true; });
+  Object.keys(dayChecksWork).forEach(k=>{ if(dayChecksWork[k] && lines.indexOf(k.trim())>=0) checks[k]=true; });
   if(!daySt && !memo){ delete kd().days[dayTarget]; }
   else { kd().days[dayTarget] = { st:daySt, memo:memo, checks:checks }; }
   save(); closeDay(); render();
