@@ -109,6 +109,13 @@
   .chk-txt{flex:1; font-size:13.5px; line-height:1.5; padding-top:2px}
   .chk-row.done .chk-txt{color:var(--sub); text-decoration:line-through}
   .chk-hint{font-size:10.5px; color:var(--sub); margin:2px 2px 0}
+  .chk-row .chk-del{border:none; background:none; color:#ddd0c0; font-size:15px; padding:2px 4px; flex-shrink:0}
+  .add-row{display:flex; gap:7px; margin-top:8px}
+  .add-row input{flex:1}
+  .add-row button{flex:0 0 46px; border:none; border-radius:12px; background:var(--accent); color:#fff;
+    font-family:inherit; font-size:18px; font-weight:bold}
+  .memo-txt{white-space:pre-line; font-size:13px; color:var(--text); background:#faf5ec;
+    border-radius:10px; padding:8px 11px; margin-top:4px; line-height:1.6}
 
   .add-card{background:var(--card); border-radius:16px; box-shadow:var(--shadow); padding:12px 14px; margin:14px 0 20px}
   .add-card .f-label{font-size:11.5px; color:var(--sub); margin:8px 0 4px}
@@ -244,7 +251,7 @@
 
 <div id="pageCal" class="page">
   <div id="calWrap"></div>
-  <div class="hint">※日にちをタップすると、スタンプとメモが書けるよ。OK!=その日の分できた!、車=旅行などのおやすみ、休のはんこ=学童を休んだ日。茶色い点はメモのある日。赤い旗は提出日、えんぴつは「この日にやる!」の宿題だよ。</div>
+  <div class="hint">※日にちをタップすると、その日の「やることチェックリスト」と「メモ」が書けるよ。OK!=その日の分できた!、車=旅行などのおやすみ、休のはんこ=学童を休んだ日。茶色い点はチェックリスト・メモのある日。赤い旗は提出日、えんぴつは「この日にやる!」の宿題だよ。</div>
   <div class="bkx">
     <h3><span data-icon="save"></span>データのバックアップ</h3>
     記録はこの端末のブラウザ内に保存されています。ときどきファイルに書き出しておくと安心です。<br>
@@ -300,9 +307,14 @@
       <button id="stKyu" onclick="setDaySt('gakudo')"><span class="sic" id="sicKyu"></span>学童休み</button>
       <button id="stNone" onclick="setDaySt('')">なし</button>
     </div>
-    <label>この日のメモ（学童でやることなど・改行OK）</label>
-    <textarea id="dayMemo" rows="3" placeholder="例：学童で算数ドリル3ページ&#10;音読もやる" oninput="renderDayChecks()"></textarea>
-    <div id="dayChecks"></div>
+    <label>やることチェックリスト（できたらタップで✓）</label>
+    <div id="dayList"></div>
+    <div class="add-row">
+      <input type="text" id="dayNew" placeholder="例：算数ドリル3ページ" onkeydown="if(event.key==='Enter')addDayItem()">
+      <button type="button" onclick="addDayItem()">＋</button>
+    </div>
+    <label>メモ（自由記入・改行OK）</label>
+    <textarea id="dayMemo" rows="2" placeholder="例：習字セット持ち帰る"></textarea>
     <div class="btns">
       <button class="m-cancel" onclick="closeDay()">やめる</button>
       <button class="m-save" onclick="saveDay()">保存</button>
@@ -363,10 +375,20 @@ function load(){
   try{
     const d = JSON.parse(localStorage.getItem(KEY));
     if(d && d.kids){
-      // 旧データ移行：days の 1 → {st:"hana", memo:""}
+      // 旧データ移行：days の 1 → {st:"hana"}／メモ＋チェック → チェックリストに分離
       Object.values(d.kids).forEach(k=>{
         const days = k.days || {};
-        Object.keys(days).forEach(ds=>{ if(days[ds]===1) days[ds] = { st:"hana", memo:"" }; });
+        Object.keys(days).forEach(ds=>{
+          if(days[ds]===1) days[ds] = { st:"hana" };
+          const rec = days[ds];
+          if(rec && typeof rec==="object" && !Array.isArray(rec.list)){
+            const lines = (rec.memo||"").split("\n").map(l=>l.trim()).filter(Boolean);
+            const checks = rec.checks || {};
+            rec.list = lines.map(l=>({text:l, done:!!checks[l]}));
+            rec.memo = "";
+            delete rec.checks;
+          }
+        });
       });
       return d;
     }
@@ -491,7 +513,7 @@ function renderCal(){
     }
     const rec = days[ds];
     const st = rec && rec.st;
-    const hasMemo = rec && rec.memo;
+    const hasMemo = rec && ((rec.list && rec.list.length) || rec.memo);
     const isDue = kd().tasks.some(x=>x.due===ds);
     const isPlan = kd().tasks.some(x=>(x.plan||[]).indexOf(ds)>=0);
     cells += '<div class="cell'+(st==="hana"?' done':'')+(st==="rest"?' rest':'')+(st==="gakudo"?' gakudo':'')+(ds===t?' today':'')+(isDue?' dueday':'')+(isPlan?' planday':'')+'" onclick="openDay(\''+ds+'\')">'
@@ -510,21 +532,22 @@ function renderCal(){
   const YB=["日","月","火","水","木","金","土"];
   const todayPlans = kd().tasks.filter(x=>(x.plan||[]).indexOf(t)>=0).map(x=>x.name);
   const todayRec = kd().days[t] || {};
+  const todayList = todayRec.list || [];
   const todayMemo = todayRec.memo;
-  const checks = todayRec.checks || {};
   let inner = "";
   todayPlans.forEach(n=>{
     inner += '<div class="plan-row"><span class="pd">やる宿題</span><span>'+esc(n)+'</span></div>';
   });
-  if(todayMemo){
-    const lines = todayMemo.split("\n").filter(l=>l.trim()!=="");
-    inner += lines.map((l,i)=>{
-      const done = !!checks[l];
-      return '<div class="chk-row'+(done?' done':'')+'" onclick="toggleCheck(\''+t+'\','+i+')">'
-        + '<span class="chk-box">'+(done?icon("check"):"")+'</span>'
-        + '<span class="chk-txt">'+esc(l)+'</span></div>';
-    }).join("");
+  if(todayList.length){
+    inner += todayList.map((it,i)=>
+      '<div class="chk-row'+(it.done?' done':'')+'" onclick="toggleCheck(\''+t+'\','+i+')">'
+      + '<span class="chk-box">'+(it.done?icon("check"):"")+'</span>'
+      + '<span class="chk-txt">'+esc(it.text)+'</span></div>'
+    ).join("");
     inner += '<div class="chk-hint">タップでチェック✓　できたらポチッ！</div>';
+  }
+  if(todayMemo){
+    inner += '<div class="memo-txt">'+esc(todayMemo)+'</div>';
   }
   if(!inner) inner = '<div class="plan-row"><span style="color:var(--sub)">きょうの予定やメモはまだないよ</span></div>';
   html += '<div class="plan-card"><h3><span style="display:inline-block;width:17px;height:17px">'+icon("memo")+'</span>きょう '
@@ -572,40 +595,42 @@ function delTask(id){
     save(); render(); toast("消したよ");
   }
 }
-/* ---- 日のスタンプ＆メモ ---- */
-let dayTarget = null, daySt = "", dayChecksWork = {};
+/* ---- 日のスタンプ／チェックリスト／メモ ---- */
+let dayTarget = null, daySt = "", dayListWork = [];
 const YOBI7 = ["日","月","火","水","木","金","土"];
 function openDay(ds){
   dayTarget = ds;
-  const rec = kd().days[ds] || { st:"", memo:"", checks:{} };
+  const rec = kd().days[ds] || { st:"", list:[], memo:"" };
   daySt = rec.st || "";
-  dayChecksWork = Object.assign({}, rec.checks || {});
+  dayListWork = (rec.list||[]).map(it=>({text:it.text, done:!!it.done}));
   document.getElementById("dayTitle").textContent = fmtMD(ds) + "（" + YOBI7[new Date(ds).getDay()] + "）の記録";
   document.getElementById("dayMemo").value = rec.memo || "";
+  document.getElementById("dayNew").value = "";
   paintDaySt();
-  renderDayChecks();
+  renderDayList();
   document.getElementById("overlay4").classList.add("show");
 }
-function renderDayChecks(){
-  const memo = document.getElementById("dayMemo").value;
-  const lines = memo.split("\n").filter(l=>l.trim()!=="");
-  const wrap = document.getElementById("dayChecks");
-  if(!lines.length){ wrap.innerHTML = ""; return; }
-  wrap.innerHTML = '<div class="chk-hint" style="margin:8px 2px 2px">できたらタップでチェック✓</div>'
-    + lines.map((l,i)=>{
-      const done = !!dayChecksWork[l];
-      return '<div class="chk-row'+(done?' done':'')+'" onclick="toggleDayCheck('+i+')">'
-        + '<span class="chk-box">'+(done?icon("check"):"")+'</span>'
-        + '<span class="chk-txt">'+esc(l)+'</span></div>';
-    }).join("");
+function renderDayList(){
+  const wrap = document.getElementById("dayList");
+  if(!dayListWork.length){ wrap.innerHTML = '<div class="chk-hint" style="margin:2px">下の欄に「やること」を足してね</div>'; return; }
+  wrap.innerHTML = dayListWork.map((it,i)=>
+    '<div class="chk-row'+(it.done?' done':'')+'">'
+    + '<span class="chk-box" onclick="toggleDayItem('+i+')">'+(it.done?icon("check"):"")+'</span>'
+    + '<span class="chk-txt" onclick="toggleDayItem('+i+')">'+esc(it.text)+'</span>'
+    + '<button class="chk-del" type="button" onclick="delDayItem('+i+')">✕</button></div>'
+  ).join("");
 }
-function toggleDayCheck(idx){
-  const lines = document.getElementById("dayMemo").value.split("\n").filter(l=>l.trim()!=="");
-  const line = lines[idx]; if(line===undefined) return;
-  if(dayChecksWork[line]) delete dayChecksWork[line];
-  else dayChecksWork[line] = true;
-  renderDayChecks();
+function addDayItem(){
+  const inp = document.getElementById("dayNew");
+  const v = inp.value.trim();
+  if(!v) return;
+  dayListWork.push({text:v, done:false});
+  inp.value = ""; inp.focus();
+  renderDayList();
 }
+function toggleDayItem(i){ if(dayListWork[i]){ dayListWork[i].done = !dayListWork[i].done; renderDayList(); } }
+function delDayItem(i){ dayListWork.splice(i,1); renderDayList(); }
+
 function setDaySt(s){ daySt = (daySt===s) ? "" : s; paintDaySt(); }
 function paintDaySt(){
   document.getElementById("stHana").classList.toggle("on", daySt==="hana");
@@ -616,23 +641,20 @@ function paintDaySt(){
 function closeDay(){ document.getElementById("overlay4").classList.remove("show"); dayTarget=null; }
 function saveDay(){
   if(!dayTarget) return;
+  // 入力欄に打ちかけの項目があれば拾う
+  const pending = document.getElementById("dayNew").value.trim();
+  if(pending) dayListWork.push({text:pending, done:false});
   const memo = document.getElementById("dayMemo").value.trim();
-  // メモの行に残ってるチェックだけ引き継ぐ
-  const lines = memo.split("\n").map(l=>l.trim());
-  const checks = {};
-  Object.keys(dayChecksWork).forEach(k=>{ if(dayChecksWork[k] && lines.indexOf(k.trim())>=0) checks[k]=true; });
-  if(!daySt && !memo){ delete kd().days[dayTarget]; }
-  else { kd().days[dayTarget] = { st:daySt, memo:memo, checks:checks }; }
+  const list = dayListWork.filter(it=>it.text.trim()!=="");
+  if(!daySt && !list.length && !memo){ delete kd().days[dayTarget]; }
+  else { kd().days[dayTarget] = { st:daySt, list:list, memo:memo }; }
   save(); closeDay(); render();
   toast(daySt==="hana" ? "OK!スタンプおしたよ" : daySt==="rest" ? "おやすみの日にしたよ" : daySt==="gakudo" ? "学童おやすみにしたよ" : "保存したよ");
 }
+/* カレンダーのカードから直接チェックを付け外し */
 function toggleCheck(ds, idx){
-  const rec = kd().days[ds]; if(!rec || !rec.memo) return;
-  const lines = rec.memo.split("\n").filter(l=>l.trim()!=="");
-  const line = lines[idx]; if(line===undefined) return;
-  if(!rec.checks) rec.checks = {};
-  if(rec.checks[line]) delete rec.checks[line];
-  else rec.checks[line] = true;
+  const rec = kd().days[ds]; if(!rec || !rec.list || !rec.list[idx]) return;
+  rec.list[idx].done = !rec.list[idx].done;
   save(); render();
 }
 function showPage(p){
