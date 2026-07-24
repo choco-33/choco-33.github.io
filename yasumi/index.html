@@ -252,7 +252,7 @@
 
 <div id="pageCal" class="page">
   <div id="calWrap"></div>
-  <div class="hint">※日にちをタップすると、その日の「やることチェックリスト」と「メモ」が書けるよ。OK!=その日の分できた!、車=旅行などのおやすみ、休のはんこ=学童を休んだ日。茶色い点はチェックリスト・メモのある日。赤い旗は提出日、えんぴつは「この日にやる!」の宿題だよ。</div>
+  <div class="hint">※日にちをタップすると、その日の「やることチェックリスト」と「メモ」が書けるよ。チェックが付かなかった項目は、次の日にアプリを開くと自動で今日にくり越されるよ。笑顔=できた!、車=旅行などのおやすみ、休のはんこ=学童を休んだ日、しょんぼり顔=できなかった。茶色い点はチェックリスト・メモのある日。赤い旗は提出日、えんぴつは「この日にやる!」の宿題だよ。</div>
   <div class="bkx">
     <h3><span data-icon="save"></span>データのバックアップ</h3>
     記録はこの端末のブラウザ内に保存されています。ときどきファイルに書き出しておくと安心です。<br>
@@ -405,6 +405,27 @@ function load(){
 }
 function save(){ localStorage.setItem(KEY, JSON.stringify(db)); }
 function kd(){ return db.kids[db.cur]; }
+/* できなかった宿題を今日に自動くり越し */
+function carryOver(){
+  const t = todayStr();
+  let moved = false;
+  Object.keys(db.kids).forEach(kk=>{
+    const days = db.kids[kk].days || {};
+    Object.keys(days).filter(ds=>ds < t).sort().forEach(ds=>{
+      const rec = days[ds]; if(!rec || !Array.isArray(rec.list)) return;
+      const undone = rec.list.filter(it=>!it.done);
+      if(!undone.length) return;
+      const tr = days[t] = days[t] || { st:"", list:[], memo:"" };
+      if(!Array.isArray(tr.list)) tr.list = [];
+      undone.forEach(it=>{
+        if(!tr.list.some(x=>x.text===it.text)){ tr.list.push({text:it.text, done:false}); moved = true; }
+      });
+      rec.list = rec.list.filter(it=>it.done);   // 昨日以前は「できた分」だけ残す
+      if(!rec.st && (!rec.list || !rec.list.length) && !rec.memo) delete days[ds];
+    });
+  });
+  if(moved) save();
+}
 function todayStr(){
   const t=new Date();
   return t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0");
@@ -793,6 +814,7 @@ function toast(msg){
   toastTimer = setTimeout(()=>t.classList.remove("show"), 1800);
 }
 
+carryOver();
 render();
 </script>
 </body>
