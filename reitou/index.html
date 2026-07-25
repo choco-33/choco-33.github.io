@@ -153,7 +153,8 @@
   .cell.today{border:2px solid var(--cart);}
   .cell .memodot{position:absolute;bottom:4px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--ice-deep);z-index:2;box-shadow:0 0 0 1.5px #fff;}
   .cell.has .memodot{box-shadow:0 0 0 1.5px rgba(0,0,0,.25);}
-  .cell .note{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;opacity:.55;}
+  .cell .note{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+  .cell .note svg{width:66%;height:66%;}
   /* detail sheet */
   .sheet-bg{position:fixed;inset:0;background:rgba(50,65,75,.42);opacity:0;pointer-events:none;transition:.25s;z-index:40;}
   .sheet-bg.show{opacity:1;pointer-events:auto;}
@@ -231,7 +232,7 @@
     </div>
     <div class="wk"><div class="sun">日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div class="sat">土</div></div>
     <div class="cal" id="bCal"></div>
-    <div class="tip">日をタップして、お弁当の写真と<br>「何を入れたか」を記録できるよ 🍱</div>
+    <div class="tip">日をタップして、お弁当の写真と<br>「何を入れたか」を記録できるよ <svg viewBox="0 0 48 48" fill="none" style="width:17px;height:17px;vertical-align:-4px"><rect x="6.5" y="13" width="35" height="25" rx="6" fill="#f6e2c4" stroke="#cc9b5e" stroke-width="2.6"/><rect x="9.5" y="16.5" width="12.5" height="18" rx="3" fill="#fffaf0" stroke="#cc9b5e" stroke-width="1.8"/><circle cx="15.7" cy="25.5" r="2.5" fill="#e2726a"/><circle cx="30.5" cy="21.5" r="3.5" fill="#e6a15c" stroke="#cc8a4a" stroke-width="1.2"/><circle cx="36" cy="26.5" r="3.5" fill="#e6a15c" stroke="#cc8a4a" stroke-width="1.2"/><circle cx="29.8" cy="30.8" r="3" fill="#8fb37e" stroke="#6f9861" stroke-width="1.2"/></svg></div>
   </div>
 </div>
 
@@ -469,6 +470,7 @@ function bAllMeta(){return new Promise(res=>{const rq=bTx(["meta"],"readonly").o
 let bRef=new Date();bRef.setDate(1);
 let bMap={};let bCur=null;let bPending=undefined;let bUsedSel=[];
 const BWD=["日","月","火","水","木","金","土"];
+const BENTO_ICON='<svg viewBox="0 0 48 48" fill="none"><rect x="6.5" y="13" width="35" height="25" rx="6" fill="#f6e2c4" stroke="#cc9b5e" stroke-width="2.6"/><rect x="9.5" y="16.5" width="12.5" height="18" rx="3" fill="#fffaf0" stroke="#cc9b5e" stroke-width="1.8"/><circle cx="15.7" cy="25.5" r="2.5" fill="#e2726a"/><circle cx="30.5" cy="21.5" r="3.5" fill="#e6a15c" stroke="#cc8a4a" stroke-width="1.2"/><circle cx="36" cy="26.5" r="3.5" fill="#e6a15c" stroke="#cc8a4a" stroke-width="1.2"/><circle cx="29.8" cy="30.8" r="3" fill="#8fb37e" stroke="#6f9861" stroke-width="1.2"/></svg>';
 function bYmd(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 
 async function bMakeImages(file){
@@ -494,7 +496,7 @@ function renderBento(){
     if(m&&m.hasImg)cls+=" has";if(ds===today)cls+=" today";
     let inner='<span class="dnum">'+d+'</span>';
     if(m&&m.hasImg&&m.thumb)inner+='<img src="'+m.thumb+'" alt="">';
-    else if(hasMemo)inner+='<span class="note">🍱</span>';
+    else if(hasMemo)inner+='<span class="note">'+BENTO_ICON+'</span>';
     if(hasMemo)inner+='<span class="memodot"></span>';
     html+='<div class="'+cls+'" data-bd="'+ds+'">'+inner+'</div>';}
   const cal=document.getElementById("bCal");cal.innerHTML=html;
