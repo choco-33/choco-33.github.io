@@ -147,6 +147,8 @@
   .cell .dn{font-size:11px; line-height:1}
   .cell .st{width:22px; height:22px; margin-top:1px}
   .cell .st svg{width:100%; height:100%}
+  .cell .st.multi{width:auto; max-width:100%; display:inline-flex; gap:1px; justify-content:center}
+  .cell .st.multi svg{width:15px; height:15px}
   .cell.done{background:#fdf6e8}
   body.ao .cell.done{background:#fdf6e8}
   .cell.rest{background:#e9f1f6}
@@ -301,7 +303,7 @@
 <div id="overlay4">
   <div class="modal">
     <h3><span data-icon="cal"></span><span id="dayTitle"></span></h3>
-    <label>スタンプ</label>
+    <label>スタンプ（いくつでもえらべるよ）</label>
     <div class="stamp-row">
       <button id="stHana" onclick="setDaySt('hana')"><span class="sic" id="sicHana"></span>できた!</button>
       <button id="stRest" onclick="setDaySt('rest')"><span class="sic" id="sicRest"></span>おやすみ</button>
@@ -392,6 +394,10 @@ function load(){
             rec.memo = "";
             delete rec.checks;
           }
+          if(rec && typeof rec==="object"){
+            if(!Array.isArray(rec.sts)) rec.sts = rec.st ? [rec.st] : [];
+            delete rec.st;
+          }
         });
       });
       return d;
@@ -405,6 +411,8 @@ function load(){
 }
 function save(){ localStorage.setItem(KEY, JSON.stringify(db)); }
 function kd(){ return db.kids[db.cur]; }
+/* 1日のスタンプは配列で管理（旧データの単一 st も配列として読む） */
+function stsOf(r){ return r ? (Array.isArray(r.sts) ? r.sts : (r.st ? [r.st] : [])) : []; }
 /* できなかった宿題を今日に自動くり越し */
 function carryOver(){
   const t = todayStr();
@@ -415,13 +423,13 @@ function carryOver(){
       const rec = days[ds]; if(!rec || !Array.isArray(rec.list)) return;
       const undone = rec.list.filter(it=>!it.done);
       if(!undone.length) return;
-      const tr = days[t] = days[t] || { st:"", list:[], memo:"" };
+      const tr = days[t] = days[t] || { sts:[], list:[], memo:"" };
       if(!Array.isArray(tr.list)) tr.list = [];
       undone.forEach(it=>{
         if(!tr.list.some(x=>x.text===it.text)){ tr.list.push({text:it.text, done:false}); moved = true; }
       });
       rec.list = rec.list.filter(it=>it.done);   // 昨日以前は「できた分」だけ残す
-      if(!rec.st && (!rec.list || !rec.list.length) && !rec.memo) delete days[ds];
+      if(!stsOf(rec).length && (!rec.list || !rec.list.length) && !rec.memo) delete days[ds];
     });
   });
   if(moved) save();
@@ -456,7 +464,7 @@ function render(){
   let tot=0, done=0;
   tasks.forEach(x=>{ tot+=x.total; done+=Math.min(x.done,x.total); });
   document.getElementById("statProg").textContent = tot ? Math.floor(done/tot*100)+"%" : "0%";
-  document.getElementById("statStamp").textContent = Object.values(kd().days).filter(v=>v && v.st==="hana").length;
+  document.getElementById("statStamp").textContent = Object.values(kd().days).filter(v=>stsOf(v).indexOf("hana")>=0).length;
   renderTasks();
   renderCal();
 }
@@ -537,18 +545,19 @@ function renderCal(){
       for(let i=0;i<pad;i++) cells += '<div class="cell out"></div>';
     }
     const rec = days[ds];
-    const st = rec && rec.st;
+    const sts = stsOf(rec);
     const hasMemo = rec && ((rec.list && rec.list.length) || rec.memo);
     const isDue = kd().tasks.some(x=>x.due===ds);
     const isPlan = kd().tasks.some(x=>(x.plan||[]).indexOf(ds)>=0);
-    cells += '<div class="cell'+(st==="hana"?' done':'')+(st==="rest"?' rest':'')+(st==="gakudo"?' gakudo':'')+(st==="dekinai"?' dekinai':'')+(ds===t?' today':'')+(isDue?' dueday':'')+(isPlan?' planday':'')+'" onclick="openDay(\''+ds+'\')">'
+    const bg = sts.indexOf("hana")>=0?' done':sts.indexOf("rest")>=0?' rest':sts.indexOf("gakudo")>=0?' gakudo':sts.indexOf("dekinai")>=0?' dekinai':'';
+    const STIC = {hana:"ok", rest:"car", gakudo:"kyu", dekinai:"dekinai"};
+    let stHtml = "";
+    if(sts.length){ stHtml = '<span class="st'+(sts.length>1?' multi':'')+'">'+sts.map(s=>icon(STIC[s]||"")).join("")+'</span>'; }
+    else if(isDue){ stHtml = '<span class="st">'+icon("flag")+'</span>'; }
+    else if(isPlan){ stHtml = '<span class="st">'+icon("pencil")+'</span>'; }
+    cells += '<div class="cell'+bg+(ds===t?' today':'')+(isDue?' dueday':'')+(isPlan?' planday':'')+'" onclick="openDay(\''+ds+'\')">'
       + '<span class="dn">'+d.getDate()+'</span>'
-      + (st==="hana" ? '<span class="st">'+icon("ok")+'</span>'
-         : (st==="rest" ? '<span class="st">'+icon("car")+'</span>'
-         : (st==="gakudo" ? '<span class="st">'+icon("kyu")+'</span>'
-         : (st==="dekinai" ? '<span class="st">'+icon("dekinai")+'</span>'
-         : (isDue ? '<span class="st">'+icon("flag")+'</span>'
-         : (isPlan ? '<span class="st">'+icon("pencil")+'</span>' : ''))))))
+      + stHtml
       + (hasMemo ? '<span class="mdot"></span>' : '')
       + '</div>';
     d.setDate(d.getDate()+1);
@@ -622,12 +631,12 @@ function delTask(id){
   }
 }
 /* ---- 日のスタンプ／チェックリスト／メモ ---- */
-let dayTarget = null, daySt = "", dayListWork = [];
+let dayTarget = null, daySts = [], dayListWork = [];
 const YOBI7 = ["日","月","火","水","木","金","土"];
 function openDay(ds){
   dayTarget = ds;
-  const rec = kd().days[ds] || { st:"", list:[], memo:"" };
-  daySt = rec.st || "";
+  const rec = kd().days[ds] || { sts:[], list:[], memo:"" };
+  daySts = stsOf(rec).slice();
   dayListWork = (rec.list||[]).map(it=>({text:it.text, done:!!it.done}));
   document.getElementById("dayTitle").textContent = fmtMD(ds) + "（" + YOBI7[new Date(ds).getDay()] + "）の記録";
   document.getElementById("dayMemo").value = rec.memo || "";
@@ -657,13 +666,17 @@ function addDayItem(){
 function toggleDayItem(i){ if(dayListWork[i]){ dayListWork[i].done = !dayListWork[i].done; renderDayList(); } }
 function delDayItem(i){ dayListWork.splice(i,1); renderDayList(); }
 
-function setDaySt(s){ daySt = (daySt===s) ? "" : s; paintDaySt(); }
+function setDaySt(s){
+  if(s===""){ daySts = []; }
+  else { const i = daySts.indexOf(s); if(i>=0) daySts.splice(i,1); else daySts.push(s); }
+  paintDaySt();
+}
 function paintDaySt(){
-  document.getElementById("stHana").classList.toggle("on", daySt==="hana");
-  document.getElementById("stRest").classList.toggle("on", daySt==="rest");
-  document.getElementById("stKyu").classList.toggle("on", daySt==="gakudo");
-  document.getElementById("stDekinai").classList.toggle("on", daySt==="dekinai");
-  document.getElementById("stNone").classList.toggle("on", daySt==="");
+  document.getElementById("stHana").classList.toggle("on", daySts.indexOf("hana")>=0);
+  document.getElementById("stRest").classList.toggle("on", daySts.indexOf("rest")>=0);
+  document.getElementById("stKyu").classList.toggle("on", daySts.indexOf("gakudo")>=0);
+  document.getElementById("stDekinai").classList.toggle("on", daySts.indexOf("dekinai")>=0);
+  document.getElementById("stNone").classList.toggle("on", daySts.length===0);
 }
 function closeDay(){ document.getElementById("overlay4").classList.remove("show"); dayTarget=null; }
 function saveDay(){
@@ -673,10 +686,10 @@ function saveDay(){
   if(pending) dayListWork.push({text:pending, done:false});
   const memo = document.getElementById("dayMemo").value.trim();
   const list = dayListWork.filter(it=>it.text.trim()!=="");
-  if(!daySt && !list.length && !memo){ delete kd().days[dayTarget]; }
-  else { kd().days[dayTarget] = { st:daySt, list:list, memo:memo }; }
+  if(!daySts.length && !list.length && !memo){ delete kd().days[dayTarget]; }
+  else { kd().days[dayTarget] = { sts:daySts.slice(), list:list, memo:memo }; }
   save(); closeDay(); render();
-  toast(daySt==="hana" ? "OK!スタンプおしたよ" : daySt==="rest" ? "おやすみの日にしたよ" : daySt==="gakudo" ? "学童おやすみにしたよ" : daySt==="dekinai" ? "「できなかった」にしたよ。あしたがんばろ！" : "保存したよ");
+  toast(daySts.length ? "スタンプをおしたよ" : "保存したよ");
 }
 /* カレンダーのカードから直接チェックを付け外し */
 function toggleCheck(ds, idx){
