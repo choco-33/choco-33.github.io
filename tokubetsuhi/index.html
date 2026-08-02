@@ -181,7 +181,7 @@
       <div class="m-title" id="mTitle"></div>
       <button id="mNext">›</button>
     </div>
-    <div class="m-sum">この月の特別費 <b id="mSum">0</b> 円（<span id="mCnt">0</span>件）</div>
+    <div class="m-sum">この年の特別費 <b id="mSum">0</b> 円（<span id="mCnt">0</span>件）</div>
     <div class="viewsw">
       <button id="swDate" class="on" data-view="date">日付順</button>
       <button id="swCat" data-view="cat">カテゴリ別</button>
@@ -226,7 +226,7 @@ const CATS=["行事・イベント","車・住まい","保険・税金","こど�
 let state={records:[],budgets:{},cats:null};   /* record: {id,date,name,cat(名前),amt} */
 let selCat="";
 let editCats=false;
-let mRef=new Date(), yRef=new Date().getFullYear();
+let mRef=new Date(), yRef=new Date().getFullYear(), lRef=new Date().getFullYear();
 
 async function storeGet(k){
   try{if(typeof window!=="undefined"&&window.storage&&window.storage.get){const r=await window.storage.get(k);return r?r.value:null;}}catch(e){}
@@ -347,22 +347,23 @@ document.getElementById("saveBtn").addEventListener("click",async()=>{
 /* ---- monthly list ---- */
 let listView="date";
 function recCard(r){
-  const d=r.date.slice(8,10).replace(/^0/,"")+"日";
+  const p=r.date.split("-");
+  const d=(p.length===3?parseInt(p[1],10)+"/"+parseInt(p[2],10):r.date);
   return '<div class="rec"><div class="r-mid"><div class="r-name">'+esc(r.name)+'</div>'
     +'<div class="r-meta">'+d+'　<span class="r-cat">'+esc(r.cat||"")+'</span></div></div>'
     +'<span class="r-amt">'+yen(r.amt)+'円</span>'
     +'<button class="del" data-id="'+r.id+'">×</button></div>';
 }
 function renderList(){
-  const mk=mRef.getFullYear()+"-"+String(mRef.getMonth()+1).padStart(2,"0");
-  document.getElementById("mTitle").textContent=mRef.getFullYear()+"年 "+(mRef.getMonth()+1)+"月";
-  const recs=state.records.filter(r=>r.date&&r.date.slice(0,7)===mk);
+  const yk=""+lRef;
+  document.getElementById("mTitle").textContent=lRef+"年";
+  const recs=state.records.filter(r=>r.date&&r.date.slice(0,4)===yk);
   const list=document.getElementById("recList");
   let sum=0;recs.forEach(r=>sum+=r.amt);
   document.getElementById("mSum").textContent=yen(sum);
   document.getElementById("mCnt").textContent=recs.length;
 
-  if(recs.length===0){ list.innerHTML='<div class="empty">この月の特別費はないよ。えらい！◎</div>'; return; }
+  if(recs.length===0){ list.innerHTML='<div class="empty">この年の特別費はないよ。えらい！◎</div>'; return; }
 
   if(listView==="cat"){
     // カテゴリ別グループ表示（登録カテゴリ順、その他は最後）
@@ -391,8 +392,8 @@ document.querySelectorAll(".viewsw button").forEach(b=>b.addEventListener("click
   document.querySelectorAll(".viewsw button").forEach(x=>x.classList.toggle("on",x===b));
   renderList();
 }));
-document.getElementById("mPrev").addEventListener("click",()=>{mRef=new Date(mRef.getFullYear(),mRef.getMonth()-1,1);renderList();});
-document.getElementById("mNext").addEventListener("click",()=>{mRef=new Date(mRef.getFullYear(),mRef.getMonth()+1,1);renderList();});
+document.getElementById("mPrev").addEventListener("click",()=>{lRef--;renderList();});
+document.getElementById("mNext").addEventListener("click",()=>{lRef++;renderList();});
 
 /* ---- yearly summary ---- */
 function renderSummary(){
