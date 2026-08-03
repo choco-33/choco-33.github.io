@@ -32,8 +32,8 @@
   .stamps b{font-size:16px;}
 
   .tabs{display:flex;gap:6px;background:var(--line);padding:5px;border-radius:18px;margin:12px 0 16px;}
-  .tab{flex:1;text-align:center;font-family:inherit;font-size:16px;color:var(--ink-soft);
-    background:transparent;border:none;padding:11px 0;border-radius:14px;cursor:pointer;transition:.2s;}
+  .tab{flex:1;text-align:center;font-family:inherit;font-size:14.5px;color:var(--ink-soft);
+    background:transparent;border:none;padding:11px 2px;border-radius:14px;cursor:pointer;transition:.2s;}
   .tab.active{background:var(--paper);color:var(--ink);box-shadow:0 2px 8px var(--shadow);}
   .page{display:none;animation:fade .28s ease;}
   .page.active{display:block;}
@@ -119,6 +119,19 @@
   .result .again:active{transform:translateY(3px);box-shadow:0 1px 0 #c1902b;}
   .result .back{border:none;background:transparent;color:var(--ink-soft);font-family:inherit;font-size:14px;cursor:pointer;margin-top:12px;}
 
+  /* ---- sentences ---- */
+  .bun-note{background:var(--paper);border:1px dashed var(--line);border-radius:14px;padding:11px 14px;
+    font-size:13px;color:var(--ink-soft);text-align:center;line-height:1.7;margin-bottom:14px;}
+  .bun-note b{color:var(--coral-deep);}
+  .buncard{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:14px 15px;
+    box-shadow:0 3px 10px var(--shadow);margin-bottom:11px;}
+  .buncard .jp{font-size:17px;line-height:1.7;}
+  .buncard .reveal{margin-top:10px;font-family:inherit;font-size:13.5px;color:var(--mint-deep);
+    background:#e7f2ee;border:1.5px solid #cfe6df;border-radius:11px;padding:8px 14px;cursor:pointer;}
+  .buncard .reveal:active{transform:scale(.96);}
+  .buncard .ans{margin-top:11px;background:var(--cream);border-radius:12px;padding:11px 13px;
+    font-size:17px;color:var(--sky-deep);letter-spacing:.01em;line-height:1.6;word-break:break-word;}
+
   .hidden{display:none !important;}
 
   .bkx{margin:20px 2px 100px;background:var(--paper);border:1px solid var(--line);border-radius:18px;
@@ -142,6 +155,7 @@
   <div class="tabs">
     <button class="tab active" data-tab="hyou">あいうえお表</button>
     <button class="tab" data-tab="quiz">クイズ</button>
+    <button class="tab" data-tab="bun">ぶん</button>
   </div>
 
   <!-- ===== chart ===== -->
@@ -202,6 +216,13 @@
         <button class="back" id="backBtn">せってい に もどる</button>
       </div>
     </div>
+  </div>
+
+  <!-- ===== sentences ===== -->
+  <div class="page" id="page-bun">
+    <div class="bun-note">文のときは <b>は→wa</b>・<b>へ→e</b>・<b>を→o</b>！<br>ことばの間は すこしあける・文のはじめは 大文字だよ。</div>
+    <div id="bunList"></div>
+    <div class="note">日本語の文を見て、ローマ字を かんがえてみよう。<br>「こたえを みる」を おすと 正解が 出るよ ◎</div>
   </div>
 </div>
 
@@ -292,6 +313,35 @@ function renderChart(){
   c.innerHTML=html;
 }
 renderChart();
+
+/* ===== sentences（プリントの例文） ===== */
+const BUN=[
+  ["おととい、なしばたけへ 行った。","Ototoi, nasibatake e itta."],
+  ["いわさきさんは、とても やさしい。","Iwasaki-san wa, totemo yasasii."],
+  ["みんなで、「ありがとう！」と 言った。","Minna de, “Arigatô!” to itta."],
+  ["来年も、おいしい なしを 食べたい。","Rainen mo, oisii nasi o tabetai."],
+  ["ともだちと あそぶ。","Tomodati to asobu."],
+  ["にっきを かく。","Nikki o kaku."],
+  ["じょうずに おどる。","Zyôzu ni odoru."]
+];
+const MARU="①②③④⑤⑥⑦⑧⑨⑩";
+function esc(s){return(""+s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function renderBun(){
+  const w=document.getElementById("bunList");
+  w.innerHTML=BUN.map((b,i)=>
+    '<div class="buncard">'
+    +'<div class="jp">'+MARU[i]+' '+esc(b[0])+'</div>'
+    +'<button class="reveal" data-i="'+i+'">こたえを みる ▾</button>'
+    +'<div class="ans hidden" id="ans'+i+'">'+esc(b[1])+'</div>'
+    +'</div>'
+  ).join("");
+  w.querySelectorAll(".reveal").forEach(btn=>btn.addEventListener("click",()=>{
+    const a=document.getElementById("ans"+btn.dataset.i);
+    const hidden=a.classList.toggle("hidden");
+    btn.textContent=hidden?"こたえを みる ▾":"こたえを かくす ▴";
+  }));
+}
+renderBun();
 
 /* ===== quiz ===== */
 let scopeId="seion", dir="read";
