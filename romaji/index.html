@@ -49,8 +49,12 @@
     box-shadow:0 2px 6px var(--shadow);}
   .cell.blank{background:transparent;border:none;box-shadow:none;}
   .cell .kana{font-size:21px;line-height:1.1;}
-  .cell .roma{font-size:12px;color:var(--mint-deep);margin-top:2px;letter-spacing:.02em;}
+  .cell .roma{font-size:12px;color:var(--mint-deep);margin-top:2px;letter-spacing:.01em;}
+  .cell .roma .hb{color:var(--coral-deep);opacity:.85;font-size:.82em;}
   .cell.d .roma{color:var(--sky-deep);}
+  .hblegend{font-size:11.5px;color:var(--ink-soft);text-align:center;margin-top:12px;line-height:1.7;
+    background:var(--paper);border:1px dashed var(--line);border-radius:12px;padding:9px 12px;}
+  .hblegend b{color:var(--coral-deep);}
   .cell.y .kana{font-size:18px;}
 
   .rules{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:14px 15px;
@@ -262,24 +266,28 @@ const SCOPES=[
 ];
 
 /* ===== chart render ===== */
+/* ちがう文字だけ ヘボン式を（）で見せる */
+const HEBON={si:"shi",ti:"chi",tu:"tsu",hu:"fu",zi:"ji",di:"ji",du:"zu",
+  sya:"sha",syu:"shu",syo:"sho",tya:"cha",tyu:"chu",tyo:"cho",zya:"ja",zyu:"ju",zyo:"jo"};
+function romaHtml(r){ return r + (HEBON[r]?' <span class="hb">'+HEBON[r]+'</span>':''); }
+function cellHtml(x,cls){ return '<div class="cell '+(cls||"")+'"><div class="kana">'+x[0]+'</div><div class="roma">'+romaHtml(x[1])+'</div></div>'; }
 function chartGrid(rows,cls){
-  // rows: array of [hira,roma]; build 5-col with padding rows already in SEION order
   let html='<div class="grid g5">';
-  rows.forEach(x=>{ html+='<div class="cell '+(cls||"")+'"><div class="kana">'+x[0]+'</div><div class="roma">'+x[1]+'</div></div>'; });
+  rows.forEach(x=>{ html+=cellHtml(x,cls); });
   html+='</div>';
   return html;
 }
 function renderChart(){
   const c=document.getElementById("chart");
-  // 清音：5列で並べる（や行・わ行はそのまま流し込み）
   let html='<div class="sec-title">せいおん（あ〜ん）</div>';
   html+=chartGrid(SEION,"");
   html+='<div class="sec-title">だくおん・半だくおん</div>';
   html+=chartGrid(DAKUON,"d");
   html+='<div class="sec-title">ようおん（ちいさい ゃゅょ）</div>';
   html+='<div class="grid g3">';
-  YOUON.forEach(x=>{ html+='<div class="cell d y"><div class="kana">'+x[0]+'</div><div class="roma">'+x[1]+'</div></div>'; });
+  YOUON.forEach(x=>{ html+=cellHtml(x,"d y"); });
   html+='</div>';
+  html+='<div class="hblegend">（　）の中は <b>ヘボン式</b>（パスポートや駅の名前で使うよ）。テストは 上の書き方（くんれいしき）で OK！</div>';
   c.innerHTML=html;
 }
 renderChart();
