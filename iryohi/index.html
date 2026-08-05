@@ -179,7 +179,7 @@
       <div class="m-title" id="mTitle"></div>
       <button id="mNext">›</button>
     </div>
-    <div class="m-sum">この月の合計 <b id="mSum">0</b> 円（<span id="mCnt">0</span>件）</div>
+    <div class="m-sum">この年の合計 <b id="mSum">0</b> 円（<span id="mCnt">0</span>件）</div>
     <div id="recList"></div>
   </div>
 
@@ -212,7 +212,7 @@ const DEF_FAMILY=["さく","あお","パパ","ママ"];
 
 let state={family:DEF_FAMILY.slice(),records:[]};
 let selWho=0, selCat=0;
-let mRef=new Date(), yRef=new Date().getFullYear();
+let mRef=new Date(), yRef=new Date().getFullYear(), lRef=new Date().getFullYear();
 
 /* storage: works inside Claude (window.storage) AND standalone (localStorage) */
 async function storeGet(k){
@@ -303,16 +303,17 @@ function renderSettings(){
 /* ---- monthly list ---- */
 function monthKey(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");}
 function renderList(){
-  const mk=monthKey(mRef);
-  document.getElementById("mTitle").textContent=mRef.getFullYear()+"年 "+(mRef.getMonth()+1)+"月";
-  const recs=state.records.filter(r=>r.date&&r.date.slice(0,7)===mk).sort((a,b)=>a.date<b.date?1:-1);
+  const yk=""+lRef;
+  document.getElementById("mTitle").textContent=lRef+"年";
+  const recs=state.records.filter(r=>r.date&&r.date.slice(0,4)===yk).sort((a,b)=>a.date<b.date?1:-1);
   const list=document.getElementById("recList");list.innerHTML="";
   let sum=0;
-  if(recs.length===0)list.innerHTML='<div class="empty">この月の記録はまだないよ ✎</div>';
+  if(recs.length===0)list.innerHTML='<div class="empty">この年の記録はまだないよ ✎</div>';
   recs.forEach(r=>{
     sum+=r.amt;
     const el=document.createElement("div");el.className="rec";
-    const d=r.date.slice(8,10).replace(/^0/,"")+"日";
+    const p=r.date.split("-");
+    const d=(p.length===3?parseInt(p[1],10)+"/"+parseInt(p[2],10):r.date);
     el.innerHTML='<span class="r-who w'+((r.who%4)+1)+'">'+esc(state.family[r.who]||"？")+'</span>'
       +'<div class="r-mid"><div class="r-place">'+esc(r.place||CATS[r.cat]||"")+'</div>'
       +'<div class="r-meta">'+d+'・'+(CATS[r.cat]||"")+'</div></div>'
@@ -327,8 +328,8 @@ function renderList(){
     await save();renderList();renderSummary();renderPlaceList();
   }));
 }
-document.getElementById("mPrev").addEventListener("click",()=>{mRef=new Date(mRef.getFullYear(),mRef.getMonth()-1,1);renderList();});
-document.getElementById("mNext").addEventListener("click",()=>{mRef=new Date(mRef.getFullYear(),mRef.getMonth()+1,1);renderList();});
+document.getElementById("mPrev").addEventListener("click",()=>{lRef--;renderList();});
+document.getElementById("mNext").addEventListener("click",()=>{lRef++;renderList();});
 
 /* ---- yearly summary ---- */
 const DED_LINE=100000;
