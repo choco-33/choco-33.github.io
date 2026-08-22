@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f4efe6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>今週の献立</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&family=Yomogi&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4efe6;
+    --card:#fffef9;
+    --ink:#5b5346;
+    --ink-soft:#938876;
+    --line:#e8e0d2;
+    --terracotta:#cf9d8e;
+    --sage:#a7b58c;
+    --corn:#e4c873;
+    --plum:#b494a0;
+    --sky:#9cb4bd;
+    --shadow:0 6px 18px rgba(120,104,80,.10);
+    --radius:20px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Zen Maru Gothic",system-ui,sans-serif;
+    line-height:1.7;
+    padding:0 0 96px;
+    max-width:560px;
+    margin:0 auto;
+  }
+  header{
+    padding:28px 20px 14px;
+    text-align:center;
+  }
+  header .eyebrow{
+    font-family:"Yomogi",cursive;
+    color:var(--terracotta);
+    font-size:.95rem;
+    margin:0;
+  }
+  header h1{
+    font-size:1.9rem;
+    font-weight:700;
+    margin:2px 0 4px;
+    letter-spacing:.02em;
+  }
+  header .sub{
+    color:var(--ink-soft);
+    font-size:.82rem;
+    margin:0;
+  }
+  header .corn{font-size:1.1rem;vertical-align:-2px}
+
+  /* tab bar */
+  .tabs{
+    position:sticky;top:0;z-index:20;
+    display:flex;gap:8px;
+    padding:10px 16px;
+    background:linear-gradient(var(--bg) 70%, rgba(244,239,230,0));
+    backdrop-filter:blur(4px);
+  }
+  .tab{
+    flex:1;border:none;cursor:pointer;
+    font-family:inherit;font-size:.95rem;font-weight:500;
+    color:var(--ink-soft);
+    background:var(--card);
+    border:1.5px solid var(--line);
+    padding:11px 0;border-radius:999px;
+    transition:.18s;
+  }
+  .tab[aria-selected="true"]{
+    color:#fff;background:var(--terracotta);
+    border-color:var(--terracotta);
+    box-shadow:var(--shadow);
+  }
+
+  main{padding:6px 16px}
+  .panel[hidden]{display:none}
+
+  /* meal cards */
+  .day{
+    background:var(--card);
+    border:1.5px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:0;margin:14px 0;
+    overflow:hidden;
+  }
+  .day-head{
+    display:flex;align-items:center;gap:12px;
+    padding:15px 16px;
+  }
+  .badge{
+    flex:none;width:44px;height:44px;border-radius:14px;
+    display:grid;place-items:center;
+    font-weight:700;font-size:1.2rem;color:#fff;
+  }
+  .day-title{flex:1;min-width:0}
+  .day-dow{font-size:.72rem;color:var(--ink-soft);margin:0;font-family:"Yomogi",cursive}
+  .day-main{font-size:1.12rem;font-weight:700;margin:0;line-height:1.35}
+  .rows{padding:0 16px 4px}
+  .row{
+    display:flex;gap:8px;align-items:baseline;
+    padding:7px 0;border-top:1px dashed var(--line);
+    font-size:.9rem;
+  }
+  .row .k{
+    flex:none;width:42px;color:var(--ink-soft);font-size:.76rem;
+  }
+  .row .v{flex:1}
+  .corn-tag{
+    display:inline-block;font-size:.68rem;color:#9a7d2e;
+    background:#faf1d4;border-radius:999px;
+    padding:1px 8px;margin-left:6px;vertical-align:1px;
+  }
+  .recipe-btn{
+    width:100%;border:none;cursor:pointer;
+    font-family:inherit;font-size:.85rem;font-weight:500;
+    color:var(--terracotta);background:#fbf6ee;
+    padding:11px 16px;text-align:left;
+    display:flex;justify-content:space-between;align-items:center;
+    border-top:1px solid var(--line);
+  }
+  .recipe-btn .chev{transition:.2s;font-size:.7rem}
+  .recipe-btn[aria-expanded="true"] .chev{transform:rotate(90deg)}
+  .recipe{
+    padding:2px 18px 16px;font-size:.9rem;
+    color:var(--ink);
+  }
+  .recipe[hidden]{display:none}
+  .recipe h4{
+    margin:14px 0 4px;font-size:.82rem;color:var(--ink-soft);
+    font-weight:700;letter-spacing:.02em;
+  }
+  .recipe p{margin:2px 0}
+  .recipe .step{
+    counter-increment:s;position:relative;
+    padding:4px 0 4px 26px;margin:0;
+  }
+  .recipe .step::before{
+    content:counter(s);position:absolute;left:0;top:4px;
+    width:18px;height:18px;border-radius:50%;
+    background:var(--sage);color:#fff;
+    font-size:.66rem;font-weight:700;
+    display:grid;place-items:center;
+  }
+  .recipe ol{counter-reset:s;list-style:none;padding:0;margin:2px 0}
+
+  /* shopping */
+  .progress-wrap{
+    background:var(--card);border:1.5px solid var(--line);
+    border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:16px;margin:14px 0;
+  }
+  .progress-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .progress-top b{font-size:1.05rem}
+  .progress-top .count{color:var(--terracotta);font-family:"Yomogi",cursive}
+  .bar{height:10px;border-radius:999px;background:#efe7d8;overflow:hidden}
+  .bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--corn),var(--terracotta));transition:.35s}
+  .reset{
+    margin-top:12px;border:1.5px solid var(--line);background:#fff;
+    color:var(--ink-soft);font-family:inherit;font-size:.8rem;
+    padding:8px 14px;border-radius:999px;cursor:pointer;
+  }
+  .cat{
+    background:var(--card);border:1.5px solid var(--line);
+    border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:6px 16px 10px;margin:14px 0;
+  }
+  .cat h3{
+    font-size:.92rem;margin:12px 2px 6px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .cat h3 .dot{width:10px;height:10px;border-radius:50%}
+  .item{
+    display:flex;align-items:center;gap:12px;
+    padding:9px 2px;border-top:1px dashed var(--line);
+    cursor:pointer;
+  }
+  .item:first-of-type{border-top:none}
+  .check{
+    flex:none;width:24px;height:24px;border-radius:8px;
+    border:2px solid var(--line);background:#fff;
+    display:grid;place-items:center;transition:.15s;
+  }
+  .check svg{width:14px;height:14px;stroke:#fff;stroke-width:3;fill:none;opacity:0;transition:.15s}
+  .item.done .check{background:var(--sage);border-color:var(--sage)}
+  .item.done .check svg{opacity:1}
+  .item .name{flex:1;font-size:.92rem;transition:.15s}
+  .item.done .name{color:var(--ink-soft);text-decoration:line-through}
+  .item .qty{color:var(--ink-soft);font-size:.8rem;flex:none}
+
+  footer{
+    text-align:center;color:var(--ink-soft);
+    font-size:.72rem;font-family:"Yomogi",cursive;
+    padding:24px 20px 8px;
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <p class="eyebrow">今週の こんだて</p>
+  <h1>おうちごはん <span class="corn">🌽</span></h1>
+  <p class="sub">4人分・shunkon風のやさしい味／サラダなしでも野菜たっぷり</p>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button class="tab" role="tab" id="tab-menu" aria-controls="panel-menu" aria-selected="true">献立</button>
+  <button class="tab" role="tab" id="tab-shop" aria-controls="panel-shop" aria-selected="false">買い物リスト</button>
+</nav>
+
+<main>
+  <section class="panel" id="panel-menu" role="tabpanel" aria-labelledby="tab-menu"></section>
+  <section class="panel" id="panel-shop" role="tabpanel" aria-labelledby="tab-shop" hidden></section>
+</main>
+
+<footer>made for our family kitchen</footer>
+
+<script>
+/* ---------- data ---------- */
+const DAYS = [
+  { dow:"月曜", color:"var(--terracotta)", main:"鶏むねのやわらかチキン南蛮風", corn:true,
+    side:"コーンとじゃがいものバター炒め", soup:"卵スープ",
+    recipe:{
+      main:["鶏むね2枚を一口大のそぎ切りにし、塩こしょう＋酒大さじ1をもみ込む。",
+            "片栗粉を大さじ4ほどまぶし、多めの油で両面こんがり焼く。",
+            "甘酢だれ（しょうゆ・酢・砂糖 各大さじ3）を絡め、照りが出たら火を止める。"],
+      tartar:"大人用タルタル：ゆで卵2個をつぶし、マヨ大さじ4・砂糖ひとつまみ・塩こしょう。子供はたれのみでOK。",
+      side:"じゃがいも（角切り）をレンジで柔らかくし、コーンとバター大さじ1で炒めて塩こしょう。",
+      soup:"水600mlに鶏がらスープの素小さじ2。溶き卵1個を細く回し入れ、塩こしょうで調整。"
+    }},
+  { dow:"火曜", color:"var(--sage)", main:"豚こまボールの照り焼き", corn:false,
+    side:"ブロッコリーのおかか和え", soup:"わかめスープ",
+    recipe:{
+      main:["豚こま400gに片栗粉大さじ2をもみ込み、7〜8等分して手でぎゅっと丸める。",
+            "フライパンで転がしながら焼き、火が通ったら余分な脂を拭く。",
+            "たれ（しょうゆ・みりん・酒 各大さじ2、砂糖大さじ1）を加えて絡める。"],
+      side:"ブロッコリーを小房に分けてゆで、かつおぶし＋しょうゆ少々で和える。",
+      soup:"水600mlに鶏がらスープの素小さじ2。戻したわかめとごまを加え、ごま油を数滴。"
+    }},
+  { dow:"水曜", color:"var(--corn)", main:"ふわふわ豆腐ハンバーグ", corn:false,
+    side:"かぼちゃの甘煮", soup:"味噌汁",
+    recipe:{
+      main:["合いびき肉400gに、水切りした木綿豆腐1丁・みじん切り玉ねぎ1/2個・パン粉1/2カップ・卵1個・塩こしょうを加えてよく練る。",
+            "4等分して小判形にし、両面焼いてふたをし蒸し焼きに。",
+            "ソース：ケチャップ大さじ4・中濃ソース大さじ2・砂糖ひとつまみを軽く煮詰める。"],
+      side:"一口大のかぼちゃを、水100ml・砂糖大さじ2・しょうゆ小さじ1で柔らかくなるまで煮る。",
+      soup:"水600ml＋顆粒だし小さじ1を温め、豆腐やわかめを入れて味噌大さじ2〜3を溶く。煮立てすぎない。"
+    }},
+  { dow:"木曜", color:"var(--sky)", main:"鮭のバター醤油ムニエル", corn:true,
+    side:"キャベツとコーンのバター蒸し", soup:"豆腐の味噌汁",
+    recipe:{
+      main:["生鮭4切れに塩こしょうし、薄力粉を薄くまぶす。",
+            "バター大さじ1で両面焼く。",
+            "しょうゆ小さじ2を回しかけ、香りを立てて仕上げる。"],
+      side:"ざく切りキャベツとコーンを耐熱容器に入れ、バター・塩少々をのせてレンジで3〜4分。",
+      soup:"水600ml＋顆粒だし小さじ1に豆腐を入れ、味噌大さじ2〜3を溶く。"
+    }},
+  { dow:"金曜", color:"var(--plum)", main:"コーン入りチーズドリア", corn:true,
+    side:"（メインでたっぷり）", soup:"コンソメ野菜スープ",
+    recipe:{
+      main:["耐熱皿にごはんを平らに敷く。",
+            "ミートソース（市販缶＋炒めた玉ねぎ・ひき肉でかさ増し）とコーンをのせる。",
+            "チーズをたっぷりかけ、トースターかオーブンで焼き色がつくまで7〜10分。"],
+      soup:"水600mlにコンソメキューブ2個。小さく切った玉ねぎ・にんじん・キャベツを5〜7分煮て塩こしょう。"
+    }},
+  { dow:"土曜", color:"var(--terracotta)", main:"みんな大好き唐揚げ", corn:false,
+    side:"ポテトのチーズ焼き", soup:"豆腐とわかめの味噌汁",
+    recipe:{
+      main:["鶏もも肉を一口大に切り、しょうゆ大さじ2・酒大さじ1・おろしにんにく＆しょうが各小さじ1をもみ込み15分以上（前夜に下味冷凍が◎）。",
+            "片栗粉をまぶす。",
+            "170〜180℃でこんがり揚げる。"],
+      side:"じゃがいもをレンジで柔らかくして潰し、耐熱皿に広げてチーズをのせ、トースターで焼く。",
+      soup:"水600ml＋顆粒だし小さじ1に豆腐と戻したわかめ、味噌大さじ2〜3。"
+    }},
+  { dow:"日曜", color:"var(--sage)", main:"甘口プルコギ丼", corn:false,
+    side:"小松菜とにんじんの炒めもの", soup:"中華スープ",
+    recipe:{
+      main:["こま肉400gを、焼肉のたれ大さじ4・砂糖大さじ1・おろしにんにく少々で下味。",
+            "細切りの玉ねぎ・にんじんと一緒に炒める。",
+            "火が通ったらごはんにのせる。"],
+      side:"小松菜とにんじんをごま油でさっと炒め、塩・鶏がらスープの素で味付け。",
+      soup:"水600mlに鶏がらスープの素小さじ2、しょうゆ小さじ1、塩ひとつまみ。溶き卵1個を回し入れ、ごま油を数滴。"
+    }}
+];
+
+const SHOP = [
+  { cat:"肉・魚", color:"var(--terracotta)", items:[
+    ["鶏むね肉","2枚"],["豚こま切れ肉","400g"],["合いびき肉","400g"],["生鮭","4切れ"],
+    ["ひき肉（ミートソース用）","300g"],["鶏もも肉","2〜3枚"],["こま肉（プルコギ）","400g"]]},
+  { cat:"野菜・きのこ", color:"var(--sage)", items:[
+    ["じゃがいも","6〜7個"],["ブロッコリー","1〜2株"],["かぼちゃ","1/4個"],["キャベツ","1/2玉"],
+    ["小松菜","1袋"],["にんじん","2〜3本"],["玉ねぎ","3〜4個"],["小ねぎ","1袋"]]},
+  { cat:"コーン🌽", color:"var(--corn)", items:[
+    ["コーン缶（または冷凍）","2〜3缶"]]},
+  { cat:"豆腐・大豆・海藻", color:"var(--plum)", items:[
+    ["木綿豆腐","3丁"],["乾燥わかめ","1袋"]]},
+  { cat:"卵・乳製品", color:"var(--sky)", items:[
+    ["卵","1パック"],["ピザ用チーズ","1袋"],["バター","1箱"],["牛乳","少々"]]},
+  { cat:"その他・常備", color:"var(--ink-soft)", items:[
+    ["ごはん（多めに炊く）",""],["ミートソース缶／レトルト","1〜2個"],["パン粉",""],
+    ["唐揚げ用の下味（しょうゆ・酒・にんにく・しょうが）",""]]}
+];
+
+/* ---------- storage adapter (window.storage → localStorage → memory) ---------- */
+const KEY = "kondate-checked-v1";
+const mem = {};
+const store = {
+  async get(){
+    if (window.storage) { try { const r = await window.storage.get(KEY); return r? JSON.parse(r.value):{}; } catch(e){} }
+    try { const v = localStorage.getItem(KEY); return v? JSON.parse(v):{}; } catch(e){}
+    return mem[KEY] || {};
+  },
+  async set(obj){
+    if (window.storage) { try { await window.storage.set(KEY, JSON.stringify(obj)); return; } catch(e){} }
+    try { localStorage.setItem(KEY, JSON.stringify(obj)); return; } catch(e){}
+    mem[KEY] = obj;
+  }
+};
+
+/* ---------- render menu ---------- */
+function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function renderMenu(){
+  const el = document.getElementById("panel-menu");
+  el.innerHTML = DAYS.map((d,i)=>{
+    const r = d.recipe;
+    const steps = (arr)=>`<ol>${arr.map(s=>`<li class="step">${esc(s)}</li>`).join("")}</ol>`;
+    let rec = `<h4>メイン</h4>${steps(r.main)}`;
+    if(r.tartar) rec += `<h4>大人用アレンジ</h4><p>${esc(r.tartar)}</p>`;
+    if(r.side) rec += `<h4>副菜</h4><p>${esc(r.side)}</p>`;
+    if(r.soup) rec += `<h4>汁もの</h4><p>${esc(r.soup)}</p>`;
+    return `<article class="day">
+      <div class="day-head">
+        <div class="badge" style="background:${d.color}">${d.dow[0]}</div>
+        <div class="day-title">
+          <p class="day-dow">${d.dow}</p>
+          <p class="day-main">${esc(d.main)}${d.corn?'<span class="corn-tag">コーン</span>':''}</p>
+        </div>
+      </div>
+      <div class="rows">
+        <div class="row"><span class="k">副菜</span><span class="v">${esc(d.side)}</span></div>
+        <div class="row"><span class="k">汁もの</span><span class="v">${esc(d.soup)}</span></div>
+      </div>
+      <button class="recipe-btn" aria-expanded="false" data-i="${i}">
+        <span>レシピを見る</span><span class="chev">▶</span>
+      </button>
+      <div class="recipe" hidden id="rec-${i}">${rec}</div>
+    </article>`;
+  }).join("");
+  el.querySelectorAll(".recipe-btn").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      const rec = document.getElementById("rec-"+btn.dataset.i);
+      const open = btn.getAttribute("aria-expanded")==="true";
+      btn.setAttribute("aria-expanded", String(!open));
+      rec.hidden = open;
+    });
+  });
+}
+
+/* ---------- render shopping ---------- */
+let checked = {};
+function id(c,i){return c+"-"+i;}
+async function renderShop(){
+  checked = await store.get();
+  const el = document.getElementById("panel-shop");
+  let total=0;
+  SHOP.forEach(c=>total+=c.items.length);
+  const cats = SHOP.map((c,ci)=>{
+    const rows = c.items.map((it,ii)=>{
+      const key = id(ci,ii);
+      const done = checked[key] ? " done":"";
+      return `<div class="item${done}" data-key="${key}">
+        <span class="check"><svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg></span>
+        <span class="name">${esc(it[0])}</span>
+        <span class="qty">${esc(it[1]||"")}</span>
+      </div>`;
+    }).join("");
+    return `<div class="cat">
+      <h3><span class="dot" style="background:${c.color}"></span>${esc(c.cat)}</h3>
+      ${rows}
+    </div>`;
+  }).join("");
+  el.innerHTML = `
+    <div class="progress-wrap">
+      <div class="progress-top"><b>買い物の進み</b><span class="count" id="count"></span></div>
+      <div class="bar"><i id="bar"></i></div>
+      <button class="reset" id="reset">ぜんぶリセット</button>
+    </div>
+    ${cats}`;
+  el.querySelectorAll(".item").forEach(it=>{
+    it.addEventListener("click",async ()=>{
+      const key = it.dataset.key;
+      it.classList.toggle("done");
+      checked[key] = it.classList.contains("done");
+      if(!checked[key]) delete checked[key];
+      await store.set(checked);
+      updateProgress(total);
+    });
+  });
+  document.getElementById("reset").addEventListener("click",async ()=>{
+    checked = {}; await store.set(checked);
+    el.querySelectorAll(".item").forEach(it=>it.classList.remove("done"));
+    updateProgress(total);
+  });
+  updateProgress(total);
+}
+function updateProgress(total){
+  const done = Object.keys(checked).length;
+  const pct = total? Math.round(done/total*100):0;
+  const c = document.getElementById("count");
+  const b = document.getElementById("bar");
+  if(c) c.textContent = `${done} / ${total}`;
+  if(b) b.style.width = pct+"%";
+}
+
+/* ---------- tabs ---------- */
+const tabMenu=document.getElementById("tab-menu"), tabShop=document.getElementById("tab-shop");
+const pMenu=document.getElementById("panel-menu"), pShop=document.getElementById("panel-shop");
+function select(which){
+  const menu = which==="menu";
+  tabMenu.setAttribute("aria-selected",String(menu));
+  tabShop.setAttribute("aria-selected",String(!menu));
+  pMenu.hidden=!menu; pShop.hidden=menu;
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+tabMenu.addEventListener("click",()=>select("menu"));
+tabShop.addEventListener("click",()=>select("shop"));
+
+renderMenu();
+renderShop();
+</script>
+</body>
+</html>
