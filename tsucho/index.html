@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="つうちょう">
+<meta name="theme-color" content="#eef3f7">
+<title>SakuとAoのつうちょう</title>
+<style>
+@font-face{font-family:"Uzura";src:url("../uzura.ttf") format("truetype");font-display:swap;}
+
+  :root{
+    --cream:#eef3f7;--paper:#ffffff;--ink:#4d5560;--ink-soft:#98a1ad;
+    --saku:#6f9ec0;--saku-deep:#4f83a8;--ao:#7bb89a;--ao-deep:#5a9c7c;
+    --in:#6faf7f;--in-deep:#4f9264;--out:#e0917d;--out-deep:#cc7159;
+    --gold:#e6bd6a;--line:#e2e9ef;--shadow:rgba(90,120,150,.15);
+    --accent:#6f9ec0;--accent-deep:#4f83a8;
+  }
+  body.ao{--accent:#7bb89a;--accent-deep:#5a9c7c;}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{font-family:"Uzura","Hiragino Maru Gothic ProN",sans-serif;
+    background:radial-gradient(circle at 14% 6%,rgba(111,158,192,.14),transparent 44%),
+      radial-gradient(circle at 86% 94%,rgba(123,184,154,.14),transparent 44%),var(--cream);
+    color:var(--ink);min-height:100dvh;padding:15px 12px 40px;display:flex;justify-content:center;}
+  .app{width:100%;max-width:460px;}
+  .head{text-align:center;margin:2px 0 10px;}
+  .head .deco{font-size:13px;color:var(--accent-deep);letter-spacing:.08em;}
+  .head h1{font-size:22px;letter-spacing:.03em;margin-top:2px;color:var(--accent-deep);}
+
+  .tabs{display:flex;gap:8px;margin:12px 0 14px;}
+  .tabk{flex:1;text-align:center;font-family:inherit;font-size:17px;color:var(--ink-soft);
+    background:var(--paper);border:2px solid var(--line);padding:12px 0;border-radius:16px;cursor:pointer;transition:.2s;box-shadow:0 2px 8px var(--shadow);}
+  .tabk.on[data-k="saku"]{background:var(--saku);border-color:var(--saku);color:#fff;}
+  .tabk.on[data-k="ao"]{background:var(--ao);border-color:var(--ao);color:#fff;}
+
+  .bal{background:linear-gradient(160deg,#fff,#f3f8fb);border:1px solid var(--line);border-radius:22px;
+    padding:20px 18px;text-align:center;box-shadow:0 6px 18px var(--shadow);margin-bottom:14px;}
+  .bal .lbl{font-size:13px;color:var(--ink-soft);}
+  .bal .amt{font-size:40px;color:var(--accent-deep);line-height:1.2;}
+  .bal .amt small{font-size:18px;}
+
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:15px 14px;
+    box-shadow:0 5px 16px var(--shadow);margin-bottom:14px;}
+  .seg{display:flex;gap:8px;margin-bottom:12px;}
+  .seg button{flex:1;font-family:inherit;font-size:15px;border:2px solid var(--line);background:var(--cream);
+    color:var(--ink-soft);border-radius:13px;padding:11px 0;cursor:pointer;transition:.15s;}
+  .seg button.on.in{background:var(--in);border-color:var(--in);color:#fff;}
+  .seg button.on.out{background:var(--out);border-color:var(--out);color:#fff;}
+  .f-label{font-size:12px;font-weight:700;color:var(--ink-soft);margin:11px 2px 6px;}
+  .f-label:first-child{margin-top:0;}
+  input[type=date],input[type=text]{width:100%;font-family:inherit;font-size:15px;color:var(--ink);
+    background:var(--cream);border:1.5px solid var(--line);border-radius:13px;padding:11px 13px;outline:none;-webkit-appearance:none;}
+  input:focus{border-color:var(--accent);}
+  .yen-row{position:relative;}
+  .yen-row::after{content:"円";position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:14px;font-weight:700;color:var(--ink-soft);}
+  .yen-row input{width:100%;font-family:inherit;font-size:20px;color:var(--ink);background:var(--cream);border:1.5px solid var(--line);
+    border-radius:13px;padding:12px 42px 12px 14px;outline:none;-webkit-appearance:none;font-variant-numeric:tabular-nums;}
+  .yen-row input:focus{border-color:var(--accent);}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;}
+  .chip{font-family:inherit;font-size:12.5px;color:var(--ink-soft);background:var(--cream);
+    border:1.5px solid var(--line);border-radius:99px;padding:8px 12px;cursor:pointer;transition:.15s;}
+  .chip.sel{background:var(--accent-deep);border-color:var(--accent-deep);color:#fff;}
+  .chip.add{border-style:dashed;}
+  .chip.editing{border-color:#e0a9a4;color:#c4756f;}
+  .chip:active{transform:scale(.95);}
+  .save-btn{display:block;width:100%;margin-top:14px;font-family:inherit;font-size:17px;color:#fff;
+    background:var(--accent-deep);border:none;border-radius:15px;padding:14px;cursor:pointer;}
+  .save-btn:active{transform:scale(.98);}
+  .cancel-edit{display:block;width:100%;margin-top:8px;font-family:inherit;font-size:13px;color:var(--ink-soft);
+    background:transparent;border:none;cursor:pointer;padding:8px;}
+
+  .sec-title{font-size:13px;color:var(--ink-soft);margin:4px 4px 8px;}
+  .row{display:flex;align-items:center;gap:10px;background:var(--paper);border:1px solid var(--line);
+    border-radius:14px;padding:11px 13px;box-shadow:0 3px 9px var(--shadow);margin-bottom:8px;}
+  .row .r-date{flex:0 0 auto;font-size:11px;color:var(--ink-soft);width:38px;text-align:center;line-height:1.3;}
+  .row .r-mid{flex:1;min-width:0;cursor:pointer;}
+  .row .r-cat{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .row .r-memo{font-size:11px;color:var(--ink-soft);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .row .r-amt{flex:0 0 auto;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;text-align:right;}
+  .row .r-amt.in{color:var(--in-deep);} .row .r-amt.out{color:var(--out-deep);}
+  .row .r-bal{flex:0 0 auto;font-size:10.5px;color:var(--ink-soft);text-align:right;min-width:58px;font-variant-numeric:tabular-nums;}
+  .row .del{flex:0 0 auto;width:24px;height:24px;border:none;background:transparent;color:var(--ink-soft);font-size:16px;cursor:pointer;opacity:.4;border-radius:50%;}
+  .edit-hint{color:var(--accent-deep);}
+  .empty{text-align:center;color:var(--ink-soft);font-size:14px;padding:26px 10px;line-height:1.9;}
+
+  .toast{position:fixed;left:50%;bottom:32px;transform:translateX(-50%) translateY(80px);background:var(--ink);
+    color:#fff;font-size:14px;padding:12px 22px;border-radius:99px;box-shadow:0 6px 20px var(--shadow);
+    z-index:80;opacity:0;transition:.35s cubic-bezier(.34,1.56,.64,1);max-width:90vw;text-align:center;}
+  .toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+
+  .bkx{margin:20px 2px 100px;background:var(--paper);border:1px solid var(--line);border-radius:18px;
+    padding:14px 16px;box-shadow:0 4px 12px var(--shadow);font-size:12px;color:var(--ink-soft);line-height:1.7}
+  .bkx h3{font-size:13.5px;color:var(--ink);margin-bottom:4px;}
+  .bkx .bkx-btn{border:none;border-radius:12px;padding:9px 16px;font-family:inherit;font-size:12.5px;
+    color:#fff;background:var(--saku);margin:8px 8px 0 0;cursor:pointer}
+  .bkx .bkx-btn.sub{background:#c3ccd6}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="head">
+    <div class="deco">＼ おかねの でいり・ざんだか ／</div>
+    <h1>つうちょう</h1>
+  </div>
+
+  <div class="tabs">
+    <button class="tabk on" data-k="saku">Saku</button>
+    <button class="tabk" data-k="ao">Ao</button>
+  </div>
+
+  <div class="bal">
+    <div class="lbl"><span id="balName">Saku</span>の ざんだか</div>
+    <div class="amt"><span id="balAmt">0</span><small> 円</small></div>
+  </div>
+
+  <div class="card">
+    <div class="seg">
+      <button class="in on" id="segIn" data-type="in">＋ あずける（入金）</button>
+      <button class="out" id="segOut" data-type="out">－ つかう（出金）</button>
+    </div>
+    <div class="f-label">きんがく</div>
+    <div class="yen-row"><input type="number" id="fAmt" placeholder="0" min="0" inputmode="numeric"></div>
+    <div class="f-label">なにに？（ふんるい）</div>
+    <div class="chips" id="catChips"></div>
+    <div class="f-label">ひづけ</div>
+    <input type="date" id="fDate">
+    <div class="f-label">メモ（なくてもOK）</div>
+    <input type="text" id="fMemo" placeholder="れい：おばあちゃんから" maxlength="24">
+    <button class="save-btn" id="saveBtn">きにゆうする</button>
+    <button class="cancel-edit" id="cancelEdit" style="display:none">へんしゅうをやめる</button>
+  </div>
+
+  <div class="sec-title">つうちょう（あたらしい順）</div>
+  <div id="list"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const KEY="tsucho_v1";
+const DEF_IN=["おこづかい","おとしだま","おてつだい","プレゼント","その他"];
+const DEF_OUT=["おかし・ジュース","おもちゃ","ほん","ちょきん","きふ","その他"];
+/* entry: {id,date,type:"in"|"out",cat,memo,amt} */
+let state={kids:{saku:{entries:[]},ao:{entries:[]}}, catsIn:null, catsOut:null};
+let curKid="saku", selType="in", selCatIn="", selCatOut="", editCats=false, editId=null;
+const KNAME={saku:"Saku", ao:"Ao"};
+
+async function storeGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+async function storeSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+async function load(){
+  try{const v=await storeGet(KEY);if(v)state=Object.assign(state,JSON.parse(v));}catch(e){}
+  if(!state.kids)state.kids={saku:{entries:[]},ao:{entries:[]}};
+  ["saku","ao"].forEach(k=>{if(!state.kids[k])state.kids[k]={entries:[]};if(!Array.isArray(state.kids[k].entries))state.kids[k].entries=[];});
+  if(!Array.isArray(state.catsIn)||!state.catsIn.length)state.catsIn=DEF_IN.slice();
+  if(!Array.isArray(state.catsOut)||!state.catsOut.length)state.catsOut=DEF_OUT.slice();
+  selCatIn=state.catsIn[0]||"";selCatOut=state.catsOut[0]||"";
+  document.getElementById("fDate").value=todayStr();
+  renderAll();
+}
+async function save(){try{await storeSet(KEY,JSON.stringify(state));}catch(e){}}
+function esc(s){return(""+s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function yen(n){return (n||0).toLocaleString("ja-JP");}
+function todayStr(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function md(ds){const p=(""+ds).split("-");return p.length===3?(parseInt(p[1],10)+"/"+parseInt(p[2],10)):ds;}
+let toastT;function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),2100);}
+
+function curCats(){return selType==="in"?state.catsIn:state.catsOut;}
+function curSelCat(){return selType==="in"?selCatIn:selCatOut;}
+function setSelCat(v){if(selType==="in")selCatIn=v;else selCatOut=v;}
+
+function renderAll(){
+  document.body.className=curKid==="ao"?"ao":"";
+  document.getElementById("balName").textContent=KNAME[curKid];
+  document.querySelectorAll(".tabk").forEach(t=>t.classList.toggle("on",t.dataset.k===curKid));
+  renderCatChips();renderList();
+}
+
+/* ---- kid tabs ---- */
+document.querySelectorAll(".tabk").forEach(t=>t.addEventListener("click",()=>{
+  if(editId)endEdit();
+  curKid=t.dataset.k;renderAll();
+}));
+
+/* ---- type toggle ---- */
+function setType(tp){
+  selType=tp;
+  document.getElementById("segIn").classList.toggle("on",tp==="in");
+  document.getElementById("segOut").classList.toggle("on",tp==="out");
+  renderCatChips();
+}
+document.getElementById("segIn").addEventListener("click",()=>setType("in"));
+document.getElementById("segOut").addEventListener("click",()=>setType("out"));
+
+/* ---- category chips ---- */
+function renderCatChips(){
+  const w=document.getElementById("catChips");w.innerHTML="";
+  const cats=curCats(),sel=curSelCat();
+  cats.forEach(n=>{
+    const b=document.createElement("button");
+    b.className="chip"+(n===sel&&!editCats?" sel":"")+(editCats?" editing":"");
+    b.textContent=n+(editCats?" ×":"");
+    b.addEventListener("click",async()=>{
+      if(editCats){
+        if(!confirm("「"+n+"」を消す？"))return;
+        let arr=cats.filter(x=>x!==n);if(!arr.length)arr=["その他"];
+        if(selType==="in")state.catsIn=arr;else state.catsOut=arr;
+        if(curSelCat()===n)setSelCat(arr[0]||"");
+        await save();renderCatChips();
+      }else{setSelCat(n);renderCatChips();}
+    });
+    w.appendChild(b);
+  });
+  const add=document.createElement("button");
+  add.className="chip add";add.textContent="＋ ついか";
+  add.addEventListener("click",async()=>{
+    const n=(prompt("あたらしい ぶんるいの なまえは？")||"").trim();
+    if(!n)return;
+    if(cats.indexOf(n)>=0){toast("もうあるよ");return;}
+    if(selType==="in")state.catsIn.push(n);else state.catsOut.push(n);
+    setSelCat(n);editCats=false;await save();renderCatChips();toast("「"+n+"」を ついかしたよ");
+  });
+  w.appendChild(add);
+  const ed=document.createElement("button");
+  ed.className="chip add"+(editCats?" sel":"");
+  ed.textContent=editCats?"かんりょう":"へんしゅう";
+  ed.addEventListener("click",()=>{editCats=!editCats;renderCatChips();});
+  w.appendChild(ed);
+}
+
+/* ---- list with running balance ---- */
+function renderList(){
+  const entries=state.kids[curKid].entries.slice();
+  entries.sort((a,b)=>{ if(a.date!==b.date)return a.date<b.date?-1:1; return (""+a.id)<(""+b.id)?-1:1; });
+  let bal=0;const withBal=entries.map(e=>{ bal+=(e.type==="in"?e.amt:-e.amt); return {e:e,bal:bal}; });
+  document.getElementById("balAmt").textContent=yen(bal);
+  const list=document.getElementById("list");
+  if(!withBal.length){list.innerHTML='<div class="empty">まだ きろくが ないよ。<br>上から 入金・出金を きにゅうしてに- ✎</div>'return;}
+  list.innerHTML=withBal.slice().reverse().map(o=>{
+    const e=o.e;const sign=e.type==="in"?"＋":"－";
+    return '<div class="row">'
+      +'<div class="r-date">'+md(e.date)+'</div>'
+      +'<div class="r-mid" data-edit="'+e.id+'"><div class="r-cat">'+esc(e.cat||"")+' <span class="edit-hint">✎</span></div>'
+      +(e.memo?'<div class="r-memo">'+esc(e.memo)+'</div>':'')+'</div>'
+      +'<div style="text-align:right"><div class="r-amt '+e.type+'">'+sign+yen(e.amt)+'</div>'
+      +'<div class="r-bal">のこり '+yen(o.bal)+'</div></div>'
+      +'<button class="del" data-id="'+e.id+'">×</button></div>';
+  }).join("");
+  list.querySelectorAll(".del").forEach(b=>b.addEventListener("click",async()=>{
+    if(editId&&editId==b.dataset.id)endEdit();
+    state.kids[curKid].entries=state.kids[curKid].entries.filter(x=>x.id!=b.dataset.id);
+    await save();renderList();
+  }));
+  list.querySelectorAll("[data-edit]").forEach(m=>m.addEventListener("click",()=>startEdit(m.dataset.edit)));
+}
+
+/* ---- add / edit ---- */
+document.getElementById("saveBtn").addEventListener("click",async()=>{
+  const amt=parseInt(document.getElementById("fAmt").value,10);
+  const date=document.getElementById("fDate").value;
+  const memo=document.getElementById("fMemo").value.trim();
+  const cat=curSelCat();
+  if(!amt||amt<1){toast("きんがくを いれてね");return;}
+  if(!date){toast("ひづけを えらんでね");return;}
+  if(!cat){toast("ぶんるいを えらんでね");return;}
+  if(editId){
+    const e=state.kids[curKid].entries.find(x=>x.id==editId);
+    if(e){e.date=date;e.type=selType;e.cat=cat;e.memo=memo;e.amt=amt;}
+    endEdit();await save();renderList();toast("なおしたよ ✓");
+  }else{
+    state.kids[curKid].entries.push({id:Date.now()+"_"+Math.random().toString(36).slice(2,6),date:date,type:selType,cat:cat,memo:memo,amt:amt});
+    await save();
+    document.getElementById("fAmt").value="";document.getElementById("fMemo").value="";
+    renderList();toast((selType==="in"?"あずけたよ ＋":"つかったよ －")+yen(amt)+"円");
+  }
+});
+function startEdit(id){
+  const e=state.kids[curKid].entries.find(x=>x.id==id);if(!e)return;
+  editId=id;
+  setType(e.type);setSelCat(e.cat);
+  document.getElementById("fAmt").value=e.amt;
+  document.getElementById("fDate").value=e.date;
+  document.getElementById("fMemo").value=e.memo||"";
+  renderCatChips();
+  document.getElementById("saveBtn").textContent="こうしんする";
+  document.getElementById("cancelEdit").style.display="block";
+  try{window.scrollTo(0,0);}catch(e2){}
+  toast("なおして「こうしんする」を おしてね");
+}
+function endEdit(){
+  editId=null;
+  document.getElementById("fAmt").value="";document.getElementById("fMemo").value="";
+  document.getElementById("saveBtn").textContent="きにゅうする";
+  document.getElementById("cancelEdit").style.display="none";
+}
+document.getElementById("cancelEdit").addEventListener("click",()=>{endEdit();toast("へんしゅうを やめたよ");});
+
+load();
+</script>
+
+<div class="bkx">
+  <h3>💾 データのバックアップ</h3>
+  つうちょうの きろくは この端末のブラウザ内に保存されています。ときどきファイルに書き出しておくと、機種変更やアプリのお引っ越しでも安心です。<br>
+  <button class="bkx-btn" id="bkxExp">書き出す</button><button class="bkx-btn sub" id="bkxImpBtn">読み込む</button>
+  <input type="file" id="bkxImp" accept=".json" style="display:none">
+</div>
+<script>
+(function(){
+  var APP="tsucho";
+  var _b=document.querySelector(".bkx"),_ap=document.querySelector(".app");if(_b&&_ap)_ap.appendChild(_b);
+  document.getElementById("bkxExp").addEventListener("click",function(){
+    var data={};
+    for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);data[k]=localStorage.getItem(k);}
+    var blob=new Blob([JSON.stringify({__bkx:APP,data:data},null,2)],{type:"application/json"});
+    var a=document.createElement("a");a.href=URL.createObjectURL(blob);
+    var d=new Date();
+    a.download=APP+"-backup-"+d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")+".json";
+    a.click();URL.revokeObjectURL(a.href);
+  });
+  document.getElementById("bkxImpBtn").addEventListener("click",function(){document.getElementById("bkxImp").click();});
+  document.getElementById("bkxImp").addEventListener("change",function(ev){
+    var f=ev.target.files[0];if(!f)return;var r=new FileReader();
+    r.onload=function(){
+      try{var j=JSON.parse(r.result);var data=j.__bkx?j.data:j;
+        if(typeof data!=="object"||!data)throw 0;
+        if(!confirm("今の内容を読み込んだ内容で置き換えます。よろしいですか？"))return;
+        Object.keys(data).forEach(function(k){localStorage.setItem(k,data[k]);});
+        alert("読み込みました。画面を更新します。");location.reload();
+      }catch(e){alert("このファイルは読み込めませんでした");}
+    };
+    r.readAsText(f);ev.target.value="";
+  });
+})();
+</script>
+</body>
+</html>
