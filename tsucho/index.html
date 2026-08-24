@@ -125,6 +125,8 @@
     <div class="yen-row"><input type="number" id="fAmt" placeholder="0" min="0" inputmode="numeric"></div>
     <div class="f-label">分類</div>
     <div class="chips" id="catChips"></div>
+    <div class="f-label">だれから？（なくてもOK）</div>
+    <input type="text" id="fFrom" placeholder="れい：おばあちゃん" maxlength="16">
     <div class="f-label">日付</div>
     <input type="date" id="fDate">
     <div class="f-label">メモ（なくてもOK）</div>
@@ -243,7 +245,7 @@ function renderList(){
     return '<div class="row">'
       +'<div class="r-date">'+md(e.date)+'</div>'
       +'<div class="r-mid" data-edit="'+e.id+'"><div class="r-cat">'+esc(e.cat||"")+' <span class="edit-hint">✎</span></div>'
-      +(e.memo?'<div class="r-memo">'+esc(e.memo)+'</div>':'')+'</div>'
+      +((e.from||e.memo)?'<div class="r-memo">'+esc([e.from,e.memo].filter(Boolean).join("・"))+'</div>':'')+'</div>'
       +'<div style="text-align:right"><div class="r-amt '+e.type+'">'+sign+yen(e.amt)+'</div>'
       +'<div class="r-bal">残り '+yen(o.bal)+'</div></div>'
       +'<button class="del" data-id="'+e.id+'">×</button></div>';
@@ -261,18 +263,19 @@ document.getElementById("saveBtn").addEventListener("click",async()=>{
   const amt=parseInt(document.getElementById("fAmt").value,10);
   const date=document.getElementById("fDate").value;
   const memo=document.getElementById("fMemo").value.trim();
+  const from=document.getElementById("fFrom").value.trim();
   const cat=curSelCat();
   if(!amt||amt<1){toast("金額を 入れてね");return;}
   if(!date){toast("日付を 選んでね");return;}
   if(!cat){toast("分類を 選んでね");return;}
   if(editId){
     const e=state.kids[curKid].entries.find(x=>x.id==editId);
-    if(e){e.date=date;e.type=selType;e.cat=cat;e.memo=memo;e.amt=amt;}
+    if(e){e.date=date;e.type=selType;e.cat=cat;e.from=from;e.memo=memo;e.amt=amt;}
     endEdit();await save();renderList();toast("なおしたよ ✓");
   }else{
-    state.kids[curKid].entries.push({id:Date.now()+"_"+Math.random().toString(36).slice(2,6),date:date,type:selType,cat:cat,memo:memo,amt:amt});
+    state.kids[curKid].entries.push({id:Date.now()+"_"+Math.random().toString(36).slice(2,6),date:date,type:selType,cat:cat,from:from,memo:memo,amt:amt});
     await save();
-    document.getElementById("fAmt").value="";document.getElementById("fMemo").value="";
+    document.getElementById("fAmt").value="";document.getElementById("fMemo").value="";document.getElementById("fFrom").value="";
     renderList();toast((selType==="in"?"入金したよ ＋":"出金したよ －")+yen(amt)+"円");
   }
 });
@@ -283,6 +286,7 @@ function startEdit(id){
   document.getElementById("fAmt").value=e.amt;
   document.getElementById("fDate").value=e.date;
   document.getElementById("fMemo").value=e.memo||"";
+  document.getElementById("fFrom").value=e.from||"";
   renderCatChips();
   document.getElementById("saveBtn").textContent="更新する";
   document.getElementById("cancelEdit").style.display="block";
@@ -291,7 +295,7 @@ function startEdit(id){
 }
 function endEdit(){
   editId=null;
-  document.getElementById("fAmt").value="";document.getElementById("fMemo").value="";
+  document.getElementById("fAmt").value="";document.getElementById("fMemo").value="";document.getElementById("fFrom").value="";
   document.getElementById("saveBtn").textContent="記入する";
   document.getElementById("cancelEdit").style.display="none";
 }
