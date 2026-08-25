@@ -301,6 +301,8 @@ function endEdit(){
 }
 document.getElementById("cancelEdit").addEventListener("click",()=>{endEdit();toast("編集を やめたよ");});
 
+var _k=new URLSearchParams(location.search).get("k");
+if(_k==="saku"||_k==="ao"){curKid=_k;document.title=(_k==="saku"?"Saku":"Ao")+"の通帳";var _tb=document.querySelector(".tabs");if(_tb)_tb.style.display="none";}
 load();
 </script>
 
