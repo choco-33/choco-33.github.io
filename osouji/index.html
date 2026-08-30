@@ -147,6 +147,36 @@
   .bkx .bkx-btn{border:none;border-radius:12px;padding:9px 16px;font-family:inherit;font-weight:700;
     font-size:12.5px;color:#fff;background:#a8b89a;margin:8px 8px 0 0;cursor:pointer}
   .bkx .bkx-btn.sub{background:#c9bfae}
+
+  .cal-nav{display:flex;align-items:center;justify-content:center;gap:16px;margin:12px 4px 10px}
+  .cal-nav button{border:none;background:var(--card);box-shadow:var(--shadow);width:34px;height:34px;border-radius:50%;font-size:18px;color:var(--accent-dark);font-family:inherit}
+  .cal-nav .mlabel{font-size:16px;font-weight:bold;min-width:120px;text-align:center}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:0 2px}
+  .cal-wd{text-align:center;font-size:11px;color:var(--sub);padding:2px 0}
+  .cal-cell{aspect-ratio:1/1;background:var(--card);border-radius:12px;box-shadow:var(--shadow);padding:4px 0 0;display:flex;flex-direction:column;align-items:center;font-size:12px;border:2px solid transparent;overflow:hidden}
+  .cal-cell.empty{background:transparent;box-shadow:none}
+  .cal-cell.today{border-color:var(--accent)}
+  .cal-cell.sel{border-color:var(--accent-dark);background:#fff4f1}
+  .cal-cell .dnum{font-weight:bold;color:var(--text)}
+  .cal-cell.sun .dnum{color:#e8837e}
+  .cal-cell.sat .dnum{color:#6aa9d8}
+  .cal-cell .pdots{display:flex;gap:2px;margin-top:3px;flex-wrap:wrap;justify-content:center}
+  .cal-cell .pd{width:6px;height:6px;border-radius:50%;background:var(--warn)}
+  .cal-cell .pd.done{background:var(--ok)}
+  .day-panel{background:var(--card);border-radius:18px;box-shadow:var(--shadow);margin:12px 2px 0;padding:12px 14px}
+  .day-panel h3{font-size:14px;margin-bottom:8px;color:var(--accent-dark)}
+  .plan-item{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid #faf1e8}
+  .plan-item:last-of-type{border-bottom:none}
+  .plan-item.done .check{background:var(--ok);border-color:var(--ok);color:#fff}
+  .plan-item.done .pname{color:var(--sub);text-decoration:line-through}
+  .plan-item .pname{font-size:14px}
+  .plan-item .pwhere{font-size:11px;color:var(--sub);margin-top:1px}
+  .plan-item .sinfo{flex:1;min-width:0}
+  .plan-item .pdel{border:none;background:none;color:#e0d2c4;font-size:14px;padding:6px}
+  .plan-add{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+  .plan-add select{flex:1;border:1.5px solid #eeded2;border-radius:12px;padding:8px 10px;font-family:inherit;font-size:13px;background:#fffdfb;color:var(--text);outline:none;min-width:0}
+  .plan-add .padd-btn{border:none;background:var(--mint);color:#fff;font-family:inherit;font-weight:bold;font-size:13px;padding:0 16px;border-radius:12px}
+  .plan-empty{text-align:center;color:var(--sub);font-size:12.5px;padding:16px 0}
 </style>
 </head>
 <body>
@@ -167,8 +197,11 @@
   <div id="histList"></div>
 </div>
 
+<div id="pagePlan" class="page"></div>
+
 <nav class="tabbar">
   <button id="tabRooms" class="active" onclick="showPage('Rooms')"><span class="ico" data-icon="house"></span>おそうじ</button>
+  <button id="tabPlan" onclick="showPage('Plan')"><span class="ico" data-icon="calendar"></span>よてい</button>
   <button id="tabHistory" onclick="showPage('History')"><span class="ico" data-icon="book"></span>きろく</button>
 </nav>
 
@@ -196,6 +229,7 @@ const ICONS = {
   stairs: SVG_OPEN+'<path d="M8 40 H16 V32 H24 V24 H32 V16 H40" stroke-width="3.5"/><path d="M36 8 L37 11 L40 12 L37 13 L36 16 L35 13 L32 12 L35 11 Z" fill="#ffe08c" stroke-width="1.5"/></svg>',
   book: SVG_OPEN+'<path d="M24 13 Q16 8 7 10 V36 Q16 34 24 39 Q32 34 41 36 V10 Q32 8 24 13 Z" fill="#fdf3dc"/><path d="M24 13 V39"/><path d="M12 17 Q16 16 19 18 M12 23 Q16 22 19 24" stroke-width="2"/><path d="M29 18 Q33 16 36 17 M29 24 Q33 22 36 23" stroke-width="2"/></svg>',
   sparkle: SVG_OPEN+'<path d="M24 6 Q26 19 39 24 Q26 29 24 42 Q22 29 9 24 Q22 19 24 6 Z" fill="#ffe9a8"/></svg>',
+  calendar: SVG_OPEN+'<rect x="8" y="11" width="32" height="29" rx="4" fill="#fce8d8"/><path d="M8 18 H40" stroke-width="2.5"/><path d="M16 7 V13 M32 7 V13"/><rect x="14" y="24" width="6" height="6" rx="1.5" fill="#f4a09c" stroke="none"/><path d="M25 27 H33 M25 33 H31" stroke-width="2"/></svg>',
 };
 const ROOM_ICON = {
   "キッチン":"pan","リビング":"sofa","玄関":"door","洋室1":"book2",
@@ -230,11 +264,12 @@ let openRooms = new Set(JSON.parse(sessionStorage.getItem("osouji-open")||"[]"))
 function load(){
   try{
     const s = JSON.parse(localStorage.getItem(KEY));
-    if(s && s.rooms) return s;
+    if(s && s.rooms){ if(!Array.isArray(s.plans)) s.plans=[]; return s; }
   }catch(e){}
   return {
     rooms: DEFAULT_ROOMS.map(r=>({floor:r.floor, name:r.name, spots:[...r.spots]})),
-    logs: []
+    logs: [],
+    plans: []
   };
 }
 function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
@@ -402,6 +437,68 @@ function renderStats(){
   document.getElementById("statStreak").textContent = streak;
 }
 
+var calYear, calMonth, selDate=null;
+(function(){var n=new Date();calYear=n.getFullYear();calMonth=n.getMonth();})();
+function planId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function plansOn(date){return state.plans.filter(function(p){return p.date===date;});}
+function pad2(n){return String(n).padStart(2,"0");}
+function renderPlan(){
+  var el=document.getElementById("pagePlan");
+  var startWd=new Date(calYear,calMonth,1).getDay();
+  var dim=new Date(calYear,calMonth+1,0).getDate();
+  var wd=["日","月","火","水","木","金","土"];
+  var cells="";
+  for(var i=0;i<startWd;i++){cells+='<div class="cal-cell empty"></div>';}
+  for(var d=1;d<=dim;d++){
+    var ds=calYear+"-"+pad2(calMonth+1)+"-"+pad2(d);
+    var ps=plansOn(ds);
+    var isToday=ds===todayStr(), isSel=ds===selDate;
+    var dow=new Date(calYear,calMonth,d).getDay();
+    var dots="";
+    if(ps.length){dots=ps.slice(0,4).map(function(p){return '<span class="pd'+(p.done?" done":"")+'"></span>';}).join("");}
+    cells+='<div class="cal-cell'+(isToday?" today":"")+(isSel?" sel":"")+(dow===0?" sun":"")+(dow===6?" sat":"")+'" onclick="selectDay(&#39;'+ds+'&#39;)"><span class="dnum">'+d+'</span><span class="pdots">'+dots+'</span></div>';
+  }
+  var head="";
+  for(var w=0;w<7;w++){var c=w===0?"#e8837e":w===6?"#6aa9d8":"";head+='<div class="cal-wd" style="color:'+c+'">'+wd[w]+'</div>';}
+  el.innerHTML='<div class="cal-nav"><button onclick="calMove(-1)">‹</button><span class="mlabel">'+calYear+'年'+(calMonth+1)+'月</span><button onclick="calMove(1)">›</button></div><div class="cal-grid">'+head+cells+'</div><div id="dayPanel"></div>';
+  renderDayPanel();
+}
+function calMove(delta){calMonth+=delta;if(calMonth<0){calMonth=11;calYear--;}if(calMonth>11){calMonth=0;calYear++;}renderPlan();}
+function selectDay(ds){selDate=(selDate===ds?null:ds);renderPlan();}
+function renderDayPanel(){
+  var el=document.getElementById("dayPanel");
+  if(!selDate){el.innerHTML="";return;}
+  var d=new Date(selDate+"T00:00:00");
+  var wd=["日","月","火","水","木","金","土"][d.getDay()];
+  var ps=plansOn(selDate);
+  var roomOpts=state.rooms.map(function(r,ri){return '<option value="'+ri+'">'+escapeHtml(r.name)+'（'+r.floor+'）</option>';}).join("");
+  var list;
+  if(!ps.length){list='<div class="plan-empty">この日の予定はまだないよ🧹</div>';}
+  else{list=ps.map(function(p){return '<div class="plan-item'+(p.done?" done":"")+'"><button class="check" onclick="togglePlan(&#39;'+p.id+'&#39;)">✓</button><div class="sinfo"><div class="pname">'+escapeHtml(p.spot)+'</div><div class="pwhere">'+p.floor+' '+escapeHtml(p.room)+'</div></div><button class="pdel" onclick="delPlan(&#39;'+p.id+'&#39;)">✕</button></div>';}).join("");}
+  el.innerHTML='<div class="day-panel"><h3>'+(d.getMonth()+1)+'月'+d.getDate()+'日（'+wd+'）の予定</h3>'+list+'<div class="plan-add"><select id="planRoom" onchange="fillSpotOpts()">'+roomOpts+'</select><select id="planSpot"></select><button class="padd-btn" onclick="addPlan()">追加</button></div></div>';
+  fillSpotOpts();
+}
+function fillSpotOpts(){
+  var ri=+document.getElementById("planRoom").value;
+  var sel=document.getElementById("planSpot");
+  var r=state.rooms[ri];
+  sel.innerHTML=r.spots.map(function(s){return '<option value="'+escapeHtml(s)+'">'+escapeHtml(s)+'</option>';}).join("")+'<option value="__all">▶ 部屋ぜんぶ</option>';
+}
+function addPlan(){
+  if(!selDate)return;
+  var ri=+document.getElementById("planRoom").value;
+  var r=state.rooms[ri];
+  var sv=document.getElementById("planSpot").value;
+  var spots=sv==="__all"?r.spots.slice():[sv];
+  spots.forEach(function(sp){
+    if(state.plans.some(function(p){return p.date===selDate&&p.floor===r.floor&&p.room===r.name&&p.spot===sp;}))return;
+    state.plans.push({id:planId(),date:selDate,floor:r.floor,room:r.name,spot:sp,done:false});
+  });
+  save();renderPlan();toast("予定を追加したよ🗓️");
+}
+function togglePlan(id){var p=state.plans.find(function(x){return x.id===id;});if(!p)return;p.done=!p.done;save();renderPlan();if(p.done)toast(PRAISE[Math.floor(Math.random()*PRAISE.length)]);}
+function delPlan(id){var i=state.plans.findIndex(function(x){return x.id===id;});if(i<0)return;state.plans.splice(i,1);save();renderPlan();}
+
 function renderAll(){ renderRooms(); renderHistory(); renderStats(); }
 
 function showPage(name){
@@ -409,6 +506,7 @@ function showPage(name){
   document.querySelectorAll(".tabbar button").forEach(b=>b.classList.remove("active"));
   document.getElementById("page"+name).classList.add("active");
   document.getElementById("tab"+name).classList.add("active");
+  if(name==="Plan") renderPlan();
 }
 
 let toastTimer;
