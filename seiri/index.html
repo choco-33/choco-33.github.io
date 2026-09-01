@@ -141,6 +141,49 @@
   .bkx h3 svg{width:18px;height:18px}
   .bkx .bkx-btn{border:none;border-radius:12px;padding:9px 16px;font-family:inherit;font-weight:700;font-size:12.5px;color:#fff;background:#9cbcae;margin:8px 8px 0 0;cursor:pointer}
   .bkx .bkx-btn.sub{background:#c2ccc6}
+
+  /* 予定日バッジ */
+  .due-badge{display:inline-block;font-size:11px;font-weight:bold;padding:2px 9px;border-radius:99px;margin-left:8px;vertical-align:middle}
+  .due-badge.soon{background:#fff0e6;color:#d9772f}
+  .due-badge.today{background:#ffe3e0;color:#d0554c}
+  .due-badge.past{background:#ffe3e0;color:#d0554c}
+  .due-badge.later{background:#eaf3ef;color:#5a9685}
+  .due-row{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12.5px;color:var(--sub)}
+  .due-row input[type=date]{border:1.5px solid #dfe8e4;border-radius:10px;padding:6px 8px;font-family:inherit;font-size:12.5px;background:#fdfffe;color:var(--text);outline:none}
+  .due-row .clr{border:none;background:none;color:#c3ccc7;font-family:inherit;font-size:12px}
+
+  /* 計画カレンダー */
+  .cal-nav{display:flex;align-items:center;justify-content:center;gap:16px;margin:12px 4px 10px}
+  .cal-nav button{border:none;background:var(--card);box-shadow:var(--shadow);width:34px;height:34px;border-radius:50%;font-size:18px;color:var(--accent-dark);font-family:inherit}
+  .cal-nav .mlabel{font-size:16px;font-weight:bold;min-width:120px;text-align:center}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:0 2px}
+  .cal-wd{text-align:center;font-size:11px;color:var(--sub);padding:2px 0}
+  .cal-cell{aspect-ratio:1/1;background:var(--card);border-radius:12px;box-shadow:var(--shadow);padding:4px 0 0;display:flex;flex-direction:column;align-items:center;font-size:12px;border:2px solid transparent;overflow:hidden}
+  .cal-cell.empty{background:transparent;box-shadow:none}
+  .cal-cell.today{border-color:var(--accent)}
+  .cal-cell.sel{border-color:var(--accent-dark);background:#eef7f3}
+  .cal-cell .dnum{font-weight:bold;color:var(--text)}
+  .cal-cell.sun .dnum{color:#e8837e}
+  .cal-cell.sat .dnum{color:#6aa9d8}
+  .cal-cell .pdots{display:flex;gap:2px;margin-top:3px;flex-wrap:wrap;justify-content:center}
+  .cal-cell .pd{width:6px;height:6px;border-radius:50%;background:var(--warn)}
+  .cal-cell .pd.done{background:var(--ok)}
+  .cal-cell .pd.area{background:var(--accent)}
+  .day-panel{background:var(--card);border-radius:18px;box-shadow:var(--shadow);margin:12px 2px 0;padding:12px 14px}
+  .day-panel h3{font-size:14px;margin-bottom:6px;color:var(--accent-dark)}
+  .day-panel h4{font-size:11.5px;color:var(--sub);margin:10px 0 4px}
+  .area-chip{display:flex;align-items:center;gap:8px;padding:7px 2px;font-size:13.5px;border-bottom:1px solid #f4f8f6}
+  .area-chip .ac-dot{width:9px;height:9px;border-radius:50%;background:var(--accent);flex-shrink:0}
+  .plan-item{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid #f4f8f6}
+  .plan-item:last-of-type{border-bottom:none}
+  .plan-item.done .check{background:var(--ok);border-color:var(--ok);color:#fff}
+  .plan-item.done .pname{color:var(--sub);text-decoration:line-through}
+  .plan-item .pname{flex:1;font-size:14px}
+  .plan-item .pdel{border:none;background:none;color:#d7ddd9;font-size:14px;padding:6px}
+  .plan-add{display:flex;gap:6px;margin-top:10px}
+  .plan-add input{flex:1;border:1.5px solid #dfe8e4;border-radius:12px;padding:8px 10px;font-family:inherit;font-size:13px;background:#fdfffe;color:var(--text);outline:none;min-width:0}
+  .plan-add .padd-btn{border:none;background:var(--mint);color:#fff;font-family:inherit;font-weight:bold;font-size:13px;padding:0 14px;border-radius:12px}
+  .plan-empty{text-align:center;color:var(--sub);font-size:12.5px;padding:12px 0}
 </style>
 </head>
 <body>
@@ -153,12 +196,14 @@
 <div id="pageDan" class="page"></div>
 <div id="pageTeii" class="page"></div>
 <div id="pageMina" class="page"></div>
+<div id="pagePlan" class="page"></div>
 
 <nav class="tabbar">
   <button id="tabKata" class="active" onclick="showPage('Kata')"><span class="ico" data-icon="box"></span>片付け</button>
   <button id="tabDan" onclick="showPage('Dan')"><span class="ico" data-icon="bag"></span>断捨離</button>
   <button id="tabTeii" onclick="showPage('Teii')"><span class="ico" data-icon="pin"></span>定位置</button>
   <button id="tabMina" onclick="showPage('Mina')"><span class="ico" data-icon="refresh"></span>見直し</button>
+  <button id="tabPlan" onclick="showPage('Plan')"><span class="ico" data-icon="cal"></span>計画</button>
 </nav>
 
 <div id="toast"></div>
@@ -182,6 +227,7 @@ const ICONS = {
   drawers: SVG_OPEN+'<rect x="10" y="9" width="28" height="32" rx="3" fill="#bfe0d4"/><path d="M10 20 H38 M10 30 H38" stroke-width="2.5"/><circle cx="24" cy="14.5" r="1.8" fill="#5b6b63" stroke="none"/><circle cx="24" cy="25" r="1.8" fill="#5b6b63" stroke="none"/><circle cx="24" cy="35.5" r="1.8" fill="#5b6b63" stroke="none"/><path d="M40 8 L41 11 L44 12 L41 13 L40 16 L39 13 L36 12 L39 11 Z" fill="#ffe08c" stroke-width="1.2"/></svg>',
   glass: SVG_OPEN+'<circle cx="21" cy="21" r="12" fill="#d8efe6"/><path d="M30 30 L40 40" stroke-width="3.5"/></svg>',
   house: SVG_OPEN+'<rect x="11" y="22" width="26" height="18" fill="#d8efe6"/><path d="M7 24 L24 8 L41 24"/><path d="M11 40 H37"/><rect x="20.5" y="30" width="7" height="10" rx="1" fill="#9cc7b8"/></svg>',
+  cal: SVG_OPEN+'<rect x="8" y="11" width="32" height="29" rx="4" fill="#d8efe6"/><path d="M8 18 H40" stroke-width="2.5"/><path d="M16 7 V13 M32 7 V13"/><rect x="14" y="24" width="6" height="6" rx="1.5" fill="#7cb6a6" stroke="none"/><path d="M25 27 H33 M25 33 H31" stroke-width="2"/></svg>',
 };
 const PRAISE = ["えらい！✨","すっきり！🫧","おつかれさま！🌿","ととのったね！😊","気持ちいい〜！💚","ナイス整頓！📦","おうちが喜んでる！🏠💚"];
 const DONE_ALL = ["エリアぜんぶ完了！🎉","ここは完璧！✨🏆","まるごとスッキリ！すごい！💮"];
@@ -193,6 +239,7 @@ const DEFAULT = {
   ],
   discards: [],
   goal: 0,
+  plans: [],
   items: [],
   places: [
     {id:"m1", name:"玄関の収納", last:null},
@@ -211,7 +258,9 @@ function load(){
       if(!Array.isArray(s.discards)) s.discards=[];
       if(!Array.isArray(s.items)) s.items=[];
       if(!Array.isArray(s.places)) s.places=[];
+      if(!Array.isArray(s.plans)) s.plans=[];
       if(typeof s.goal!=="number") s.goal=0;
+      s.projects.forEach(function(p){ if(typeof p.due!=="string") p.due=""; });
       return s;
     }
   }catch(e){}
@@ -228,9 +277,22 @@ let openProj = new Set(JSON.parse(sessionStorage.getItem("seiri-open")||"[]"));
 function saveOpen(){ sessionStorage.setItem("seiri-open", JSON.stringify([...openProj])); }
 
 /* ===== 片付け ===== */
+function dueInfo(due){
+  if(!due) return null;
+  const past = daysAgo(due);
+  if(past>0) return {cls:"past", text:past+"日すぎ"};
+  if(past===0) return {cls:"today", text:"今日やる"};
+  const n = -past;
+  if(n<=3) return {cls:"soon", text:n+"日後"};
+  const d = new Date(due+"T00:00:00");
+  return {cls:"later", text:(d.getMonth()+1)+"/"+d.getDate()};
+}
+function dueBadge(due){ const info=dueInfo(due); return info ? '<span class="due-badge '+info.cls+'">'+info.text+'</span>' : ""; }
+function setDue(pi, val){ state.projects[pi].due = val||""; save(); renderKata(); if(val) toast("予定日を "+val+" にしたよ🗓️"); }
 function renderKata(){
   const el = document.getElementById("pageKata");
-  let html = '<div class="sec-note">エリアごとに やることを 分けて、ちょっとずつ片付けよう。写真で before / after も残せるよ📷</div>';
+  state.projects.sort(function(a,b){ var ad=a.due||"9999-99-99", bd=b.due||"9999-99-99"; return ad<bd?-1:(ad>bd?1:0); });
+  let html = '<div class="sec-note">エリアごとに やることを 分けて、ちょっとずつ片付けよう。予定日をつけると近い順に並ぶよ🗓️ 写真で before / after も残せる📷</div>';
   if(!state.projects.length){
     html += '<div class="empty">まだエリアがないよ。<br>下から追加してみよう！</div>';
   }
@@ -241,7 +303,7 @@ function renderKata(){
     html += '<div class="card'+(isOpen?" open":"")+'">'
       + '<div class="proj-head" onclick="toggleProj('+pi+')">'
       +   '<span class="picon">'+ICONS.box+'</span>'
-      +   '<div style="flex:1;min-width:0"><div class="pname">'+esc(p.area)+'</div></div>'
+      +   '<div style="flex:1;min-width:0"><div class="pname">'+esc(p.area)+dueBadge(p.due)+'</div></div>'
       +   '<span class="pcount">'+done+'/'+total+'</span><span class="arrow">▶</span>'
       + '</div>'
       + '<div class="pbar"><span style="width:'+pct+'%"></span></div>'
@@ -253,6 +315,7 @@ function renderKata(){
               + '<button class="tdel" onclick="delTask('+pi+','+ti+')">✕</button></div>';
           }).join("")
       +   '<div class="row-add"><input id="taskIn'+pi+'" type="text" placeholder="やることを追加" maxlength="24" onkeydown="if(event.key===\'Enter\')addTask('+pi+')"><button onclick="addTask('+pi+')">追加</button></div>'
+      +   '<div class="due-row">予定日：<input type="date" value="'+(p.due||"")+'" onchange="setDue('+pi+',this.value)">'+(p.due?'<button class="clr" onclick="setDue('+pi+',&#39;&#39;)">クリア</button>':'')+'</div>'
       +   '<div class="photos">'
       +     photoBox(pi,"before",p.beforeImg)
       +     photoBox(pi,"after",p.afterImg)
@@ -487,6 +550,65 @@ function delMina(i){
   state.places.splice(i,1); save(); renderMina();
 }
 
+/* ===== 計画（カレンダー） ===== */
+let calYear, calMonth, selDate=null;
+(function(){ var n=new Date(); calYear=n.getFullYear(); calMonth=n.getMonth(); })();
+function plansOn(date){ return state.plans.filter(function(p){return p.date===date;}); }
+function areasDue(date){ return state.projects.filter(function(p){return p.due===date;}); }
+function renderPlan(){
+  var el=document.getElementById("pagePlan");
+  var startWd=new Date(calYear,calMonth,1).getDay();
+  var dim=new Date(calYear,calMonth+1,0).getDate();
+  var wd=["日","月","火","水","木","金","土"];
+  var cells="";
+  for(var i=0;i<startWd;i++){ cells+='<div class="cal-cell empty"></div>'; }
+  for(var d=1;d<=dim;d++){
+    var ds=calYear+"-"+pad2(calMonth+1)+"-"+pad2(d);
+    var ps=plansOn(ds), ar=areasDue(ds);
+    var isToday=ds===todayStr(), isSel=ds===selDate;
+    var dow=new Date(calYear,calMonth,d).getDay();
+    var dots="";
+    ar.slice(0,4).forEach(function(){ dots+='<span class="pd area"></span>'; });
+    ps.slice(0,4).forEach(function(p){ dots+='<span class="pd'+(p.done?" done":"")+'"></span>'; });
+    cells+='<div class="cal-cell'+(isToday?" today":"")+(isSel?" sel":"")+(dow===0?" sun":"")+(dow===6?" sat":"")+'" onclick="selDay(&#39;'+ds+'&#39;)"><span class="dnum">'+d+'</span><span class="pdots">'+dots+'</span></div>';
+  }
+  var head="";
+  for(var w=0;w<7;w++){ var c=w===0?"#e8837e":w===6?"#6aa9d8":""; head+='<div class="cal-wd" style="color:'+c+'">'+wd[w]+'</div>'; }
+  el.innerHTML='<div class="sec-note">日にちをタップして、片付けの予定を立てよう🗓️ 片付けエリアに予定日をつけると自動でここに出るよ（緑ポチ＝エリア）。</div>'
+    +'<div class="cal-nav"><button onclick="calMove(-1)">‹</button><span class="mlabel">'+calYear+'年'+(calMonth+1)+'月</span><button onclick="calMove(1)">›</button></div>'
+    +'<div class="cal-grid">'+head+cells+'</div><div id="dayPanel"></div>';
+  renderDayPanel();
+}
+function calMove(delta){ calMonth+=delta; if(calMonth<0){calMonth=11;calYear--;} if(calMonth>11){calMonth=0;calYear++;} renderPlan(); }
+function selDay(ds){ selDate=(selDate===ds?null:ds); renderPlan(); }
+function renderDayPanel(){
+  var el=document.getElementById("dayPanel");
+  if(!selDate){ el.innerHTML=""; return; }
+  var d=new Date(selDate+"T00:00:00");
+  var wd=["日","月","火","水","木","金","土"][d.getDay()];
+  var ar=areasDue(selDate), ps=plansOn(selDate);
+  var html='<div class="day-panel"><h3>'+(d.getMonth()+1)+'月'+d.getDate()+'日（'+wd+'）の予定</h3>';
+  if(ar.length){
+    html+='<h4>片付けエリア</h4>';
+    ar.forEach(function(p){ var done=p.tasks.filter(function(t){return t.done;}).length; html+='<div class="area-chip"><span class="ac-dot"></span><span style="flex:1">'+esc(p.area)+'</span><span style="font-size:11px;color:var(--sub)">'+done+'/'+p.tasks.length+'</span></div>'; });
+  }
+  html+='<h4>メモ予定</h4>';
+  if(!ps.length){ html+='<div class="plan-empty">メモ予定はまだないよ</div>'; }
+  else{ ps.forEach(function(p){ html+='<div class="plan-item'+(p.done?" done":"")+'"><button class="check" onclick="togglePlan(&#39;'+p.id+'&#39;)">✓</button><div class="pname">'+esc(p.label)+'</div><button class="pdel" onclick="delPlan(&#39;'+p.id+'&#39;)">✕</button></div>'; }); }
+  html+='<div class="plan-add"><input id="planIn" type="text" placeholder="予定を追加（例：本棚の整理）" maxlength="30" onkeydown="if(event.key===&#39;Enter&#39;)addPlan()"><button class="padd-btn" onclick="addPlan()">追加</button></div>';
+  html+='</div>';
+  el.innerHTML=html;
+}
+function addPlan(){
+  if(!selDate) return;
+  var inp=document.getElementById("planIn"); var label=inp?inp.value.trim():"";
+  if(!label){ toast("予定を入れてね"); return; }
+  state.plans.push({id:uid(), date:selDate, label:label, done:false});
+  save(); renderPlan(); toast("予定を追加したよ🗓️");
+}
+function togglePlan(id){ var p=state.plans.find(function(x){return x.id===id;}); if(!p) return; p.done=!p.done; save(); renderPlan(); if(p.done) toast(PRAISE[Math.floor(Math.random()*PRAISE.length)]); }
+function delPlan(id){ var i=state.plans.findIndex(function(x){return x.id===id;}); if(i<0) return; state.plans.splice(i,1); save(); renderPlan(); }
+
 /* ===== 共通 ===== */
 function showPage(name){
   document.querySelectorAll(".page").forEach(function(p){p.classList.remove("active");});
@@ -497,6 +619,7 @@ function showPage(name){
   if(name==="Dan") renderDan();
   if(name==="Teii") renderTeii();
   if(name==="Mina") renderMina();
+  if(name==="Plan") renderPlan();
 }
 let toastTimer;
 function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer=setTimeout(function(){t.classList.remove("show");},1800); }
