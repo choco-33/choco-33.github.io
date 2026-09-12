@@ -177,6 +177,7 @@
   .plan-add select{flex:1;border:1.5px solid #eeded2;border-radius:12px;padding:8px 10px;font-family:inherit;font-size:13px;background:#fffdfb;color:var(--text);outline:none;min-width:0}
   .plan-add .padd-btn{border:none;background:var(--mint);color:#fff;font-family:inherit;font-weight:bold;font-size:13px;padding:0 16px;border-radius:12px}
   .plan-empty{text-align:center;color:var(--sub);font-size:12.5px;padding:16px 0}
+  .spot .sfreq{border:1.5px solid #eeded2;border-radius:9px;padding:4px 6px;font-family:inherit;font-size:11px;background:#fffdfb;color:var(--sub);outline:none;max-width:90px;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -264,12 +265,13 @@ let openRooms = new Set(JSON.parse(sessionStorage.getItem("osouji-open")||"[]"))
 function load(){
   try{
     const s = JSON.parse(localStorage.getItem(KEY));
-    if(s && s.rooms){ if(!Array.isArray(s.plans)) s.plans=[]; return s; }
+    if(s && s.rooms){ if(!Array.isArray(s.plans)) s.plans=[]; if(!s.freq) s.freq={}; return s; }
   }catch(e){}
   return {
     rooms: DEFAULT_ROOMS.map(r=>({floor:r.floor, name:r.name, spots:[...r.spots]})),
     logs: [],
-    plans: []
+    plans: [],
+    freq: {}
   };
 }
 function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
@@ -293,9 +295,22 @@ function doneToday(r, spot){
   const l = lastLog(r, spot);
   return l && l.date===todayStr();
 }
+function freqLabel(dys){ return dys===1?"毎日":dys===7?"毎週":dys===14?"2週ごと":dys===30?"1ヶ月ごと":dys+"日ごと"; }
+function spotFreq(r,spot){ return (state.freq&&state.freq[r.floor+"/"+r.name+"/"+spot])||0; }
+function setFreq(ri,si,val){ var r=state.rooms[ri], k=r.floor+"/"+r.name+"/"+r.spots[si]; if(!state.freq)state.freq={}; var v=parseInt(val,10)||0; if(v>0)state.freq[k]=v; else delete state.freq[k]; save(); renderRooms(); }
+function freqSelect(ri,si,cur){ var opts=[[0,"頻度なし"],[1,"毎日"],[2,"2日"],[3,"3日"],[7,"1週"],[14,"2週"],[30,"1ヶ月"]]; var h='<select class="sfreq" onclick="event.stopPropagation()" onchange="setFreq('+ri+','+si+',this.value)">'; for(var i=0;i<opts.length;i++){ h+='<option value="'+opts[i][0]+'"'+(opts[i][0]===cur?" selected":"")+'>'+opts[i][1]+'</option>'; } return h+'</select>'; }
 function spotStatus(r, spot){
   const l = lastLog(r, spot);
-  if(!l) return {cls:"none", text:"まだ記録なし"};
+  var _fq = spotFreq(r,spot);
+  if(!l) return {cls:"none", text: _fq? ("まだ記録なし・"+freqLabel(_fq)) : "まだ記録なし"};
+  if(_fq){
+    var _nd=new Date(l.date+"T00:00:00"); _nd.setDate(_nd.getDate()+_fq);
+    var _nds=fmtDate(_nd); var _md=(_nd.getMonth()+1)+"/"+_nd.getDate(); var _u=-daysAgo(_nds);
+    if(daysAgo(l.date)===0) return {cls:"ok", text:"今日やった✨ 次回 "+_md};
+    if(_u>0) return {cls:"ok", text:"次回 "+_md+"（あと"+_u+"日）"};
+    if(_u===0) return {cls:"warn", text:"次回 今日！ "+_md};
+    return {cls:"bad", text:(-_u)+"日すぎ 次回 "+_md};
+  }
   const d = daysAgo(l.date);
   if(d===0) return {cls:"ok", text:"今日おそうじ済み✨"};
   if(d<=3)  return {cls:"ok", text:`${d}日前`};
@@ -339,6 +354,7 @@ function renderRooms(){
               <div class="sname">${escapeHtml(s)}</div>
               <div class="slast ${st.cls}">${st.text}</div>
             </div>
+            ${freqSelect(ri,si,spotFreq(r,s))}
             <button class="sdel" onclick="removeSpot(${ri},${si})">✕</button>
           </div>`;
         }).join("")}
