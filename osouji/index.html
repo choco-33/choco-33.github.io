@@ -199,10 +199,12 @@
 </div>
 
 <div id="pagePlan" class="page"></div>
+<div id="pageBig" class="page"></div>
 
 <nav class="tabbar">
   <button id="tabRooms" class="active" onclick="showPage('Rooms')"><span class="ico" data-icon="house"></span>おそうじ</button>
   <button id="tabPlan" onclick="showPage('Plan')"><span class="ico" data-icon="calendar"></span>予定</button>
+  <button id="tabBig" onclick="showPage('Big')"><span class="ico" data-icon="sparkle"></span>大掃除</button>
   <button id="tabHistory" onclick="showPage('History')"><span class="ico" data-icon="book"></span>きろく</button>
 </nav>
 
@@ -258,6 +260,20 @@ const PRAISE = [
   "気持ちいいね〜！😊","すごい！継続は力なり✨","おうちが喜んでる！🏠💕","ナイスおそうじ！🧹"
 ];
 const ROOM_DONE = ["この部屋コンプリート！🎉","全部ピカピカ！✨🏆","部屋まるごとキレイ！すごい！💮"];
+const DEFAULT_BIG = { cats: [
+  {name:"大掃除", items:[
+    {id:"b1",name:"換気扇",freq:365,last:null},
+    {id:"b2",name:"エアコン",freq:365,last:null},
+    {id:"b3",name:"窓・網戸",freq:180,last:null},
+    {id:"b4",name:"カーテン洗濯",freq:180,last:null},
+    {id:"b5",name:"排水溝の分解掃除",freq:90,last:null}
+  ]},
+  {name:"季節のお手入れ", items:[
+    {id:"b6",name:"扇風機のお手入れ",freq:365,last:null},
+    {id:"b7",name:"除湿機のお手入れ",freq:365,last:null},
+    {id:"b8",name:"加湿器のお手入れ",freq:365,last:null}
+  ]}
+]};
 
 let state = load();
 let openRooms = new Set(JSON.parse(sessionStorage.getItem("osouji-open")||"[]"));
@@ -265,13 +281,14 @@ let openRooms = new Set(JSON.parse(sessionStorage.getItem("osouji-open")||"[]"))
 function load(){
   try{
     const s = JSON.parse(localStorage.getItem(KEY));
-    if(s && s.rooms){ if(!Array.isArray(s.plans)) s.plans=[]; if(!s.freq) s.freq={}; return s; }
+    if(s && s.rooms){ if(!Array.isArray(s.plans)) s.plans=[]; if(!s.freq) s.freq={}; if(!s.big) s.big=JSON.parse(JSON.stringify(DEFAULT_BIG)); return s; }
   }catch(e){}
   return {
     rooms: DEFAULT_ROOMS.map(r=>({floor:r.floor, name:r.name, spots:[...r.spots]})),
     logs: [],
     plans: [],
-    freq: {}
+    freq: {},
+    big: JSON.parse(JSON.stringify(DEFAULT_BIG))
   };
 }
 function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
@@ -515,6 +532,47 @@ function addPlan(){
 function togglePlan(id){var p=state.plans.find(function(x){return x.id===id;});if(!p)return;p.done=!p.done;save();renderPlan();if(p.done)toast(PRAISE[Math.floor(Math.random()*PRAISE.length)]);}
 function delPlan(id){var i=state.plans.findIndex(function(x){return x.id===id;});if(i<0)return;state.plans.splice(i,1);save();renderPlan();}
 
+function bigStatus(it){
+  if(!it.last) return {cls:"none", text: it.freq? ("まだ記録なし・"+freqLabel(it.freq)) : "まだ記録なし"};
+  if(it.freq){
+    var _nd=new Date(it.last+"T00:00:00"); _nd.setDate(_nd.getDate()+it.freq);
+    var _nds=fmtDate(_nd); var _ty=(new Date(todayStr()+"T00:00:00")).getFullYear();
+    var _md=(_nd.getFullYear()!==_ty?_nd.getFullYear()+"/":"")+(_nd.getMonth()+1)+"/"+_nd.getDate();
+    var _u=-daysAgo(_nds); var _rem=_u>=60?"":"（あと"+_u+"日）";
+    if(daysAgo(it.last)===0) return {cls:"ok", text:"今日やった✨ 次回 "+_md};
+    if(_u>0) return {cls:"ok", text:"次回 "+_md+_rem};
+    if(_u===0) return {cls:"warn", text:"次回 今日！ "+_md};
+    return {cls:"bad", text:(-_u)+"日すぎ 次回 "+_md};
+  }
+  var d=daysAgo(it.last);
+  return {cls: d<=30?"ok":(d<=90?"warn":"bad"), text:d+"日前"};
+}
+function bigDueVal(it){ if(!it.last) return it.freq?1e11:1e12; if(!it.freq) return 9e11; var _nd=new Date(it.last+"T00:00:00"); _nd.setDate(_nd.getDate()+it.freq); return _nd.getTime(); }
+function bigFreqSelect(ci,ii,cur){ var opts=[[0,"頻度なし"],[7,"1週"],[14,"2週"],[30,"1ヶ月"],[60,"2ヶ月"],[90,"3ヶ月"],[180,"半年"],[365,"1年"]]; var h='<select class="sfreq" onclick="event.stopPropagation()" onchange="setBigFreq('+ci+','+ii+',this.value)">'; for(var i=0;i<opts.length;i++){ h+='<option value="'+opts[i][0]+'"'+(opts[i][0]===cur?" selected":"")+'>'+opts[i][1]+'</option>'; } return h+'</select>'; }
+function setBigFreq(ci,ii,val){ state.big.cats[ci].items[ii].freq=parseInt(val,10)||0; save(); renderBig(); }
+function renderBig(){
+  var el=document.getElementById("pageBig"); var html='';
+  html+='<p style="font-size:12px;color:var(--sub);margin:2px 4px 10px;line-height:1.6">年に数回のお手入れをカテゴリ別に。やったらチェックで次回を自動計算するよ✨</p>';
+  state.big.cats.forEach(function(cat,ci){
+    var arr=cat.items.map(function(it,ii){return {it:it,ii:ii};});
+    arr.sort(function(a,b){return bigDueVal(a.it)-bigDueVal(b.it);});
+    html+='<div class="room open"><div class="room-head" style="cursor:default"><span class="icon">'+ICONS.sparkle+'</span><div style="flex:1;min-width:0"><div class="rname">'+escapeHtml(cat.name)+'</div></div><button class="sdel" onclick="delBigCat('+ci+')">✕</button></div><div class="room-body">';
+    if(!cat.items.length){ html+='<div class="empty" style="padding:14px 0;font-size:12.5px">まだ項目がないよ</div>'; }
+    arr.forEach(function(o){ var it=o.it, ii=o.ii, st=bigStatus(it), dn=it.last===todayStr();
+      html+='<div class="spot'+(dn?" done":"")+'"><button class="check" onclick="toggleBig('+ci+','+ii+',event)">✓</button><div class="sinfo"><div class="sname">'+escapeHtml(it.name)+'</div><div class="slast '+st.cls+'">'+st.text+'</div></div>'+bigFreqSelect(ci,ii,it.freq||0)+'<button class="sdel" onclick="delBigItem('+ci+','+ii+')">✕</button></div>';
+    });
+    html+='<div class="spot-add"><input id="bigIn'+ci+'" type="text" placeholder="項目を追加（例：換気扇）" maxlength="20" onkeydown="if(event.key===&#39;Enter&#39;)addBigItem('+ci+')"><button onclick="addBigItem('+ci+')">追加</button></div>';
+    html+='</div></div>';
+  });
+  html+='<div class="spot-add" style="margin:6px 2px 24px"><input id="bigCatIn" type="text" placeholder="カテゴリを追加（例：ペット用品）" maxlength="16" onkeydown="if(event.key===&#39;Enter&#39;)addBigCat()"><button onclick="addBigCat()">カテゴリ追加</button></div>';
+  el.innerHTML=html;
+}
+function toggleBig(ci,ii,ev){ if(ev)ev.stopPropagation(); var it=state.big.cats[ci].items[ii]; if(it.last===todayStr()){ it.last=null; } else { it.last=todayStr(); toast(PRAISE[Math.floor(Math.random()*PRAISE.length)]); confetti(ev); } save(); renderBig(); }
+function addBigItem(ci){ var inp=document.getElementById("bigIn"+ci); var name=inp.value.trim(); if(!name)return; state.big.cats[ci].items.push({id:planId(),name:name,freq:0,last:null}); save(); renderBig(); toast("「"+name+"」を追加したよ🌱"); }
+function delBigItem(ci,ii){ var it=state.big.cats[ci].items[ii]; if(!confirm("「"+it.name+"」を削除する？"))return; state.big.cats[ci].items.splice(ii,1); save(); renderBig(); }
+function addBigCat(){ var inp=document.getElementById("bigCatIn"); var name=inp.value.trim(); if(!name)return; state.big.cats.push({name:name,items:[]}); save(); renderBig(); toast("カテゴリ「"+name+"」を追加🌱"); }
+function delBigCat(ci){ var c=state.big.cats[ci]; if(!confirm("カテゴリ「"+c.name+"」を削除する？（中の項目も消えます）"))return; state.big.cats.splice(ci,1); save(); renderBig(); }
+
 function renderAll(){ renderRooms(); renderHistory(); renderStats(); }
 
 function showPage(name){
@@ -523,6 +581,7 @@ function showPage(name){
   document.getElementById("page"+name).classList.add("active");
   document.getElementById("tab"+name).classList.add("active");
   if(name==="Plan") renderPlan();
+  if(name==="Big") renderBig();
 }
 
 let toastTimer;
