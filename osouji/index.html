@@ -295,19 +295,19 @@ function doneToday(r, spot){
   const l = lastLog(r, spot);
   return l && l.date===todayStr();
 }
-function freqLabel(dys){ return dys===1?"毎日":dys===7?"毎週":dys===14?"2週ごと":dys===30?"1ヶ月ごと":dys+"日ごと"; }
+function freqLabel(dys){ return dys===1?"毎日":dys===7?"毎週":dys===14?"2週ごと":dys===30?"1ヶ月ごと":dys===60?"2ヶ月ごと":dys===90?"3ヶ月ごと":dys===180?"半年ごと":dys===365?"1年ごと":dys+"日ごと"; }
 function spotFreq(r,spot){ return (state.freq&&state.freq[r.floor+"/"+r.name+"/"+spot])||0; }
 function setFreq(ri,si,val){ var r=state.rooms[ri], k=r.floor+"/"+r.name+"/"+r.spots[si]; if(!state.freq)state.freq={}; var v=parseInt(val,10)||0; if(v>0)state.freq[k]=v; else delete state.freq[k]; save(); renderRooms(); }
-function freqSelect(ri,si,cur){ var opts=[[0,"頻度なし"],[1,"毎日"],[2,"2日"],[3,"3日"],[7,"1週"],[14,"2週"],[30,"1ヶ月"]]; var h='<select class="sfreq" onclick="event.stopPropagation()" onchange="setFreq('+ri+','+si+',this.value)">'; for(var i=0;i<opts.length;i++){ h+='<option value="'+opts[i][0]+'"'+(opts[i][0]===cur?" selected":"")+'>'+opts[i][1]+'</option>'; } return h+'</select>'; }
+function freqSelect(ri,si,cur){ var opts=[[0,"頻度なし"],[1,"毎日"],[2,"2日"],[3,"3日"],[7,"1週"],[14,"2週"],[30,"1ヶ月"],[60,"2ヶ月"],[90,"3ヶ月"],[180,"半年"],[365,"1年"]]; var h='<select class="sfreq" onclick="event.stopPropagation()" onchange="setFreq('+ri+','+si+',this.value)">'; for(var i=0;i<opts.length;i++){ h+='<option value="'+opts[i][0]+'"'+(opts[i][0]===cur?" selected":"")+'>'+opts[i][1]+'</option>'; } return h+'</select>'; }
 function spotStatus(r, spot){
   const l = lastLog(r, spot);
   var _fq = spotFreq(r,spot);
   if(!l) return {cls:"none", text: _fq? ("まだ記録なし・"+freqLabel(_fq)) : "まだ記録なし"};
   if(_fq){
     var _nd=new Date(l.date+"T00:00:00"); _nd.setDate(_nd.getDate()+_fq);
-    var _nds=fmtDate(_nd); var _md=(_nd.getMonth()+1)+"/"+_nd.getDate(); var _u=-daysAgo(_nds);
+    var _nds=fmtDate(_nd); var _ty=(new Date(todayStr()+"T00:00:00")).getFullYear(); var _md=(_nd.getFullYear()!==_ty?_nd.getFullYear()+"/":"")+(_nd.getMonth()+1)+"/"+_nd.getDate(); var _u=-daysAgo(_nds); var _rem=_u>=60?"":"（あと"+_u+"日）";
     if(daysAgo(l.date)===0) return {cls:"ok", text:"今日やった✨ 次回 "+_md};
-    if(_u>0) return {cls:"ok", text:"次回 "+_md+"（あと"+_u+"日）"};
+    if(_u>0) return {cls:"ok", text:"次回 "+_md+_rem};
     if(_u===0) return {cls:"warn", text:"次回 今日！ "+_md};
     return {cls:"bad", text:(-_u)+"日すぎ 次回 "+_md};
   }
