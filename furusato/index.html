@@ -159,7 +159,7 @@ const ICONS = {
   chart: SVG_OPEN+'<path d="M9 39 H40"/><rect x="13" y="24" width="6" height="13" rx="1.5" fill="#f4d29a"/><rect x="22" y="17" width="6" height="20" rx="1.5" fill="#e39a4c"/><rect x="31" y="28" width="6" height="9" rx="1.5" fill="#f0b25f"/></svg>',
   present: SVG_OPEN+'<rect x="10" y="12" width="28" height="26" rx="4" fill="#f4d29a"/><path d="M10 22 H38 M24 12 V38"/><path d="M24 12 C24 12 18 6 15 9 C12 12 18 14 24 12 C30 14 36 12 33 9 C30 6 24 12 24 12 Z" fill="#f0b25f"/></svg>',
 };
-const SITES = ["楽天ふるさと納税","さとふる","ふるなび","ふるさとチョイス","ふるさとプレミアム","au PAY ふるさと納税","その他"];
+const SITES = ["楽天ふるさと納税","さとふる","ふるなび","ふるさとチョイス","ふるさとプレミアム","au PAY ふるさと納税","Yahoo!ふるさと納税"];
 const PLABEL = {watashi:"私", otto:"夫"};
 
 let state = load();
@@ -237,7 +237,8 @@ function renderKiroku(){
   });
 
   var e = editId ? P().items.find(function(x){return x.id===editId;}) : null;
-  var siteOpts = SITES.map(function(s){ return '<option'+(e&&e.site===s?" selected":"")+'>'+s+'</option>'; }).join("");
+  var siteList = SITES.slice(); if(e && e.site && siteList.indexOf(e.site)<0) siteList.push(e.site);
+  var siteOpts = siteList.map(function(s){ return '<option'+(e&&e.site===s?" selected":"")+'>'+s+'</option>'; }).join("");
   html+='<div class="form" id="form">'
     +'<h3>'+(e?"寄付をなおす":PLABEL[curPerson]+"の寄付を追加")+'</h3>'
     +'<div class="fld"><label>寄付先（自治体）</label><input id="fMuni" type="text" placeholder="例：北海道○○町" maxlength="30" value="'+(e?esc(e.muni):"")+'"></div>'
