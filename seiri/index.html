@@ -575,7 +575,7 @@ function renderPlan(){
   var head="";
   for(var w=0;w<7;w++){ var c=w===0?"#e8837e":w===6?"#6aa9d8":""; head+='<div class="cal-wd" style="color:'+c+'">'+wd[w]+'</div>'; }
   el.innerHTML='<div class="sec-note">日にちをタップして、片付けの予定を立てよう🗓️ 片付けエリアに予定日をつけると自動でここに出るよ（緑ポチ＝エリア）。</div>'
-    +'<div class="cal-nav"><button onclick="calMove(-1)">‹</button><span class="mlabel">'+calYear+'年'+(calMonth+1)+'月</span><button onclick="calMove(1)">›</button></div>'
+    +'<div class="cal-nav"><button onclick="calMove(-1)">＜</button><span class="mlabel">'+calYear+'年'+(calMonth+1)+'月</span><button onclick="calMove(1)">＞</button></div>'
     +'<div class="cal-grid">'+head+cells+'</div><div id="dayPanel"></div>';
   renderDayPanel();
 }
