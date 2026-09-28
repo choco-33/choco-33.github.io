@@ -67,7 +67,9 @@
   .d-os .oslbl{font-size:11.5px; color:var(--sub)}
   .badge{display:inline-block; font-size:10.5px; padding:2px 8px; border-radius:999px; background:#f3ece0; color:#a2907a}
   .badge.kakutei{background:#eef1f6; color:#7c8aa0}
-  .d-foot{display:flex; justify-content:flex-end; gap:4px; margin-top:8px}
+  .d-foot{display:flex; justify-content:flex-end; align-items:center; gap:4px; margin-top:8px}
+  .chip.heart{border-color:#f3cfc9; color:#d98a82}
+  .chip.heart.on{background:#f2a7a0; border-color:#f2a7a0; color:#fff}
   .d-foot button{border:none; background:none; color:#c9bda9; font-size:11.5px; font-family:inherit; padding:5px 7px}
 
   .form{background:var(--card); border-radius:16px; box-shadow:var(--shadow); padding:14px; margin-top:4px}
@@ -232,7 +234,7 @@ function renderKiroku(){
       +'<div class="d-top"><div class="d-muni">'+esc(it.muni)+'</div><div class="d-amt">'+yen(it.amt)+'円</div></div>'
       +'<div class="d-sub">'+ (it.date? it.date.replace(/-/g,"/") : "") + (it.site? '　・　'+esc(it.site) : '') +'</div>'
       +giftPart+osPart
-      +'<div class="d-foot"><button onclick="startEdit(&#39;'+it.id+'&#39;)">なおす✎</button><button onclick="delItem(&#39;'+it.id+'&#39;)">削除</button></div>'
+      +'<div class="d-foot"><span class="chip heart'+(it.again?" on":"")+'" style="margin-right:auto" onclick="toggleField(&#39;'+it.id+'&#39;,&#39;again&#39;)">'+(it.again?"♥ また頼みたい":"♡ また頼みたい")+'</span><button onclick="startEdit(&#39;'+it.id+'&#39;)">なおす✎</button><button onclick="delItem(&#39;'+it.id+'&#39;)">削除</button></div>'
       +'</div>';
   });
 
@@ -323,6 +325,11 @@ function renderMatome(){
   html+='<div class="mtitle">🎁 返礼品 まだ届いてない</div>';
   if(!giftNot.length){ html+='<div class="allok">✓ ぜんぶ届いてるよ</div>'; }
   else{ html+='<div class="todo">'+giftNot.map(function(it){return '<div class="todo-row"><span class="tdot"></span><span style="flex:1">'+esc(it.gift)+'</span><span style="font-size:11px;color:var(--sub)">'+esc(it.muni)+'</span></div>';}).join("")+'</div>'; }
+
+  var again=P().items.filter(function(it){return it.again;}).sort(function(a,b){return a.date<b.date?1:-1;});
+  html+='<div class="mtitle">♥ また頼みたい（'+PLABEL[curPerson]+'・全部の年）</div>';
+  if(!again.length){ html+='<div class="allok" style="color:var(--sub)">記録の「♡ また頼みたい」を押すとここに集まるよ</div>'; }
+  else{ html+='<div class="todo">'+again.map(function(it){return '<div class="todo-row"><span class="tdot" style="background:#f2a7a0"></span><span style="flex:1">'+esc(it.gift||it.muni)+'</span><span style="font-size:11px;color:var(--sub)">'+esc(it.muni)+'・'+(it.date||"").slice(0,4)+'年</span></div>';}).join("")+'</div>'; }
 
   var osn=osMunis(y).length;
   if(osn>5){ html+='<div class="limit-info" style="margin-top:14px;color:var(--bad)">⚠ ワンストップ特例は1年で5自治体まで。今は'+osn+'自治体なので、確定申告が必要になるかも。</div>'; }
