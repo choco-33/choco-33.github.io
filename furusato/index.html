@@ -73,6 +73,8 @@
   .d-rate{display:flex; align-items:center; gap:6px; margin-top:8px; font-size:11.5px; color:var(--sub)}
   .rchip{border:1.5px solid var(--line); border-radius:10px; padding:3px 10px; font-size:14px; background:#fffdfa; cursor:pointer; opacity:.4; filter:grayscale(1)}
   .rchip.on{opacity:1; filter:none; border-color:var(--accent); background:#fff6ea}
+  .d-foot .w-go{color:var(--accent-dark); font-weight:bold}
+  .w-link{font-size:12px; color:var(--accent-dark); text-decoration:none; border-bottom:1px dashed var(--accent)}
   .d-foot button{border:none; background:none; color:#c9bda9; font-size:11.5px; font-family:inherit; padding:5px 7px}
 
   .form{background:var(--card); border-radius:16px; box-shadow:var(--shadow); padding:14px; margin-top:4px}
@@ -139,10 +141,12 @@
 <div class="summary" id="summary"></div>
 
 <div id="pageKiroku" class="page active"></div>
+<div id="pageWish" class="page"></div>
 <div id="pageMatome" class="page"></div>
 
 <nav class="tabbar">
   <button id="tabKiroku" class="active" onclick="showPage('Kiroku')"><span class="ico" data-icon="gift"></span>きろく</button>
+  <button id="tabWish" onclick="showPage('Wish')"><span class="ico" data-icon="star"></span>ほしい</button>
   <button id="tabMatome" onclick="showPage('Matome')"><span class="ico" data-icon="chart"></span>まとめ</button>
 </nav>
 
@@ -162,6 +166,7 @@ const SVG_OPEN = '<svg viewBox="0 0 48 48" fill="none" stroke="#8a6f4a" stroke-w
 const ICONS = {
   gift: SVG_OPEN+'<rect x="9" y="20" width="30" height="19" rx="3" fill="#f4d29a"/><path d="M9 26 H39" stroke-width="2.5"/><rect x="21" y="20" width="6" height="19" fill="#e39a4c" stroke="none"/><path d="M24 20 C24 20 16 20 16 14 C16 10 22 11 24 20 C26 11 32 10 32 14 C32 20 24 20 24 20 Z" fill="#f0b25f"/></svg>',
   chart: SVG_OPEN+'<path d="M9 39 H40"/><rect x="13" y="24" width="6" height="13" rx="1.5" fill="#f4d29a"/><rect x="22" y="17" width="6" height="20" rx="1.5" fill="#e39a4c"/><rect x="31" y="28" width="6" height="9" rx="1.5" fill="#f0b25f"/></svg>',
+  star: SVG_OPEN+'<path d="M24 7 L29 18 L41 19.5 L32 27.5 L34.5 39.5 L24 33.5 L13.5 39.5 L16 27.5 L7 19.5 L19 18 Z" fill="#f4d29a"/></svg>',
   present: SVG_OPEN+'<rect x="10" y="12" width="28" height="26" rx="4" fill="#f4d29a"/><path d="M10 22 H38 M24 12 V38"/><path d="M24 12 C24 12 18 6 15 9 C12 12 18 14 24 12 C30 14 36 12 33 9 C30 6 24 12 24 12 Z" fill="#f0b25f"/></svg>',
 };
 const SITES = ["楽天ふるさと納税","さとふる","ふるなび","ふるさとチョイス","ふるさとプレミアム","au PAY ふるさと納税","Yahoo!ふるさと納税"];
@@ -192,7 +197,7 @@ function itemsOf(y){ return P().items.filter(function(it){return (it.date||"").s
 function totalOf(y){ return itemsOf(y).reduce(function(a,it){return a+(it.amt||0);},0); }
 function osMunis(y){ var s={}; itemsOf(y).forEach(function(it){ if(it.oneStop) s[it.muni]=1; }); return Object.keys(s); }
 
-function setPerson(p){ curPerson=p; editId=null;
+function setPerson(p){ curPerson=p; editId=null; pendingWish=null;
   document.body.classList.toggle("otto", p==="otto");
   document.querySelectorAll(".pbar .pb").forEach(function(b){ b.classList.toggle("on", b.dataset.p===p); });
   renderAll();
@@ -294,6 +299,7 @@ function saveItem(){
   }else{
     P().items.push({id:uid(), muni:muni, amt:amt, date:date, site:site, gift:gift, oneStop:oneStop, giftArrived:false, osReceived:false, osSent:false});
     toast("記入したよ🎁");
+    if(pendingWish){ var wi=W().findIndex(function(x){return x.id===pendingWish;}); if(wi>=0) W().splice(wi,1); pendingWish=null; }
   }
   curYear=date.slice(0,4);
   save(); renderAll();
@@ -356,7 +362,47 @@ function saveLimit(){
   save(); renderAll(); toast("上限を設定したよ");
 }
 
-function renderAll(){ renderTop(); renderKiroku(); renderMatome(); }
+var pendingWish=null;
+function W(){ var p=P(); if(!Array.isArray(p.wish)) p.wish=[]; return p.wish; }
+function renderWish(){
+  var el=document.getElementById("pageWish"); var list=W();
+  var sum=list.reduce(function(a,w){return a+(w.amt||0);},0);
+  var lim=P().limits[curYear]||0, rem=lim-totalOf(curYear);
+  var html='<div class="sec-note">気になる返礼品をメモしておけるよ。寄付したら「寄付した→記録へ」でそのまま記録に移せるよ🎁</div>';
+  if(list.length){ html+='<div class="limit-card" style="padding:12px 14px"><div class="limit-info" style="margin-top:0">ほしいもの合計（目安）：<b>'+yen(sum)+'円</b>'+(lim? '<br>'+curYear+'年の上限まで残り：'+yen(rem)+'円 '+(sum>rem?'<span style="color:var(--bad)">（ぜんぶは入らないかも）</span>':'<span style="color:var(--ok)">（ぜんぶ入るよ）</span>') : '<br><span style="font-size:11.5px">まとめタブで上限を入れると、ぜんぶ入るか分かるよ</span>')+'</div></div>'; }
+  else { html+='<div class="empty">まだ登録がないよ。<br>下から追加してね✨</div>'; }
+  list.forEach(function(w){
+    var link = (w.url && /^https?:/i.test(w.url)) ? '<a class="w-link" style="margin-right:auto" href="'+esc(w.url)+'" target="_blank" rel="noopener">ページを開く</a>' : '';
+    html+='<div class="card"><div class="d-top"><div class="d-muni">'+esc(w.gift)+'</div><div class="d-amt">'+(w.amt? yen(w.amt)+'円':'')+'</div></div>'
+      +'<div class="d-sub">'+esc(w.muni||'')+(w.site?(w.muni?'　・　':'')+esc(w.site):'')+'</div>'
+      +(w.memo?'<div class="d-sub" style="color:var(--text);margin-top:6px">📝 '+esc(w.memo)+'</div>':'')
+      +'<div class="d-foot">'+link+'<button class="w-go" onclick="wishDone(&#39;'+w.id+'&#39;)">寄付した→記録へ</button><button onclick="delWish(&#39;'+w.id+'&#39;)">削除</button></div></div>';
+  });
+  var siteOpts=SITES.map(function(s){return '<option>'+s+'</option>';}).join("");
+  html+='<div class="form"><h3>'+PLABEL[curPerson]+'のほしいものを追加</h3>'
+    +'<div class="fld"><label>返礼品</label><input id="wGift" type="text" maxlength="40" placeholder="例：シャインマスカット"></div>'
+    +'<div class="fld row"><div><label>自治体</label><input id="wMuni" type="text" maxlength="30" placeholder="例：山梨県○○市"></div><div><label>寄付額（目安）</label><input id="wAmt" type="number" inputmode="numeric" min="0" placeholder="15000"></div></div>'
+    +'<div class="fld"><label>サイト</label><select id="wSite">'+siteOpts+'</select></div>'
+    +'<div class="fld"><label>ページのURL（なくてもOK）</label><input id="wUrl" type="url" placeholder="https://..."></div>'
+    +'<div class="fld"><label>メモ（なくてもOK）</label><input id="wMemo" type="text" maxlength="40" placeholder="例：12月に受付開始"></div>'
+    +'<button class="save-btn" onclick="addWish()">追加する</button></div>';
+  el.innerHTML=html;
+}
+function addWish(){
+  var g=document.getElementById("wGift").value.trim(); if(!g){ toast("返礼品を入れてね"); return; }
+  W().push({id:uid(), gift:g, muni:document.getElementById("wMuni").value.trim(), amt:parseInt(document.getElementById("wAmt").value,10)||0, site:document.getElementById("wSite").value, url:document.getElementById("wUrl").value.trim(), memo:document.getElementById("wMemo").value.trim()});
+  save(); renderWish(); toast("ほしいものに追加したよ✨");
+}
+function delWish(id){ var i=W().findIndex(function(x){return x.id===id;}); if(i<0) return; if(!confirm("「"+W()[i].gift+"」を消す？")) return; W().splice(i,1); save(); renderWish(); }
+function wishDone(id){
+  var w=W().find(function(x){return x.id===id;}); if(!w) return;
+  editId=null; pendingWish=id; showPage('Kiroku'); renderKiroku();
+  document.getElementById("fMuni").value=w.muni||""; document.getElementById("fAmt").value=w.amt||""; document.getElementById("fGift").value=w.gift||"";
+  if(w.site) document.getElementById("fSite").value=w.site;
+  document.getElementById("form").scrollIntoView({block:"center"});
+  toast("内容を入れたよ。日付を確認して記入してね");
+}
+function renderAll(){ renderTop(); renderKiroku(); renderWish(); renderMatome(); }
 
 function showPage(name){
   document.querySelectorAll(".page").forEach(function(p){p.classList.remove("active");});
