@@ -80,6 +80,9 @@
   .ctag.food{background:#fde6d8; color:#d06f3c}
   .ctag.daily{background:#dff1e6; color:#4f9a6f}
   .ctag.none{background:#f3ece0; color:#b3a38c}
+  .grp{display:flex; align-items:center; gap:8px; margin:16px 4px 8px}
+  .grp.first{margin-top:4px}
+  .grp-n{font-size:11.5px; color:var(--sub)}
   .w-link{font-size:12px; color:var(--accent-dark); text-decoration:none; border-bottom:1px dashed var(--accent)}
   .d-foot button{border:none; background:none; color:#c9bda9; font-size:11.5px; font-family:inherit; padding:5px 7px}
 
@@ -230,9 +233,11 @@ function renderTop(){
 function renderKiroku(){
   var el=document.getElementById("pageKiroku");
   var list=itemsOf(curYear).slice().sort(function(a,b){ if(a.date!==b.date) return a.date<b.date?1:-1; return a.id<b.id?1:-1; });
+  list.sort(function(a,b){ return catRank(a)-catRank(b); }); var lastG=null;
   var html='';
   if(!list.length){ html+='<div class="empty">'+PLABEL[curPerson]+'の'+curYear+'年の記録はまだないよ。<br>下のフォームから追加してね🎁</div>'; }
   list.forEach(function(it){
+    var g=catRank(it); if(g!==lastG){ html+=grpHead(g, list.filter(function(x){return catRank(x)===g;}), lastG===null); lastG=g; }
     var giftPart='';
     if(it.gift){
       giftPart='<div class="d-gift"><span class="gname">🎁 '+esc(it.gift)+'</span>'
@@ -280,6 +285,8 @@ function toggleField(id, field){
 }
 function catTag(kind, it){ var c=it.cat||""; return '<span class="ctag '+(c||"none")+'" onclick="cycleCat(&#39;'+kind+'&#39;,&#39;'+it.id+'&#39;)">'+(c?CATS[c]:"分類")+'</span>'; }
 function cycleCat(kind, id){ var arr=(kind==="w")?W():P().items; var it=arr.find(function(x){return x.id===id;}); if(!it) return; it.cat = !it.cat ? "food" : (it.cat==="food" ? "daily" : ""); save(); renderAll(); }
+function catRank(it){ return it.cat==="food"?0:(it.cat==="daily"?1:2); }
+function grpHead(g, arr, first){ var lab=["食品","日用品","分類なし"][g], cls=["food","daily","none"][g]; var sum=arr.reduce(function(a,x){return a+(x.amt||0);},0); return '<div class="grp'+(first?" first":"")+'"><span class="ctag '+cls+'" style="margin:0;cursor:default">'+lab+'</span><span class="grp-n">'+arr.length+'件・'+yen(sum)+'円</span></div>'; }
 function catSelect(idn, cur){ return '<select id="'+idn+'"><option value="">分類なし</option><option value="food"'+(cur==="food"?" selected":"")+'>食品</option><option value="daily"'+(cur==="daily"?" selected":"")+'>日用品</option></select>'; }
 function setRate(id, r){
   var it=P().items.find(function(x){return x.id===id;}); if(!it) return;
@@ -379,13 +386,14 @@ function saveLimit(){
 var pendingWish=null;
 function W(){ var p=P(); if(!Array.isArray(p.wish)) p.wish=[]; return p.wish; }
 function renderWish(){
-  var el=document.getElementById("pageWish"); var list=W();
+  var el=document.getElementById("pageWish"); var list=W().slice().sort(function(a,b){ return catRank(a)-catRank(b); }); var lastG=null;
   var sum=list.reduce(function(a,w){return a+(w.amt||0);},0);
   var lim=P().limits[curYear]||0, rem=lim-totalOf(curYear);
   var html='<div class="sec-note">気になる返礼品をメモしておけるよ。寄付したら「寄付した→記録へ」でそのまま記録に移せるよ🎁</div>';
   if(list.length){ html+='<div class="limit-card" style="padding:12px 14px"><div class="limit-info" style="margin-top:0">ほしいもの合計（目安）：<b>'+yen(sum)+'円</b>'+(lim? '<br>'+curYear+'年の上限まで残り：'+yen(rem)+'円 '+(sum>rem?'<span style="color:var(--bad)">（ぜんぶは入らないかも）</span>':'<span style="color:var(--ok)">（ぜんぶ入るよ）</span>') : '<br><span style="font-size:11.5px">まとめタブで上限を入れると、ぜんぶ入るか分かるよ</span>')+'</div></div>'; }
   else { html+='<div class="empty">まだ登録がないよ。<br>下から追加してね✨</div>'; }
   list.forEach(function(w){
+    var g=catRank(w); if(g!==lastG){ html+=grpHead(g, list.filter(function(x){return catRank(x)===g;}), lastG===null); lastG=g; }
     var link = (w.url && /^https?:/i.test(w.url)) ? '<a class="w-link" style="margin-right:auto" href="'+esc(w.url)+'" target="_blank" rel="noopener">ページを開く</a>' : '';
     html+='<div class="card'+(w.cat?" cat-"+w.cat:"")+'"><div class="d-top"><div class="d-muni">'+esc(w.gift)+catTag('w',w)+'</div><div class="d-amt">'+(w.amt? yen(w.amt)+'円':'')+'</div></div>'
       +'<div class="d-sub">'+esc(w.muni||'')+(w.site?(w.muni?'　・　':'')+esc(w.site):'')+'</div>'
