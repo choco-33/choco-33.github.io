@@ -83,6 +83,10 @@
   .grp{display:flex; align-items:center; gap:8px; margin:16px 4px 8px}
   .grp.first{margin-top:4px}
   .grp-n{font-size:11.5px; color:var(--sub)}
+  .ctag.pref{background:#f6ead9; color:#a7722f}
+  .sortbar{display:flex; gap:6px; justify-content:flex-end; margin:2px 2px 0}
+  .sortbar .sb{border:1.5px solid var(--line); background:#fff; border-radius:999px; padding:4px 12px; font-family:inherit; font-size:11.5px; color:var(--sub); cursor:pointer}
+  .sortbar .sb.on{background:var(--accent); border-color:var(--accent); color:#fff}
   .w-link{font-size:12px; color:var(--accent-dark); text-decoration:none; border-bottom:1px dashed var(--accent)}
   .d-foot button{border:none; background:none; color:#c9bda9; font-size:11.5px; font-family:inherit; padding:5px 7px}
 
@@ -182,6 +186,8 @@ const SITES = ["楽天ふるさと納税","さとふる","ふるなび","ふる�
 const PLABEL = {watashi:"私", otto:"夫"};
 const RMARK = {o:"⭕", t:"🔺", x:"❌"};
 const CATS = {food:"食品", daily:"日用品"};
+const PREFS = ["北海道","青森県","岩手県","宮城県","秋田県","山形県","福島県","茨城県","栃木県","群馬県","埼玉県","千葉県","東京都","神奈川県","新潟県","富山県","石川県","福井県","山梨県","長野県","岐阜県","静岡県","愛知県","三重県","滋賀県","京都府","大阪府","兵庫県","奈良県","和歌山県","鳥取県","島根県","岡山県","広島県","山口県","徳島県","香川県","愛媛県","高知県","福岡県","佐賀県","長崎県","熊本県","大分県","宮崎県","鹿児島県","沖縄県"];
+var sortMode = (function(){ try{ return localStorage.getItem("furusato_sort")||"cat"; }catch(e){ return "cat"; } })();
 
 let state = load();
 let curPerson = "watashi";
@@ -233,11 +239,11 @@ function renderTop(){
 function renderKiroku(){
   var el=document.getElementById("pageKiroku");
   var list=itemsOf(curYear).slice().sort(function(a,b){ if(a.date!==b.date) return a.date<b.date?1:-1; return a.id<b.id?1:-1; });
-  list.sort(function(a,b){ return catRank(a)-catRank(b); }); var lastG=null;
-  var html='';
+  list.sort(function(a,b){ return grpKey(a)-grpKey(b); }); var lastG=null;
+  var html = list.length ? '<div class="sortbar"><button class="sb'+(sortMode!=="pref"?" on":"")+'" onclick="setSort(&#39;cat&#39;)">分類ごと</button><button class="sb'+(sortMode==="pref"?" on":"")+'" onclick="setSort(&#39;pref&#39;)">県ごと</button></div>' : '';
   if(!list.length){ html+='<div class="empty">'+PLABEL[curPerson]+'の'+curYear+'年の記録はまだないよ。<br>下のフォームから追加してね🎁</div>'; }
   list.forEach(function(it){
-    var g=catRank(it); if(g!==lastG){ html+=grpHead(g, list.filter(function(x){return catRank(x)===g;}), lastG===null); lastG=g; }
+    var g=grpKey(it); if(g!==lastG){ var grpArr=list.filter(function(x){return grpKey(x)===g;}); html+=(sortMode==="pref" ? prefHead(g, grpArr, lastG===null) : grpHead(g, grpArr, lastG===null)); lastG=g; }
     var giftPart='';
     if(it.gift){
       giftPart='<div class="d-gift"><span class="gname">🎁 '+esc(it.gift)+'</span>'
@@ -253,7 +259,7 @@ function renderKiroku(){
     }
     html+='<div class="card'+(it.cat?" cat-"+it.cat:"")+'">'
       +'<div class="d-top"><div class="d-muni">'+esc(it.muni)+catTag('r',it)+'</div><div class="d-amt">'+yen(it.amt)+'円</div></div>'
-      +'<div class="d-sub">'+ (it.date? it.date.replace(/-/g,"/") : "") + (it.site? '　・　'+esc(it.site) : '') +'</div>'
+      +'<div class="d-sub">'+ (prefOf(it)? esc(prefOf(it))+'　・　' : '') + (it.date? it.date.replace(/-/g,"/") : "") + (it.site? '　・　'+esc(it.site) : '') +'</div>'
       +giftPart+osPart
       +'<div class="d-rate">評価'+['o','t','x'].map(function(r){return '<span class="rchip'+(it.rate===r?" on":"")+'" onclick="setRate(&#39;'+it.id+'&#39;,&#39;'+r+'&#39;)">'+RMARK[r]+'</span>';}).join("")+'</div>'
       +'<div class="d-foot"><span class="chip heart'+(it.again?" on":"")+'" style="margin-right:auto" onclick="toggleField(&#39;'+it.id+'&#39;,&#39;again&#39;)">'+(it.again?"♥ また頼みたい":"♡ また頼みたい")+'</span><button onclick="startEdit(&#39;'+it.id+'&#39;)">なおす✎</button><button onclick="delItem(&#39;'+it.id+'&#39;)">削除</button></div>'
@@ -265,7 +271,7 @@ function renderKiroku(){
   var siteOpts = siteList.map(function(s){ return '<option'+(e&&e.site===s?" selected":"")+'>'+s+'</option>'; }).join("");
   html+='<div class="form" id="form">'
     +'<h3>'+(e?"寄付をなおす":PLABEL[curPerson]+"の寄付を追加")+'</h3>'
-    +'<div class="fld"><label>寄付先（自治体）</label><input id="fMuni" type="text" placeholder="例：北海道○○町" maxlength="30" value="'+(e?esc(e.muni):"")+'"></div>'
+    +'<div class="fld row"><div style="flex:0 0 38%"><label>都道府県</label>'+prefSelect("fPref", e?prefOf(e):"")+'</div><div><label>寄付先（自治体）</label><input id="fMuni" type="text" placeholder="例：○○町" maxlength="30" value="'+(e?esc(e.muni):"")+'" oninput="autoPref()"></div></div>'
     +'<div class="fld row"><div><label>金額（円）</label><input id="fAmt" type="number" inputmode="numeric" min="0" placeholder="10000" value="'+(e?e.amt:"")+'"></div>'
     +'<div><label>寄付日</label><input id="fDate" type="date" value="'+(e?e.date:todayStr())+'"></div></div>'
     +'<div class="fld"><label>寄付サイト</label><select id="fSite">'+siteOpts+'</select></div>'
@@ -285,6 +291,14 @@ function toggleField(id, field){
 }
 function catTag(kind, it){ var c=it.cat||""; return '<span class="ctag '+(c||"none")+'" onclick="cycleCat(&#39;'+kind+'&#39;,&#39;'+it.id+'&#39;)">'+(c?CATS[c]:"分類")+'</span>'; }
 function cycleCat(kind, id){ var arr=(kind==="w")?W():P().items; var it=arr.find(function(x){return x.id===id;}); if(!it) return; it.cat = !it.cat ? "food" : (it.cat==="food" ? "daily" : ""); save(); renderAll(); }
+function prefFromText(s){ s=String(s||"").trim(); if(!s) return ""; for(var i=0;i<PREFS.length;i++){ if(s.indexOf(PREFS[i])===0) return PREFS[i]; } for(var j=0;j<PREFS.length;j++){ var p=PREFS[j]; if(p==="北海道") continue; var sh=p.slice(0,-1); if(sh.length>=2 && s.indexOf(sh)===0) return p; } return ""; }
+function prefOf(it){ return it.pref || prefFromText(it.muni); }
+function prefRank(it){ var i=PREFS.indexOf(prefOf(it)); return i<0?99:i; }
+function grpKey(it){ return sortMode==="pref" ? prefRank(it) : catRank(it); }
+function prefHead(g, arr, first){ var lab = g<PREFS.length ? PREFS[g] : "県未設定"; var sum=arr.reduce(function(a,x){return a+(x.amt||0);},0); return '<div class="grp'+(first?" first":"")+'"><span class="ctag '+(g<PREFS.length?"pref":"none")+'" style="margin:0;cursor:default">'+lab+'</span><span class="grp-n">'+arr.length+'件・'+yen(sum)+'円</span></div>'; }
+function setSort(m){ sortMode=m; try{ localStorage.setItem("furusato_sort", m); }catch(e){} renderKiroku(); }
+function prefSelect(idn, cur){ return '<select id="'+idn+'"><option value="">未選択</option>'+PREFS.map(function(p){ return '<option'+(p===cur?" selected":"")+'>'+p+'</option>'; }).join("")+'</select>'; }
+function autoPref(){ var p=prefFromText(document.getElementById("fMuni").value); if(p) document.getElementById("fPref").value=p; }
 function catRank(it){ return it.cat==="food"?0:(it.cat==="daily"?1:2); }
 function grpHead(g, arr, first){ var lab=["食品","日用品","分類なし"][g], cls=["food","daily","none"][g]; var sum=arr.reduce(function(a,x){return a+(x.amt||0);},0); return '<div class="grp'+(first?" first":"")+'"><span class="ctag '+cls+'" style="margin:0;cursor:default">'+lab+'</span><span class="grp-n">'+arr.length+'件・'+yen(sum)+'円</span></div>'; }
 function catSelect(idn, cur){ return '<select id="'+idn+'"><option value="">分類なし</option><option value="food"'+(cur==="food"?" selected":"")+'>食品</option><option value="daily"'+(cur==="daily"?" selected":"")+'>日用品</option></select>'; }
@@ -309,14 +323,15 @@ function saveItem(){
   var gift=document.getElementById("fGift").value.trim();
   var oneStop=document.getElementById("fOneStop").checked;
   var cat=document.getElementById("fCat").value;
+  var pref=document.getElementById("fPref").value || prefFromText(muni);
   if(!muni){ toast("自治体を入れてね"); return; }
   if(amt<=0){ toast("金額を入れてね"); return; }
   if(editId){
     var it=P().items.find(function(x){return x.id===editId;});
-    it.muni=muni; it.amt=amt; it.date=date; it.site=site; it.gift=gift; it.oneStop=oneStop; it.cat=cat;
+    it.muni=muni; it.amt=amt; it.date=date; it.site=site; it.gift=gift; it.oneStop=oneStop; it.cat=cat; it.pref=pref;
     editId=null; toast("更新したよ✓");
   }else{
-    P().items.push({id:uid(), muni:muni, amt:amt, date:date, site:site, gift:gift, oneStop:oneStop, cat:cat, giftArrived:false, osReceived:false, osSent:false});
+    P().items.push({id:uid(), muni:muni, amt:amt, date:date, site:site, gift:gift, oneStop:oneStop, cat:cat, pref:pref, giftArrived:false, osReceived:false, osSent:false});
     toast("記入したよ🎁");
     if(pendingWish){ var wi=W().findIndex(function(x){return x.id===pendingWish;}); if(wi>=0) W().splice(wi,1); pendingWish=null; }
   }
@@ -423,6 +438,7 @@ function wishDone(id){
   document.getElementById("fMuni").value=w.muni||""; document.getElementById("fAmt").value=w.amt||""; document.getElementById("fGift").value=w.gift||"";
   if(w.site) document.getElementById("fSite").value=w.site;
   document.getElementById("fCat").value=w.cat||"";
+  autoPref();
   document.getElementById("form").scrollIntoView({block:"center"});
   toast("内容を入れたよ。日付を確認して記入してね");
 }
