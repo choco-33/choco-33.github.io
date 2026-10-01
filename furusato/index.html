@@ -219,7 +219,8 @@ function todayStr(){ const d=new Date(); return d.getFullYear()+"-"+pad2(d.getMo
 
 function itemsOf(y){ return P().items.filter(function(it){return (it.date||"").slice(0,4)===y;}); }
 function totalOf(y){ return itemsOf(y).reduce(function(a,it){return a+(it.amt||0);},0); }
-function osMunis(y){ var s={}; itemsOf(y).forEach(function(it){ if(it.oneStop) s[it.muni]=1; }); return Object.keys(s); }
+function muniKey(it){ var p=prefOf(it); var m=String(it.muni||"").split(" ").join("").split("　").join(""); if(p && m.indexOf(p)===0) m=m.slice(p.length); else if(p && p!=="北海道" && m.indexOf(p.slice(0,-1))===0) m=m.slice(p.length-1); return p+"|"+m; }
+function osMunis(y){ var s={}; itemsOf(y).forEach(function(it){ if(it.oneStop) s[muniKey(it)]=1; }); return Object.keys(s); }
 
 function setPerson(p){ curPerson=p; editId=null; pendingWish=null;
   document.body.classList.toggle("otto", p==="otto");
