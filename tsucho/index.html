@@ -132,7 +132,7 @@
   .fx .s{font-size:11.5px;color:var(--ink-soft);margin-top:3px}
   .bar{height:9px;border-radius:99px;background:#f1e8d4;overflow:hidden;margin-top:7px}
   .bar span{display:block;height:100%;border-radius:99px;background:var(--gold)}
-  .bar.goal span{background:var(--accent)}
+  .bar.gbar span{background:var(--accent)}
   .fx .acts{display:flex;justify-content:flex-end;margin-top:6px}
   .fx .acts button{border:none;background:none;font-family:inherit;font-size:11.5px;color:#c4756f;cursor:pointer}
   .frow{display:flex;gap:6px;margin-top:6px}
@@ -703,7 +703,7 @@ function renderGoals(){
     else if(pace>0){ var mo=Math.ceil(rest/pace); var dd=parseD(addMonths(todayStr(),mo)); msg='あと <b>'+yen(rest)+'円</b>・このペースだと 約'+mo+'か月（'+dd.getFullYear()+'年'+(dd.getMonth()+1)+'月ごろ）'; }
     else msg='あと <b>'+yen(rest)+'円</b>・'+WNAME[g.w]+'に入れていこう';
     h+='<div class="goal"><div class="t"><span class="n">'+esc(g.name)+'</span><span class="g">'+yen(g.target)+'円</span></div>'
-      +'<div class="bar goal"><span style="width:'+pct+'%"></span></div>'
+      +'<div class="bar gbar"><span style="width:'+pct+'%"></span></div>'
       +'<div class="s">'+WNAME[g.w]+'のお金 '+yen(have)+'円（'+pct+'%）<br>'+msg+'</div>'
       +'<div class="acts">'+(rest<=0?'<button class="mini-btn" onclick="buyGoal(&#39;'+g.id+'&#39;)">買った！</button>':'')+'<button class="mini-btn ghost" onclick="delGoal(&#39;'+g.id+'&#39;)">やめる</button></div></div>';
   });
