@@ -228,7 +228,7 @@
       <div class="seg">
         <button class="in on" id="segIn" onclick="setType('in')">＋ 入金</button>
         <button class="out" id="segOut" onclick="setType('out')">－ 出金</button>
-        <button class="move" id="segMove" onclick="setType('move')">⇄ 移す</button>
+        <button class="move" id="segMove" onclick="setType('move')">⇔ 移す</button>
       </div>
       <div class="f-label">金額</div>
       <div class="yen-row"><input type="number" id="fAmt" placeholder="0" min="0" inputmode="numeric" oninput="renderSplitHint()"></div>
@@ -502,7 +502,7 @@ function saveEntry(){
   var s=sums(curKid);
   if(selType==="move"){
     if(moveFrom===moveTo){ toast("ちがう場所を選んでね"); return; }
-    if(editId){ var e0=K().entries.find(function(x){return x.id==editId;}); if(e0){ e0.type="move"; e0.w=moveFrom; e0.to=moveTo; e0.cat="移す"; e0.amt=amt; e0.date=date; e0.memo=memo; delete e0.from; } endEdit(false); save(); renderAll(); toast("なおしたよ ✓"); return; }
+    if(editId){ var e0=K().entries.find(function(x){return x.id==editId;}); if(e0){ e0.type="move"; e0.w=moveFrom; e0.to=moveTo; e0.cat="移す"; e0.amt=amt; e0.date=date; e0.memo=memo; delete e0.from; } endEdit(false); save(); renderAll(); toast("なおしたよ！"); return; }
     if(s[moveFrom]<amt){ toast(WNAME[moveFrom]+"が足りないよ（"+yen(s[moveFrom])+"円）"); return; }
     addEntry(curKid,{date:date, type:"move", w:moveFrom, to:moveTo, cat:"移す", memo:memo, amt:amt});
     save(); clearForm(); renderAll(); toast(WNAME[moveFrom]+"→"+WNAME[moveTo]+" "+yen(amt)+"円 移したよ");
@@ -512,7 +512,7 @@ function saveEntry(){
   if(editId){
     var e=K().entries.find(function(x){return x.id==editId;});
     if(e){ e.date=date; e.type=selType; e.cat=cat; e.memo=memo; e.amt=amt; e.w=(selW==="split"?"use":selW); delete e.to; if(selType==="in") e.from=from; else delete e.from; }
-    endEdit(false); save(); renderAll(); toast("なおしたよ ✓"); return;
+    endEdit(false); save(); renderAll(); toast("なおしたよ！"); return;
   }
   if(selType==="in" && selW==="split"){
     var a=splitAmounts(amt), grp=uid();
@@ -567,13 +567,13 @@ function entryTitle(e){
 function renderList(){
   var rows=sortedWithBal().reverse();
   var list=document.getElementById("list");
-  if(!rows.length){ list.innerHTML='<div class="empty">まだ記録がないよ。<br>上から入金・出金を記入してね ✎</div>'; document.getElementById("tableWrap").innerHTML=""; return; }
+  if(!rows.length){ list.innerHTML='<div class="empty">まだ記録がないよ。<br>上から入金・出金を記入してね ✏️</div>'; document.getElementById("tableWrap").innerHTML=""; return; }
   list.innerHTML=rows.map(function(o){
-    var e=o.e, sign=e.type==="in"?"＋":(e.type==="out"?"－":"⇄");
+    var e=o.e, sign=e.type==="in"?"＋":(e.type==="out"?"－":"⇔");
     var tag = e.type==="move" ? '' : '<span class="wtag '+(e.w||"use")+'">'+WNAME[e.w||"use"]+'</span>';
     var sub=[e.from,e.memo].filter(Boolean).join("・");
     return '<div class="row"><div class="r-date">'+md(e.date)+'</div>'
-      +'<div class="r-mid" onclick="startEdit(&#39;'+e.id+'&#39;)"><div class="r-cat">'+esc(entryTitle(e))+tag+' <span class="edit-hint">'+(e.sys?"🔒":"✎")+'</span></div>'
+      +'<div class="r-mid" onclick="startEdit(&#39;'+e.id+'&#39;)"><div class="r-cat">'+esc(entryTitle(e))+tag+' <span class="edit-hint">'+(e.sys?"🔒":"✏️")+'</span></div>'
       +(sub?'<div class="r-memo">'+esc(sub)+'</div>':'')+'</div>'
       +'<div style="text-align:right"><div class="r-amt '+e.type+'">'+sign+yen(e.amt)+'</div><div class="r-bal">残り '+yen(o.bal)+'</div></div>'
       +(e.sys?'<span style="width:24px"></span>':'<button class="del" onclick="delEntry(&#39;'+e.id+'&#39;)">×</button>')+'</div>';
@@ -628,7 +628,7 @@ function renderBank(){
       +'<div class="acts"><button onclick="breakFixed(&#39;'+f.id+'&#39;)">途中で出す</button></div></div>';
   });
   var doneF=kd.fixed.filter(function(f){return f.status!=="active";}).slice(-3).reverse();
-  doneF.forEach(function(f){ h+='<div class="hint">✓ '+yen(f.amt)+'円・'+f.months+'か月 '+(f.status==="done"?'満期（利息 ＋'+yen(f.interest||0)+'円）':'途中で出した')+'</div>'; });
+  doneF.forEach(function(f){ h+='<div class="hint">★ '+yen(f.amt)+'円・'+f.months+'か月 '+(f.status==="done"?'満期（利息 ＋'+yen(f.interest||0)+'円）':'途中で出した')+'</div>'; });
   h+='<div class="f-label">新しく つくる</div><div class="frow"><div class="yen-row"><input type="number" id="fxAmt" placeholder="0" min="0" inputmode="numeric"></div>'
     +'<select id="fxMonths">'+["3","6","12"].map(function(m){return '<option value="'+m+'">'+m+'か月（年利'+fr[m]+'%）</option>';}).join("")+'</select></div>'
     +'<div class="frow"><select id="fxFrom"><option value="bank">預金から</option><option value="use">使うから</option></select><button class="mini-btn" style="background:var(--gold-deep)" onclick="makeFixed()">定期にする</button></div>'
