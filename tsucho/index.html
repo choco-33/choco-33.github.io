@@ -95,6 +95,24 @@
   .row .r-cat{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .row .r-memo{font-size:11px;color:var(--ink-soft);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .row .r-amt{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+  .otochk{display:block;margin:10px 0 4px;padding:10px 12px;border:2px solid #e8a7a7;border-radius:14px;background:#fff4f2;font-size:14px;cursor:pointer}
+  .otochk input{width:18px;height:18px;vertical-align:-3px;margin-right:4px}
+  .otochk span{font-size:12px;color:var(--ink-soft);margin-left:26px}
+  .chores{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+  .chores button{padding:12px 6px;border:2px solid var(--line);border-radius:14px;background:#fff;font-family:inherit;font-size:14px;color:var(--ink);cursor:pointer;line-height:1.3}
+  .chores button b{display:block;font-size:13px;color:var(--in-deep)}
+  .chores button:active{transform:scale(.96)}
+  .oto{background:#fff4f2;border:2px solid #f0c4c0;border-radius:16px;padding:12px;margin-top:10px}
+  .oto .t{display:flex;justify-content:space-between;font-size:15px}
+  .oto .big{font-size:22px;font-weight:700;color:#c0605a;text-align:center;margin:6px 0}
+  .oto .bar{height:10px;background:#f6dcd8;border-radius:6px;overflow:hidden;margin:6px 0}
+  .oto .bar span{display:block;height:100%;background:#e58a82}
+  .oto .acts{text-align:right}
+  .oto .acts button{border:none;background:none;color:var(--ink-soft);font-family:inherit;font-size:12px;text-decoration:underline;cursor:pointer}
+  .crow{display:flex;gap:6px;align-items:center;margin-top:6px}
+  .crow input{flex:1;min-width:0}
+  .crow input.n{flex:0 0 70px}
+  .crow button{flex:0 0 auto;border:none;background:#f3e6e6;color:#a05a5a;border-radius:10px;padding:6px 10px;font-family:inherit;cursor:pointer}
   .cattabs{display:flex;gap:6px;margin:2px 0 8px;overflow-x:auto}
   .cattabs button{flex:1 0 auto;padding:8px 12px;border:2px solid var(--line);border-radius:999px;background:#fff;font-family:inherit;font-size:13px;color:var(--ink);cursor:pointer;white-space:nowrap}
   .cattabs button.on{background:var(--gold);border-color:var(--gold-deep);color:#5a4a20;font-weight:700}
@@ -247,6 +265,7 @@
 
   <!-- 通帳 -->
   <div class="page on" id="pg-book">
+    <div class="card" id="choreCard"></div>
     <div class="card">
       <div class="seg">
         <button class="in on" id="segIn" onclick="setType('in')">＋ 入金</button>
@@ -309,6 +328,7 @@
 <script>
 var KEY="tsucho_v1";
 var DEF_IN=["お小遣い","お年玉","お手伝い","プレゼント","その他"];
+var DEF_CHORES=[["お皿洗い",10],["洗濯物たたみ",10],["お風呂掃除",20],["靴ならべ",5],["おつかい",20]];
 var DEF_OUT=["お菓子・ジュース","おもちゃ","本","寄付","その他"];
 var KNAME={saku:"Saku", ao:"Ao"};
 var WNAME={use:"使う", bank:"預金", give:"あげる", fixed:"定期預金", stock:"株"};
@@ -352,15 +372,17 @@ function load(){
     if(!r.split) r.split=b.split?{use:b.split.use,bank:b.split.bank,give:b.split.give}:{use:50,bank:40,give:10};
     if(typeof r.bonus!=="number") r.bonus=10;
     if(typeof r.streakReward!=="number") r.streakReward=100;
+    if(typeof r.otoshiRate!=="number") r.otoshiRate=10;
   });
   b.stockOn=false;
+  if(!Array.isArray(state.chores)) state.chores=DEF_CHORES.map(function(c){return {name:c[0], amt:c[1]};});
   selCatIn=state.catsIn[0]||""; selCatOut=state.catsOut[0]||"";
 }
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); return true; }catch(e){ toast("保存できませんでした"); return false; } }
 function K(){ return state.kids[curKid]; }
 function RK(k){ return state.bank.kids[k]; }
 function R(){ return RK(curKid); }
-var SYS_IN=["利息","定期預金の利息","預金ボーナス","続けたごほうび"];
+var SYS_IN=["利息","定期預金の利息","預金ボーナス","続けたごほうび","お年玉定期の利息"];
 function esc(s){ return (""+(s==null?"":s)).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
 function yen(n){ return Math.round(n||0).toLocaleString("ja-JP"); }
 function pad2(n){ return String(n).padStart(2,"0"); }
@@ -405,6 +427,7 @@ function monthNet(k, m){
 }
 function streakEnd(k, m){ var c=0, g=0; while(monthNet(k,m)>0 && g<240){ c++; g++; m=prevYm(m); } return c; }
 function applyBonus(k, amt, date, grp){
+  return 0;
   var kd=state.kids[k], pct=RK(k).bonus; if(!(pct>0)) return 0;
   var elig=Math.max(0, amt-kd.bonusCredit); kd.bonusCredit=Math.max(0, kd.bonusCredit-amt);
   var b=Math.floor(elig*pct/100);
@@ -415,7 +438,7 @@ function nextYm(s){ var y=parseInt(s.slice(0,4),10), m=parseInt(s.slice(5,7),10)
 function processBank(k){
   var kd=state.kids[k], got=0, msgs=[];
   var cur=ym(todayStr());
-  if(!kd.lastInterest){ kd.lastInterest=cur; }
+  kd.lastInterest=cur; kd.lastStreakCheck=prevYm(cur);
   var guard=0;
   while(kd.lastInterest<cur && guard<240){
     guard++;
@@ -445,7 +468,16 @@ function processBank(k){
   kd.fixed.forEach(function(f){
     if(f.status!=="active") return;
     var mat=addMonths(f.start, f.months);
+    if(f.otoshi) mat=f.mat;
     if(t>=mat){
+      if(f.otoshi){
+        addEntry(k,{date:mat, type:"move", w:"fixed", to:"bank", cat:"お年玉定期 満期", memo:"", amt:f.amt, sys:true, fx:f.id});
+        var it2=Math.floor(f.amt*f.rate/100);
+        if(it2>0) addEntry(k,{date:mat, type:"in", w:"bank", cat:"お年玉定期の利息", memo:"年利"+f.rate+"%", amt:it2, sys:true, fx:f.id});
+        f.status="done"; f.end=mat; f.interest=it2;
+        msgs.push("🧧 お年玉定期が満期！ 利息 ＋"+yen(it2)+"円");
+        return;
+      }
       addEntry(k,{date:mat, type:"move", w:"fixed", to:"bank", cat:"定期預金 満期", memo:f.months+"か月", amt:f.amt, sys:true});
       var it=Math.floor(f.amt*f.rate/100*f.months/12);
       if(it>0) addEntry(k,{date:mat, type:"in", w:"bank", cat:"定期預金の利息", memo:"年利"+f.rate+"%", amt:it, sys:true});
@@ -472,13 +504,34 @@ function showPage(p){
   });
   renderPage(); try{ window.scrollTo(0,0); }catch(e){}
 }
+function renderChores(){
+  var el=document.getElementById("choreCard"); if(!el) return;
+  var cm=ym(todayStr()), n=0, sm=0;
+  K().entries.forEach(function(e){ if(!e.sys && e.type==="in" && e.cat==="お手伝い" && ym(e.date)===cm){ n++; sm+=e.amt; } });
+  el.innerHTML='<h3 style="margin:0">🧹 お手伝い</h3><div class="hint" style="margin-top:2px">したお手伝いを押すと、お小遣い（使う）に入るよ</div>'
+    +'<div class="chores">'+state.chores.map(function(c,i){ return '<button onclick="doChore('+i+')">'+esc(c.name)+'<b>＋'+yen(c.amt)+'円</b></button>'; }).join("")+'</div>'
+    +'<div class="hint" style="text-align:center">今月のお手伝い：<b>'+n+'回</b>・<b>'+yen(sm)+'円</b></div>';
+}
+function doChore(i){
+  var c=state.chores[i]; if(!c) return;
+  addEntry(curKid,{date:todayStr(), type:"in", w:"use", cat:"お手伝い", memo:c.name, amt:c.amt, grp:uid()});
+  save(); renderAll(); toast("🧹 "+c.name+" ありがとう！ ＋"+yen(c.amt)+"円"); party();
+}
+function addChore(){
+  var n=document.getElementById("chN").value.trim(), a=parseInt(document.getElementById("chA").value,10)||0;
+  if(!n||a<1){ toast("名前と金額を入れてね"); return; }
+  state.chores.push({name:n, amt:a}); save(); renderAll(); toast("「"+n+"」を追加したよ");
+}
+function delChore(i){ var c=state.chores[i]; if(!c) return; if(!confirm("「"+c.name+"」を消す？")) return; state.chores.splice(i,1); save(); renderAll(); }
+function editChoreAmt(i, v){ var a=parseInt(v,10)||0; if(a<1) return; state.chores[i].amt=a; save(); renderChores(); }
+function nextNewYear(){ return (new Date().getFullYear()+1)+"-01-01"; }
 function renderAll(){
   var so=!!state.bank.stockOn; document.getElementById("tb-stock").style.display=so?"":"none";
   if(!so && curPage==="stock"){ curPage="book"; ["book","bank","goal","stock"].forEach(function(x){ document.getElementById("pg-"+x).classList.toggle("on", x==="book"); document.getElementById("tb-"+x).classList.toggle("on", x==="book"); }); }
   document.body.className = curKid==="ao" ? "ao" : "";
   document.getElementById("balName").textContent=KNAME[curKid];
   document.querySelectorAll(".tabk").forEach(function(t){ t.classList.toggle("on", t.dataset.k===curKid); });
-  renderTop(); renderForm(); renderList(); renderPage();
+  renderTop(); renderChores(); renderForm(); renderList(); renderPage();
 }
 function renderPage(){
   if(curPage==="bank") renderBank();
@@ -490,7 +543,7 @@ function renderTop(){
   var all=s.use+s.bank+s.give+s.fixed+sv;
   document.getElementById("balAmt").textContent=yen(all);
   var h='<div class="wl use">使う<b>'+yen(s.use)+'</b></div><div class="wl bank">預金<b>'+yen(s.bank)+'</b></div><div class="wl give">あげる<b>'+yen(s.give)+'</b></div>';
-  if(s.fixed>0 || s.stock>0 || sv>0) h+='<div class="wl etc">'+((s.stock>0||sv>0)?"定期・株":"定期預金")+'<b>'+yen(s.fixed+sv)+'</b></div>';
+  if(s.fixed>0 || s.stock>0 || sv>0) h+='<div class="wl etc">'+((s.stock>0||sv>0)?"定期・株":"🧧 定期")+'<b>'+yen(s.fixed+sv)+'</b></div>';
   document.getElementById("wallets").innerHTML=h;
   document.getElementById("balSub").textContent = s.stock>0 ? "株はいまの値段で計算しているよ" : "";
 }
@@ -510,13 +563,15 @@ function wChips(sel, list, onclickFn){
 function renderForm(){
   var h='';
   if(selType==="in"){
-    h+='<div class="f-label">どこに入れる？</div>'+wChips(selW,["use","bank","give","split"],"setW")+'<div class="hint" id="splitHint"></div>';
+    var oto=(curSelCat()==="お年玉" && !editId);
+    if(oto) h+='<label class="otochk"><input type="checkbox" id="fOto"'+(otoOn?' checked':'')+' onchange="otoOn=this.checked;renderForm()"> 🧧 お年玉定期に預ける<br><span>次のお正月に 年利'+R().otoshiRate+'% ふえるよ</span></label>';
+    if(!(oto && otoOn)) h+='<div class="f-label">どこに入れる？</div>'+wChips(selW,["use","bank","give","split"],"setW")+'<div class="hint" id="splitHint"></div>';
   }else if(selType==="out"){
     h+='<div class="f-label">どこから出す？</div>'+wChips(selW,["use","bank","give"],"setW");
   }else{
     h+='<div class="f-label">どこから</div>'+wChips(moveFrom,["use","bank","give"],"setMoveFrom")
      +'<div class="f-label">どこへ</div>'+wChips(moveTo,["use","bank","give"],"setMoveTo")
-     +'<div class="hint">「使う」から「預金」に移すと、預金に利息がつくよ🏦</div>';
+     +'<div class="hint">「使う」から「預金」に移すと、ためておくお金になるよ🐷</div>';
   }
   document.getElementById("wBox").innerHTML=h;
   document.getElementById("catBox").style.display = selType==="move" ? "none" : "";
@@ -553,7 +608,7 @@ function renderCatChips(){
         if(selType==="in") state.catsIn=arr; else state.catsOut=arr;
         if(curSelCat()===n) setSelCat(arr[0]||"");
         save(); renderCatChips();
-      }else{ setSelCat(n); renderCatChips(); }
+      }else{ setSelCat(n); renderForm(); }
     });
     w.appendChild(b);
   });
@@ -598,6 +653,12 @@ function saveEntry(){
     if(e){ e.date=date; e.type=selType; e.cat=cat; e.memo=memo; e.amt=amt; e.w=(selW==="split"?"use":selW); delete e.to; if(selType==="in") e.from=from; else delete e.from; }
     endEdit(false); save(); renderAll(); toast("なおしたよ！"); return;
   }
+  if(selType==="in" && cat==="お年玉" && otoOn){
+    var fid=uid(), gg=uid(), y=parseInt(date.slice(0,4),10)+1, mat=y+"-01-01", rt=R().otoshiRate;
+    K().fixed.push({id:fid, otoshi:true, amt:amt, start:date, mat:mat, rate:rt, status:"active"});
+    addEntry(curKid,{date:date, type:"in", w:"fixed", cat:cat, from:from, memo:"お年玉定期へ", amt:amt, grp:gg, fx:fid});
+    save(); clearForm(); renderAll(); toast("🧧 お年玉定期に預けたよ！ "+y+"年のお正月に ＋"+yen(Math.floor(amt*rt/100))+"円"); party(); return;
+  }
   if(selType==="in" && selW==="split"){
     var a=splitAmounts(amt), grp=uid();
     ["use","bank","give"].forEach(function(w){ if(a[w]>0) addEntry(curKid,{date:date, type:"in", w:w, cat:cat, from:from, memo:memo, amt:a[w], grp:grp}); });
@@ -615,6 +676,7 @@ function saveEntry(){
 }
 function startEdit(id){
   var e=K().entries.find(function(x){return x.id==id;}); if(!e||e.sys) return;
+  if(e.fx){ toast("お年玉定期は、消してから入れ直してね"); return; }
   editId=id;
   if(e.type==="move"){ moveFrom=e.w||"use"; moveTo=e.to||"bank"; setType("move"); }
   else { selW=e.w||"use"; setType(e.type); setSelCat(e.cat); renderCatChips(); }
@@ -635,6 +697,7 @@ function endEdit(msg){
 }
 function delEntry(id){
   var e=K().entries.find(function(x){return x.id==id;}); if(!e||e.sys) return;
+  if(e.fx){ var gi=-1; window.__grs=groupedRows(); window.__grs.forEach(function(g,i){ if(g.items.indexOf(e)>=0) gi=i; }); if(gi>=0) delGrp(gi); return; }
   if(!confirm("この記録を消す？")) return;
   if(editId==id) endEdit(false);
   K().entries=K().entries.filter(function(x){return x.id!=id;});
@@ -655,7 +718,7 @@ function entryTitle(e){
 }
 var viewMode="simple"; try{ viewMode=localStorage.getItem("tsucho_view")||"simple"; }catch(e){}
 function setView(m){ viewMode=m; try{ localStorage.setItem("tsucho_view",m); }catch(e){} renderList(); }
-var AUTO_CATS={"利息":"利息","続けたごほうび":"ごほうび","定期預金の利息":"定期の利息"};
+var AUTO_CATS={"利息":"利息","続けたごほうび":"ごほうび","定期預金の利息":"定期の利息","お年玉定期の利息":"お年玉の利息"};
 function groupedRows(){
   var src=sortedWithBal(), out=[], byGrp={}, byAuto={}, last=null;
   src.forEach(function(o){
@@ -677,7 +740,7 @@ function groupedRows(){
     return true;
   }).map(function(g){
     var main=g.items.filter(function(x){return !x.sys;}), parts=[], m0=main[0]||g.items[0];
-    if(g.auto){ g.items.forEach(function(x){ parts.push(AUTO_CATS[x.cat]+" "+yen(x.amt)+"円"); }); g.type="in"; }
+    if(g.auto){ g.items.forEach(function(x){ parts.push(AUTO_CATS[x.cat]+" "+yen(x.amt)+"円"); }); g.type="in"; if(g.items.every(function(x){return x.cat==="お年玉定期の利息";})) g.title="🧧 お年玉が ふえたよ！"; }
     else{
       if(m0.type==="move"){ g.title=WNAME[m0.w]+"から"+WNAME[m0.to]+"へ"; g.type="in"; }
       else { g.title=m0.cat||""; g.type=m0.type; }
@@ -692,21 +755,26 @@ function groupedRows(){
     return g;
   });
 }
-function editGrp(i){ var g=window.__grs[i]; if(!g||!g.ids) return; if(g.ids.length===1) startEdit(g.ids[0]); else toast("分けて入れた記録は「くわしく」で1つずつなおせるよ"); }
+function editGrp(i){ var g=window.__grs[i]; if(!g||!g.ids) return; if(g.items.some(function(x){return x.fx;})){ toast("お年玉定期は、消してから入れ直してね"); return; } if(g.ids.length===1) startEdit(g.ids[0]); else toast("分けて入れた記録は「くわしく」で1つずつなおせるよ"); }
 function delGrp(i){
   var g=window.__grs[i]; if(!g||!g.ids) return;
-  if(!confirm("この記録を消す？"+(g.items.length>g.ids.length?"（ボーナスもいっしょに消えるよ）":""))) return;
-  var del={}; g.items.forEach(function(x){ del[x.id]=1; });
+  var hasFx=g.items.some(function(x){return x.fx;});
+  if(!confirm("この記録を消す？"+(hasFx?"（お年玉定期もいっしょに消えるよ）":(g.items.length>g.ids.length?"（ボーナスもいっしょに消えるよ）":"")))) return;
+  var del={}, fxs={}; g.items.forEach(function(x){ del[x.id]=1; if(x.fx) fxs[x.fx]=1; });
+  K().entries.forEach(function(x){ if(x.fx && fxs[x.fx]) del[x.id]=1; });
+  K().fixed=K().fixed.filter(function(f){ return !fxs[f.id]; });
   if(editId && del[editId]) endEdit(false);
   K().entries=K().entries.filter(function(x){return !del[x.id];});
   save(); renderAll();
 }
+var otoOn=true;
 var catTab="all";
 var CAT_TABS=[["all","すべて"],["お小遣い","💴 お小遣い"],["お年玉","🧧 お年玉"],["out","🛍 使った"]];
 function setCatTab(t){ catTab=t; renderList(); }
 function catMatch(type, cat){
   if(catTab==="all") return true;
   if(catTab==="out") return type==="out";
+  if(catTab==="お小遣い") return type==="in" && (cat==="お小遣い"||cat==="お手伝い");
   return type==="in" && cat===catTab;
 }
 function renderCatUI(){
@@ -719,8 +787,9 @@ function renderCatUI(){
   var tot=0, yr={}, cy=String(new Date().getFullYear());
   K().entries.forEach(function(e){ if(e.sys) return; if(catMatch(e.type, e.cat)){ tot+=e.amt; var y=(""+e.date).slice(0,4); yr[y]=(yr[y]||0)+e.amt; } });
   var lab=catTab==="out"?"使ったお金":(catTab+"");
+  var otd=0; if(catTab==="お小遣い") K().entries.forEach(function(e){ if(!e.sys && e.type==="in" && e.cat==="お手伝い") otd+=e.amt; });
   cs.style.display="";
-  cs.innerHTML=lab+'の合計　<b>'+yen(tot)+'円</b>'+(yr[cy]?'<br><span style="font-size:12px;color:var(--ink-soft)">今年（'+cy+'年）は '+yen(yr[cy])+'円</span>':'');
+  cs.innerHTML=lab+'の合計　<b>'+yen(tot)+'円</b>'+(otd?'<br><span style="font-size:12px;color:var(--ink-soft)">そのうち お手伝いで ＋'+yen(otd)+'円 🧹</span>':'')+(yr[cy]?'<br><span style="font-size:12px;color:var(--ink-soft)">今年（'+cy+'年）は '+yen(yr[cy])+'円</span>':'');
 }
 function renderSimple(){
   var grs=groupedRows().reverse().filter(function(g){ if(catTab==="all") return true; if(g.auto) return false; var m=g.items.filter(function(x){return !x.sys;})[0]; return m && catMatch(m.type, m.cat); }); window.__grs=grs;
@@ -744,7 +813,7 @@ function renderSimple(){
 }
 function renderList(){
   var vs=document.getElementById("vwSimple"); if(vs){ vs.classList.toggle("on",viewMode==="simple"); document.getElementById("vwAll").classList.toggle("on",viewMode==="all"); }
-  var vh=document.getElementById("viewHint"); if(vh) vh.textContent=viewMode==="simple"?"分けて入れた分・ボーナスは1行に、利息とごほうびは月ごとに1行にまとめているよ":"ぜんぶの記録を1つずつ出しているよ（🔒は自動の記録）";
+  var vh=document.getElementById("viewHint"); if(vh) vh.textContent=viewMode==="simple"?"分けて入れた分は1行にまとめているよ":"ぜんぶの記録を1つずつ出しているよ（🔒は自動の記録）";
   renderCatUI();
   if(viewMode==="simple" && K().entries.length){ renderSimple(); if(!window.__grs.length) document.getElementById("list").innerHTML='<div class="empty">まだ記録がないよ</div>'; return; }
   var rows=sortedWithBal().reverse().filter(function(o){ return catTab==="all" || (!o.e.sys && catMatch(o.e.type, o.e.cat)); });
@@ -810,82 +879,52 @@ function pigBlock(bal){
 }
 var simMonthly=null;
 function renderBank(){
-  var s=sums(curKid), r=R().rate, kd=K();
-  var nextDay=nextYm(ym(todayStr()))+"-01";
-  var est=Math.floor(Math.max(0,s.bank)*r/1200);
-  var h='<div class="bank-top">'+pigBlock(s.bank)+'<div class="lbl">'+KNAME[curKid]+'の 預金</div><div class="amt">'+yen(s.bank)+'<small> 円</small></div><div class="rate">年利 '+r+'%</div>'
-    +'<div class="bank-info">次の利息の日：<b>'+md(nextDay)+'</b>　もらえる見込み：<b>'+yen(est)+'円</b><br>このまま1年あずけると 利息は 約<b>'+yen(simulate(Math.max(0,s.bank),0,r,1)-Math.max(0,s.bank))+'円</b></div></div>';
+  var s=sums(curKid), kd=K(), rt=R().otoshiRate;
+  var save_=Math.max(0,s.bank)+Math.max(0,s.fixed);
+  var h='<div class="bank-top">'+pigBlock(save_)+'<div class="lbl">'+KNAME[curKid]+'の ためたお金</div><div class="amt">'+yen(save_)+'<small> 円</small></div>'
+    +'<div class="bank-info">預金 '+yen(s.bank)+'円 ＋ 🧧お年玉定期 '+yen(s.fixed)+'円</div></div>';
 
-  h+='<div class="card"><h3>🏦 預金ってなに？</h3><div class="hint" style="margin-top:0;font-size:12.5px;color:var(--ink)">お金を銀行にあずけておくと、毎月1日に「利息」というおまけがもらえるよ。利息にもまた利息がつくから、長くあずけるほど増え方が大きくなるんだ（これを「複利」というよ）。預金に入れるときは、通帳タブの「移す」で「使う→預金」にしてね。'+(R().bonus>0?'<br>🎁 預金に入れると、その場で <b style="color:var(--gold-deep)">'+R().bonus+'%のボーナス</b> がもらえるよ！':'')+'</div></div>';
-
-  // 続けたらごほうび
-  var cur=ym(todayStr()), nowNet=monthNet(curKid,cur), live=nowNet>0?streakEnd(curKid,cur):streakEnd(curKid,prevYm(cur));
-  var rw=R().streakReward, toNext=3-(live%3);
-  h+='<div class="card"><h3>📅 ためるカレンダー</h3><div class="hint" style="margin-top:0">毎月 預金をふやせたら🐷スタンプ！ 3か月つづくと ごほうび'+(rw>0?yen(rw)+'円':'')+'がもらえるよ（つぎの月の1日にもらえる）。</div>'
-    +'<div class="streak">いま <b>'+live+'</b> か月 つづいてる！'+(nowNet>0?'':' <span style="font-size:12px;color:var(--ink-soft)">（今月はまだ）</span>')+'</div>'
-    +'<div class="hint">あと'+toNext+'か月で ごほうび'+(live>0&&live%3===0?'（いまの分は来月1日にもらえるよ）':'')+'</div><div class="stamps">';
-  var ms=[], mcur=cur; for(var qi=0;qi<12;qi++){ ms.unshift(mcur); mcur=prevYm(mcur); }
-  ms.forEach(function(m){ var ok=monthNet(curKid,m)>0; h+='<div class="stamp'+(ok?' on':'')+(m===cur?' now':'')+'"><div class="m">'+(ok?'🐷':'')+'</div>'+parseInt(m.slice(5,7),10)+'月</div>'; });
-  h+='</div><div class="badges">';
-  [[3,'🥉 3か月'],[6,'🥈 6か月'],[12,'🥇 1年'],[24,'👑 2年']].forEach(function(b){ var on=Math.max(kd.best,live)>=b[0]; h+='<span class="badge'+(on?' on':'')+'">'+b[1]+(on?'':'')+'</span>'; });
-  h+='</div></div>';
-
-  // 利息の履歴
-  var ints=kd.entries.filter(function(e){return e.cat==="利息"||e.cat==="定期預金の利息";}).sort(function(a,b){return a.date<b.date?1:-1;});
-  var sumInt=ints.reduce(function(a,e){return a+e.amt;},0);
-  h+='<div class="card"><h3>🪙 もらった利息</h3><div class="irow"><span>ぜんぶで</span><span class="v">'+yen(sumInt)+'円</span></div>';
-  if(!ints.length) h+='<div class="hint">まだないよ。預金に入れると、次の1日に利息がつくよ</div>';
-  ints.slice(0,6).forEach(function(e){ h+='<div class="irow"><span>'+md(e.date)+' '+esc(e.cat)+'</span><span class="v">＋'+yen(e.amt)+'円</span></div>'; });
-  h+='</div>';
-
-  // 定期預金
-  var fr=R().fixed;
-  h+='<div class="card"><h3>🔒 定期預金</h3><div class="hint" style="margin-top:0">決めた期間 出さないと約束すると、ふつうの預金より利息が多くなるよ。途中で出すと利息はもらえないよ。</div>';
+  // お年玉定期
+  h+='<div class="card"><h3>🧧 お年玉定期</h3><div class="hint" style="margin-top:0;font-size:12.5px;color:var(--ink)">お年玉を銀行に預けて、次のお正月まで出さずにいると <b style="color:#c0605a">'+rt+'%</b> ふえるよ！<br>1万円なら 1万'+yen(10000*rt/100)+'円に。途中で出すと ふえないよ。</div>';
   var act=kd.fixed.filter(function(f){return f.status==="active";});
+  if(!act.length) h+='<div class="hint">いま預けているお年玉はないよ。通帳タブで「お年玉」を入金するときに預けられるよ。</div>';
   act.forEach(function(f){
-    var mat=addMonths(f.start,f.months), tot=daysBetween(f.start,mat), el=Math.max(0,Math.min(tot,daysBetween(f.start,todayStr())));
-    var it=Math.floor(f.amt*f.rate/100*f.months/12);
-    h+='<div class="fx" style="margin-top:8px"><div class="t"><span>'+yen(f.amt)+'円・'+f.months+'か月</span><b>年利'+f.rate+'%</b></div>'
-      +'<div class="s">満期 '+ymd(mat)+'（あと'+Math.max(0,tot-el)+'日）・満期の利息 ＋'+yen(it)+'円</div>'
-      +'<div class="bar"><span style="width:'+(tot?Math.round(el/tot*100):0)+'%"></span></div>'
+    var mat=f.otoshi?f.mat:addMonths(f.start,f.months), tot=Math.max(1,daysBetween(f.start,mat)), el=Math.max(0,Math.min(tot,daysBetween(f.start,todayStr())));
+    var it=f.otoshi?Math.floor(f.amt*f.rate/100):Math.floor(f.amt*f.rate/100*f.months/12);
+    h+='<div class="oto"><div class="t"><span>'+md(f.start)+'に '+yen(f.amt)+'円</span><span>年利'+f.rate+'%</span></div>'
+      +'<div class="big">'+(f.otoshi?parseInt(mat.slice(0,4),10)+'年のお正月':ymd(mat))+'に '+yen(f.amt+it)+'円！</div>'
+      +'<div class="bar"><span style="width:'+Math.round(el/tot*100)+'%"></span></div>'
+      +'<div class="hint" style="text-align:center;margin-top:0">あと <b>'+Math.max(0,tot-el)+'日</b>（利息 ＋'+yen(it)+'円）</div>'
       +'<div class="acts"><button onclick="breakFixed(&#39;'+f.id+'&#39;)">途中で出す</button></div></div>';
   });
   var doneF=kd.fixed.filter(function(f){return f.status!=="active";}).slice(-3).reverse();
-  doneF.forEach(function(f){ h+='<div class="hint">★ '+yen(f.amt)+'円・'+f.months+'か月 '+(f.status==="done"?'満期（利息 ＋'+yen(f.interest||0)+'円）':'途中で出した')+'</div>'; });
-  h+='<div class="f-label">新しく つくる</div><div class="frow"><div class="yen-row"><input type="number" id="fxAmt" placeholder="0" min="0" inputmode="numeric"></div>'
-    +'<select id="fxMonths">'+["3","6","12"].map(function(m){return '<option value="'+m+'">'+m+'か月（年利'+fr[m]+'%）</option>';}).join("")+'</select></div>'
-    +'<div class="frow"><select id="fxFrom"><option value="bank">預金から</option><option value="use">使うから</option></select><button class="mini-btn" style="background:var(--gold-deep)" onclick="makeFixed()">定期にする</button></div>'
-    +'</div>';
+  doneF.forEach(function(f){ h+='<div class="hint">★ '+md(f.start)+'の '+yen(f.amt)+'円 '+(f.status==="done"?'満期（利息 ＋'+yen(f.interest||0)+'円）':'途中で出した')+'</div>'; });
+  h+='</div>';
 
   // 未来シミュレーション
-  var pace=monthlyPace(curKid,"bank");
-  if(simMonthly===null) simMonthly = pace>0 ? pace : 500;
-  h+='<div class="card"><h3>🔮 未来シミュレーション</h3>'
-    +'<div class="hint" style="margin-top:0">いまの預金 '+yen(Math.max(0,s.bank))+'円に、毎月ためる金額を足していくと…？</div>'
-    +'<div class="frow" style="align-items:center"><span style="flex:0 0 auto;font-size:13px">毎月</span><div class="yen-row"><input type="number" id="simM" value="'+simMonthly+'" min="0" inputmode="numeric" onchange="simMonthly=parseInt(this.value,10)||0;renderBank()"></div><span style="flex:0 0 auto;font-size:13px">ためる</span></div>'
-    +(pace>0?'<div class="hint">（この3か月は 月に約'+yen(pace)+'円 預金に入れているよ）</div>':'');
-  var yrs=[1,3,5,10], vals=yrs.map(function(y){return {y:y, w:simulate(Math.max(0,s.bank),simMonthly,r,y), n:Math.max(0,s.bank)+simMonthly*12*y};});
+  if(simMonthly===null) simMonthly=10000;
+  h+='<div class="card"><h3>🔮 毎年お年玉を預けたら？</h3>'
+    +'<div class="frow" style="align-items:center"><span style="flex:0 0 auto;font-size:13px">毎年</span><div class="yen-row"><input type="number" id="simM" value="'+simMonthly+'" min="0" inputmode="numeric" onchange="simMonthly=parseInt(this.value,10)||0;renderBank()"></div><span style="flex:0 0 auto;font-size:13px">預ける</span></div>';
+  var yrs=[1,3,5,10], vals=yrs.map(function(y){ var b=0; for(var i=0;i<y;i++){ b=Math.floor((b+simMonthly)*(1+rt/100)); } return {y:y, w:b, n:simMonthly*y}; });
   var mx=Math.max.apply(null, vals.map(function(v){return v.w;}).concat([1]));
   h+='<div class="sim">'+vals.map(function(v){ return '<div class="col"><div class="vl">'+yen(v.w)+'</div><div class="bars"><div class="b1" style="height:'+Math.round(v.n/mx*100)+'%"></div><div class="b2" style="height:'+Math.round(v.w/mx*100)+'%"></div></div><div class="yl">'+v.y+'年後</div></div>'; }).join("")+'</div>'
-    +'<div class="legend"><span><i style="background:#d8dee6"></i>利息なし</span><span><i style="background:var(--gold)"></i>利息あり（年利'+r+'%）</span></div>'
+    +'<div class="legend"><span><i style="background:#d8dee6"></i>預けただけ</span><span><i style="background:var(--gold)"></i>利息こみ（毎年'+rt+'%）</span></div>'
     +'<div class="bank-info" style="text-align:center">10年後は 利息のおかげで <b>'+yen(vals[3].w-vals[3].n)+'円</b> 多くなるよ！</div></div>';
 
   // おうちのひと設定
   var sp=R().split;
-  h+='<div class="card"><details><summary>⚙️ おうちのひと設定（'+KNAME[curKid]+'の分）</summary>'
-    +'<div class="set-row"><label>ふつう預金の年利（%）</label><input type="number" id="stRate" value="'+r+'" step="0.1" min="0"></div>'
-    +'<div class="set-row"><label>定期 3か月の年利（%）</label><input type="number" id="stF3" value="'+fr["3"]+'" step="0.1" min="0"></div>'
-    +'<div class="set-row"><label>定期 6か月の年利（%）</label><input type="number" id="stF6" value="'+fr["6"]+'" step="0.1" min="0"></div>'
-    +'<div class="set-row"><label>定期 12か月の年利（%）</label><input type="number" id="stF12" value="'+fr["12"]+'" step="0.1" min="0"></div>'
+  h+='<div class="card"><details><summary>⚙️ おうちのひと設定</summary>'
+    +'<div class="f-label">'+KNAME[curKid]+'の分</div>'
+    +'<div class="set-row"><label>お年玉定期の年利（%）</label><input type="number" id="stOto" value="'+rt+'" step="1" min="0"></div>'
     +'<div class="f-label">「分ける」の割合（%）</div>'
     +'<div class="set-row"><label>使う</label><input type="number" id="spU" value="'+sp.use+'" min="0" max="100"></div>'
     +'<div class="set-row"><label>預金</label><input type="number" id="spB" value="'+sp.bank+'" min="0" max="100"></div>'
     +'<div class="set-row"><label>あげる</label><input type="number" id="spG" value="'+sp.give+'" min="0" max="100"></div>'
-    +'<div class="f-label">ごほうび</div>'
-    +'<div class="set-row"><label>預けたらすぐボーナス（%）</label><input type="number" id="stBonus" value="'+R().bonus+'" step="1" min="0"></div>'
-    +'<div class="set-row"><label>3か月つづけたら（円）</label><input type="number" id="stStreak" value="'+R().streakReward+'" step="10" min="0"></div>'
     +'<button class="save-btn" style="font-size:15px;padding:11px" onclick="saveSettings()">設定を保存</button>'
-    +'<div class="hint">設定は '+KNAME[curKid]+' だけに反映されるよ。利息は毎月1日に、そのときの預金の額に「年利÷12」をかけてつくよ（1円未満は切り捨て）。ボーナスは、預金から出した分を入れ直したときにはつかないよ。利息・ボーナス・ごほうびは、おうちのひとが出すお金だよ。</div>'
+    +'<div class="f-label" style="margin-top:14px">🧹 お手伝いと金額（2人共通）</div>'
+    +state.chores.map(function(c,i){ return '<div class="crow"><input type="text" value="'+esc(c.name)+'" readonly><input class="n" type="number" value="'+c.amt+'" min="1" onchange="editChoreAmt('+i+',this.value)"><span style="font-size:12px">円</span><button onclick="delChore('+i+')">×</button></div>'; }).join("")
+    +'<div class="crow"><input type="text" id="chN" placeholder="例：ゴミ出し" maxlength="12"><input class="n" type="number" id="chA" placeholder="10" min="1"><span style="font-size:12px">円</span><button style="background:var(--accent-deep);color:#fff" onclick="addChore()">追加</button></div>'
+    +'<div class="hint">お年玉定期の年利は、これから預ける分に使われるよ。利息は おうちのひとが出すお金だよ。</div>'
     +'</details></div>';
   document.getElementById("pg-bank").innerHTML=h;
 }
@@ -894,11 +933,8 @@ function saveSettings(){
   var r=R();
   var u=Math.round(num("spU",r.split.use)), bk=Math.round(num("spB",r.split.bank)), g=Math.round(num("spG",r.split.give));
   if(u+bk+g!==100){ toast("分け方の合計を100%にしてね（いま"+(u+bk+g)+"%）"); return; }
-  r.rate=num("stRate",r.rate);
-  r.fixed={"3":num("stF3",r.fixed["3"]),"6":num("stF6",r.fixed["6"]),"12":num("stF12",r.fixed["12"])};
+  r.otoshiRate=num("stOto",r.otoshiRate);
   r.split={use:u, bank:bk, give:g};
-  r.bonus=Math.round(num("stBonus",r.bonus));
-  r.streakReward=Math.round(num("stStreak",r.streakReward));
   save(); renderAll(); toast(KNAME[curKid]+"の設定を保存したよ");
 }
 function makeFixed(){
@@ -914,7 +950,7 @@ function breakFixed(id){
   var f=K().fixed.find(function(x){return x.id===id;}); if(!f) return;
   if(!confirm("途中で出すと利息はもらえないよ。出す？")) return;
   var t=todayStr();
-  addEntry(curKid,{date:t, type:"move", w:"fixed", to:"bank", cat:"定期預金 途中で出した", memo:"利息なし", amt:f.amt, sys:true});
+  addEntry(curKid,{date:t, type:"move", w:"fixed", to:"bank", cat:(f.otoshi?"お年玉定期":"定期預金")+" 途中で出した", memo:"利息なし", amt:f.amt, sys:true, fx:f.id});
   f.status="early"; f.end=t;
   save(); renderAll(); toast("預金にもどしたよ");
 }
