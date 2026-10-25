@@ -110,6 +110,10 @@
   .oto .acts{text-align:right}
   .oto .acts button{border:none;background:none;color:var(--ink-soft);font-family:inherit;font-size:12px;text-decoration:underline;cursor:pointer}
   .chedit{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:5px 12px;font-family:inherit;font-size:12px;color:var(--ink-soft);cursor:pointer}
+  .splitbox{background:#fafbfd;border:1.5px dashed var(--line);border-radius:14px;padding:10px 12px;margin-top:8px}
+  .sprow{display:flex;align-items:center;gap:8px;margin:5px 0}
+  .sprow .wtag{flex:0 0 64px;text-align:center;font-size:13px;padding:5px 0}
+  .sprow input{flex:1;min-width:0;text-align:right}
   .crow{display:flex;gap:6px;align-items:center;margin-top:6px}
   .crow input{flex:1;min-width:0}
   .crow input.n{flex:0 0 70px}
@@ -568,14 +572,21 @@ function setType(tp){
   renderForm();
 }
 function wChips(sel, list, onclickFn){
-  return '<div class="chips">'+list.map(function(w){ return '<button class="chip w-'+w+(sel===w?" sel":"")+'" onclick="'+onclickFn+'(&#39;'+w+'&#39;)">'+(w==="split"?"分ける":WNAME[w])+'</button>'; }).join("")+'</div>';
+  return '<div class="chips">'+list.map(function(w){ return '<button class="chip w-'+w+(sel===w?" sel":"")+'" onclick="'+onclickFn+'(&#39;'+w+'&#39;)">'+(w==="split"?"自分で分ける":WNAME[w])+'</button>'; }).join("")+'</div>';
 }
 function renderForm(){
   var h='';
   if(selType==="in"){
     var oto=(curSelCat()==="お年玉" && !editId);
     if(oto) h+='<label class="otochk"><input type="checkbox" id="fOto"'+(otoOn?' checked':'')+' onchange="otoOn=this.checked;renderForm()"> 🧧 お年玉定期に預ける<br><span>次のお正月に 年利'+R().otoshiRate+'% ふえるよ</span></label>';
-    if(!(oto && otoOn)) h+='<div class="f-label">どこに入れる？</div>'+wChips(selW,["use","bank","give","split"],"setW")+'<div class="hint" id="splitHint"></div>';
+    if(!(oto && otoOn)){
+      h+='<div class="f-label">どこに入れる？</div>'+wChips(selW,["use","bank","give","split"],"setW");
+      if(selW==="split") h+='<div class="splitbox">'
+        +'<div class="sprow"><span class="wtag bank">預金</span><input type="number" id="spBk" min="0" inputmode="numeric" placeholder="0" value="'+(splitBank||"")+'" oninput="splitBank=parseInt(this.value,10)||0;renderSplitHint()"><span>円</span></div>'
+        +'<div class="sprow"><span class="wtag give">あげる</span><input type="number" id="spGv" min="0" inputmode="numeric" placeholder="0" value="'+(splitGive||"")+'" oninput="splitGive=parseInt(this.value,10)||0;renderSplitHint()"><span>円</span></div>'
+        +'<div class="sprow"><span class="wtag use">使う</span><b id="spUse" style="flex:1;text-align:right;font-size:16px">0</b><span>円</span></div>'
+        +'<div class="hint" id="splitHint"></div></div>';
+    }
   }else if(selType==="out"){
     h+='<div class="f-label">どこから出す？</div>'+wChips(selW,["use","bank","give"],"setW");
   }else{
@@ -591,14 +602,15 @@ function renderForm(){
 function setW(w){ selW=w; renderForm(); }
 function setMoveFrom(w){ moveFrom=w; renderForm(); }
 function setMoveTo(w){ moveTo=w; renderForm(); }
-function splitAmounts(amt){ var sp=R().split; var b=Math.floor(amt*sp.bank/100), g=Math.floor(amt*sp.give/100); return {use:amt-b-g, bank:b, give:g}; }
+function splitAmounts(amt){ var b=splitBank||0, g=splitGive||0; return {use:amt-b-g, bank:b, give:g}; }
+var splitBank=0, splitGive=0;
 function renderSplitHint(){
   var el=document.getElementById("splitHint"); if(!el) return;
-  var sp=R().split;
   if(selW!=="split"){ el.textContent=""; return; }
-  var amt=parseInt(document.getElementById("fAmt").value,10)||0;
-  if(amt>0){ var a=splitAmounts(amt); el.textContent="使う "+yen(a.use)+"円・預金 "+yen(a.bank)+"円・あげる "+yen(a.give)+"円 に分けるよ"; }
-  else el.textContent="使う"+sp.use+"%・預金"+sp.bank+"%・あげる"+sp.give+"% で分けるよ（割合は銀行タブで変えられる）";
+  var amt=parseInt(document.getElementById("fAmt").value,10)||0, a=splitAmounts(amt);
+  document.getElementById("spUse").textContent=yen(Math.max(0,a.use));
+  if(a.use<0){ el.innerHTML='<span style="color:var(--out-deep)">入金の金額より多いよ！</span>'; return; }
+  el.textContent=amt>0?"預金とあげるに入れる金額を自分で決めてね。のこりは「使う」に入るよ":"上に金額を入れてから、分け方を決めてね";
 }
 function curCats(){ return selType==="in"?state.catsIn:state.catsOut; }
 function curSelCat(){ return selType==="in"?selCatIn:selCatOut; }
@@ -671,6 +683,9 @@ function saveEntry(){
   }
   if(selType==="in" && selW==="split"){
     var a=splitAmounts(amt), grp=uid();
+    if(a.use<0){ toast("分けた金額が入金より多いよ"); return; }
+    if(a.bank+a.give===0){ toast("預金かあげるに いくら入れるか決めてね"); return; }
+    splitBank=0; splitGive=0;
     ["use","bank","give"].forEach(function(w){ if(a[w]>0) addEntry(curKid,{date:date, type:"in", w:w, cat:cat, from:from, memo:memo, amt:a[w], grp:grp}); });
     var bn2=a.bank>0?applyBonus(curKid, a.bank, date, grp):0;
     save(); clearForm(); renderAll(); toast("入金したよ ＋"+yen(amt)+"円（分けて入れたよ）"+(bn2>0?"　預金ボーナス ＋"+yen(bn2)+"円！":"")); if(bn2>0) party(); return;
@@ -926,10 +941,6 @@ function renderBank(){
   h+='<div class="card"><details><summary>⚙️ おうちのひと設定</summary>'
     +'<div class="f-label">'+KNAME[curKid]+'の分</div>'
     +'<div class="set-row"><label>お年玉定期の年利（%）</label><input type="number" id="stOto" value="'+rt+'" step="1" min="0"></div>'
-    +'<div class="f-label">「分ける」の割合（%）</div>'
-    +'<div class="set-row"><label>使う</label><input type="number" id="spU" value="'+sp.use+'" min="0" max="100"></div>'
-    +'<div class="set-row"><label>預金</label><input type="number" id="spB" value="'+sp.bank+'" min="0" max="100"></div>'
-    +'<div class="set-row"><label>あげる</label><input type="number" id="spG" value="'+sp.give+'" min="0" max="100"></div>'
     +'<button class="save-btn" style="font-size:15px;padding:11px" onclick="saveSettings()">設定を保存</button>'
     +'<div class="hint">お年玉定期の年利は、これから預ける分に使われるよ。利息は おうちのひとが出すお金だよ。</div>'
     +'</details></div>';
@@ -938,10 +949,7 @@ function renderBank(){
 function num(id, d){ var v=parseFloat(document.getElementById(id).value); return isNaN(v)||v<0 ? d : v; }
 function saveSettings(){
   var r=R();
-  var u=Math.round(num("spU",r.split.use)), bk=Math.round(num("spB",r.split.bank)), g=Math.round(num("spG",r.split.give));
-  if(u+bk+g!==100){ toast("分け方の合計を100%にしてね（いま"+(u+bk+g)+"%）"); return; }
   r.otoshiRate=num("stOto",r.otoshiRate);
-  r.split={use:u, bank:bk, give:g};
   save(); renderAll(); toast(KNAME[curKid]+"の設定を保存したよ");
 }
 function makeFixed(){
