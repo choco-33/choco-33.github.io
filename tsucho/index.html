@@ -109,6 +109,7 @@
   .oto .bar span{display:block;height:100%;background:#e58a82}
   .oto .acts{text-align:right}
   .oto .acts button{border:none;background:none;color:var(--ink-soft);font-family:inherit;font-size:12px;text-decoration:underline;cursor:pointer}
+  .chedit{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:5px 12px;font-family:inherit;font-size:12px;color:var(--ink-soft);cursor:pointer}
   .crow{display:flex;gap:6px;align-items:center;margin-top:6px}
   .crow input{flex:1;min-width:0}
   .crow input.n{flex:0 0 70px}
@@ -508,8 +509,15 @@ function renderChores(){
   var el=document.getElementById("choreCard"); if(!el) return;
   var cm=ym(todayStr()), n=0, sm=0;
   K().entries.forEach(function(e){ if(!e.sys && e.type==="in" && e.cat==="お手伝い" && ym(e.date)===cm){ n++; sm+=e.amt; } });
-  el.innerHTML='<h3 style="margin:0">🧹 お手伝い</h3><div class="hint" style="margin-top:2px">したお手伝いを押すと、お小遣い（使う）に入るよ</div>'
-    +'<div class="chores">'+state.chores.map(function(c,i){ return '<button onclick="doChore('+i+')">'+esc(c.name)+'<b>＋'+yen(c.amt)+'円</b></button>'; }).join("")+'</div>'
+  var hd='<div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">🧹 お手伝い</h3><button class="chedit" onclick="choreEdit=!choreEdit;renderChores()">'+(choreEdit?'完了':'✏️ 項目を決める')+'</button></div>';
+  if(choreEdit){
+    el.innerHTML=hd+'<div class="hint" style="margin-top:2px">お手伝いの名前と金額を自由に決めてね（Saku・Ao共通）</div>'
+      +state.chores.map(function(c,i){ return '<div class="crow"><input type="text" value="'+esc(c.name)+'" maxlength="12" onchange="editChoreName('+i+',this.value)"><input class="n" type="number" value="'+c.amt+'" min="1" inputmode="numeric" onchange="editChoreAmt('+i+',this.value)"><span style="font-size:12px">円</span><button onclick="delChore('+i+')">×</button></div>'; }).join("")
+      +'<div class="crow"><input type="text" id="chN" placeholder="例：ゴミ出し" maxlength="12"><input class="n" type="number" id="chA" placeholder="10" min="1" inputmode="numeric"><span style="font-size:12px">円</span><button style="background:var(--accent-deep);color:#fff" onclick="addChore()">追加</button></div>';
+    return;
+  }
+  el.innerHTML=hd+'<div class="hint" style="margin-top:2px">したお手伝いを押すと、お小遣い（使う）に入るよ</div>'
+    +(state.chores.length?'<div class="chores">'+state.chores.map(function(c,i){ return '<button onclick="doChore('+i+')">'+esc(c.name)+'<b>＋'+yen(c.amt)+'円</b></button>'; }).join("")+'</div>':'<div class="hint">「✏️ 項目を決める」から お手伝いを追加してね</div>')
     +'<div class="hint" style="text-align:center">今月のお手伝い：<b>'+n+'回</b>・<b>'+yen(sm)+'円</b></div>';
 }
 function doChore(i){
@@ -520,10 +528,12 @@ function doChore(i){
 function addChore(){
   var n=document.getElementById("chN").value.trim(), a=parseInt(document.getElementById("chA").value,10)||0;
   if(!n||a<1){ toast("名前と金額を入れてね"); return; }
-  state.chores.push({name:n, amt:a}); save(); renderAll(); toast("「"+n+"」を追加したよ");
+  state.chores.push({name:n, amt:a}); save(); renderChores(); toast("「"+n+"」を追加したよ");
 }
-function delChore(i){ var c=state.chores[i]; if(!c) return; if(!confirm("「"+c.name+"」を消す？")) return; state.chores.splice(i,1); save(); renderAll(); }
+function delChore(i){ var c=state.chores[i]; if(!c) return; if(!confirm("「"+c.name+"」を消す？")) return; state.chores.splice(i,1); save(); renderChores(); }
 function editChoreAmt(i, v){ var a=parseInt(v,10)||0; if(a<1) return; state.chores[i].amt=a; save(); renderChores(); }
+function editChoreName(i, v){ v=(v||"").trim(); if(!v) return; state.chores[i].name=v; save(); renderChores(); }
+var choreEdit=false;
 function nextNewYear(){ return (new Date().getFullYear()+1)+"-01-01"; }
 function renderAll(){
   var so=!!state.bank.stockOn; document.getElementById("tb-stock").style.display=so?"":"none";
@@ -921,9 +931,6 @@ function renderBank(){
     +'<div class="set-row"><label>預金</label><input type="number" id="spB" value="'+sp.bank+'" min="0" max="100"></div>'
     +'<div class="set-row"><label>あげる</label><input type="number" id="spG" value="'+sp.give+'" min="0" max="100"></div>'
     +'<button class="save-btn" style="font-size:15px;padding:11px" onclick="saveSettings()">設定を保存</button>'
-    +'<div class="f-label" style="margin-top:14px">🧹 お手伝いと金額（2人共通）</div>'
-    +state.chores.map(function(c,i){ return '<div class="crow"><input type="text" value="'+esc(c.name)+'" readonly><input class="n" type="number" value="'+c.amt+'" min="1" onchange="editChoreAmt('+i+',this.value)"><span style="font-size:12px">円</span><button onclick="delChore('+i+')">×</button></div>'; }).join("")
-    +'<div class="crow"><input type="text" id="chN" placeholder="例：ゴミ出し" maxlength="12"><input class="n" type="number" id="chA" placeholder="10" min="1"><span style="font-size:12px">円</span><button style="background:var(--accent-deep);color:#fff" onclick="addChore()">追加</button></div>'
     +'<div class="hint">お年玉定期の年利は、これから預ける分に使われるよ。利息は おうちのひとが出すお金だよ。</div>'
     +'</details></div>';
   document.getElementById("pg-bank").innerHTML=h;
