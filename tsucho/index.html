@@ -388,6 +388,19 @@ function load(){
     if(typeof r.otoshiRate!=="number") r.otoshiRate=10;
   });
   b.stockOn=false;
+  if(!state.choreMig1){
+    ["saku","ao"].forEach(function(k){
+      var kd=state.kids[k], keep=[];
+      kd.entries.forEach(function(e){
+        if(e.cat==="お手伝い" && e.type==="in" && !e.sys && !e.pay && !e.from && e.memo && (e.w||"use")==="use"){ kd.choreLog.push({id:uid(), date:e.date, name:e.memo, amt:e.amt, paid:false}); }
+        else keep.push(e);
+      });
+      kd.entries=keep;
+      kd.choreLog.sort(function(x,y){ return x.date<y.date?-1:(x.date>y.date?1:0); });
+    });
+    state.choreMig1=true;
+    try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
+  }
   if(!Array.isArray(state.chores)) state.chores=DEF_CHORES.map(function(c){return {name:c[0], amt:c[1]};});
   selCatIn=state.catsIn[0]||""; selCatOut=state.catsOut[0]||"";
 }
