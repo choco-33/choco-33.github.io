@@ -121,6 +121,11 @@
   .unpaid .ui{display:flex;justify-content:space-between;font-size:13px;padding:3px 2px;border-bottom:1px dotted var(--line)}
   .unpaid .ui button{border:none;background:none;color:#c99;font-size:13px;cursor:pointer;padding:0 2px}
   .paybtn{margin-top:8px;width:100%;padding:11px;border:none;border-radius:14px;background:var(--in-deep);color:#fff;font-family:inherit;font-size:16px;cursor:pointer}
+  .allow{background:#fdf6e6;border:2px solid #f0dca8;border-radius:16px;padding:10px 12px;margin-top:8px;text-align:center;font-size:15px}
+  .allow b{font-size:20px;color:var(--gold-deep)}
+  .allow .warn{font-size:13px;color:var(--out-deep);margin-top:2px}
+  .allow.done{background:#f4f9f5;border-color:#cfe6d6;color:var(--in-deep)}
+  .allow.done span{font-size:12px;color:var(--ink-soft)}
   .crow{display:flex;gap:6px;align-items:center;margin-top:6px}
   .crow input{flex:1;min-width:0}
   .crow input.n{flex:0 0 70px}
@@ -277,6 +282,7 @@
 
   <!-- 通帳 -->
   <div class="page on" id="pg-book">
+    <div class="card" id="allowCard"></div>
     <div class="card" id="choreCard"></div>
     <div class="card">
       <div class="seg">
@@ -386,6 +392,7 @@ function load(){
     if(typeof r.bonus!=="number") r.bonus=10;
     if(typeof r.streakReward!=="number") r.streakReward=100;
     if(typeof r.otoshiRate!=="number") r.otoshiRate=10;
+    if(typeof r.allowance!=="number") r.allowance=0;
   });
   b.stockOn=false;
   if(!state.choreMig1){
@@ -530,6 +537,34 @@ function showPage(p){
   });
   renderPage(); try{ window.scrollTo(0,0); }catch(e){}
 }
+var allowEdit=false;
+function renderAllow(){
+  var el=document.getElementById("allowCard"); if(!el) return;
+  var a=R().allowance, cm=ym(todayStr()), mn=parseInt(cm.slice(5,7),10);
+  var paid=K().entries.filter(function(e){return e.allow===cm || (!e.allow && !e.sys && e.type==="in" && e.cat==="お小遣い" && ym(e.date)===cm);})[0];
+  var hd='<div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">💴 お小遣い</h3>'+(a>0&&!allowEdit?'<button class="chedit" onclick="allowEdit=true;renderAllow()">✏️ 金額</button>':'')+'</div>';
+  if(!(a>0) || allowEdit){
+    el.innerHTML=hd+'<div class="hint" style="margin-top:2px">'+KNAME[curKid]+'の 毎月のお小遣いはいくら？</div>'
+      +'<div class="crow"><input class="n" style="flex:1" type="number" id="alA" min="1" inputmode="numeric" placeholder="500" value="'+(a||"")+'"><span style="font-size:13px">円</span><button style="background:var(--accent-deep);color:#fff" onclick="setAllow()">決める</button></div>';
+    return;
+  }
+  if(paid){
+    el.innerHTML=hd+'<div class="allow done">✓ '+mn+'月のお小遣い '+yen(paid.amt)+'円<br><span>'+md(paid.date)+'に 渡したよ</span></div>';
+  }else{
+    el.innerHTML=hd+'<div class="allow"><div>'+mn+'月のお小遣い <b>'+yen(a)+'円</b></div><div class="warn">まだ渡してないよ</div>'
+      +'<button class="paybtn" onclick="payAllow()">💴 '+yen(a)+'円 渡した</button></div>';
+  }
+}
+function setAllow(){
+  var v=parseInt(document.getElementById("alA").value,10)||0; if(v<1){ toast("金額を入れてね"); return; }
+  R().allowance=v; allowEdit=false; save(); renderAllow(); toast(KNAME[curKid]+"のお小遣いを 月"+yen(v)+"円にしたよ");
+}
+function payAllow(){
+  var a=R().allowance, cm=ym(todayStr()), mn=parseInt(cm.slice(5,7),10);
+  if(!confirm(KNAME[curKid]+"に "+mn+"月のお小遣い "+yen(a)+"円 を渡した？")) return;
+  addEntry(curKid,{date:todayStr(), type:"in", w:"use", cat:"お小遣い", memo:mn+"月分", amt:a, grp:uid(), allow:cm});
+  save(); renderAll(); toast("💴 "+mn+"月のお小遣い "+yen(a)+"円 渡したよ！「使う」に入れたよ"); party();
+}
 function renderChores(){
   var el=document.getElementById("choreCard"); if(!el) return;
   var cm=ym(todayStr()), n=0, sm=0, log=K().choreLog;
@@ -590,7 +625,7 @@ function renderAll(){
   document.body.className = curKid==="ao" ? "ao" : "";
   document.getElementById("balName").textContent=KNAME[curKid];
   document.querySelectorAll(".tabk").forEach(function(t){ t.classList.toggle("on", t.dataset.k===curKid); });
-  renderTop(); renderChores(); renderForm(); renderList(); renderPage();
+  renderTop(); renderAllow(); renderChores(); renderForm(); renderList(); renderPage();
 }
 function renderPage(){
   if(curPage==="bank") renderBank();
