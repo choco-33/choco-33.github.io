@@ -114,6 +114,13 @@
   .sprow{display:flex;align-items:center;gap:8px;margin:5px 0}
   .sprow .wtag{flex:0 0 64px;text-align:center;font-size:13px;padding:5px 0}
   .sprow input{flex:1;min-width:0;text-align:right}
+  .unpaid{background:#f4f9f5;border:2px solid #cfe6d6;border-radius:16px;padding:10px 12px;margin-top:10px;text-align:center}
+  .unpaid .ut{font-size:13px;color:var(--ink-soft)}
+  .unpaid .ua{font-size:26px;font-weight:700;color:var(--in-deep)}
+  .unpaid .ul{max-height:150px;overflow-y:auto;text-align:left;margin:4px 0}
+  .unpaid .ui{display:flex;justify-content:space-between;font-size:13px;padding:3px 2px;border-bottom:1px dotted var(--line)}
+  .unpaid .ui button{border:none;background:none;color:#c99;font-size:13px;cursor:pointer;padding:0 2px}
+  .paybtn{margin-top:8px;width:100%;padding:11px;border:none;border-radius:14px;background:var(--in-deep);color:#fff;font-family:inherit;font-size:16px;cursor:pointer}
   .crow{display:flex;gap:6px;align-items:center;margin-top:6px}
   .crow input{flex:1;min-width:0}
   .crow input.n{flex:0 0 70px}
@@ -364,6 +371,7 @@ function load(){
     if(typeof kd.lastStreakCheck!=="string") kd.lastStreakCheck="";
     if(!Array.isArray(kd.awards)) kd.awards=[];
     if(typeof kd.best!=="number") kd.best=0;
+    if(!Array.isArray(kd.choreLog)) kd.choreLog=[];
   });
   if(!Array.isArray(state.catsIn)||!state.catsIn.length) state.catsIn=DEF_IN.slice();
   if(!Array.isArray(state.catsOut)||!state.catsOut.length) state.catsOut=DEF_OUT.slice();
@@ -511,8 +519,9 @@ function showPage(p){
 }
 function renderChores(){
   var el=document.getElementById("choreCard"); if(!el) return;
-  var cm=ym(todayStr()), n=0, sm=0;
-  K().entries.forEach(function(e){ if(!e.sys && e.type==="in" && e.cat==="お手伝い" && ym(e.date)===cm){ n++; sm+=e.amt; } });
+  var cm=ym(todayStr()), n=0, sm=0, log=K().choreLog;
+  log.forEach(function(c){ if(ym(c.date)===cm){ n++; sm+=c.amt; } });
+  var un=log.filter(function(c){return !c.paid;}), unSum=un.reduce(function(a,c){return a+c.amt;},0);
   var hd='<div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">🧹 お手伝い</h3><button class="chedit" onclick="choreEdit=!choreEdit;renderChores()">'+(choreEdit?'完了':'✏️ 項目を決める')+'</button></div>';
   if(choreEdit){
     el.innerHTML=hd+'<div class="hint" style="margin-top:2px">お手伝いの名前と金額を自由に決めてね（Saku・Ao共通）</div>'
@@ -520,14 +529,37 @@ function renderChores(){
       +'<div class="crow"><input type="text" id="chN" placeholder="例：ゴミ出し" maxlength="12"><input class="n" type="number" id="chA" placeholder="10" min="1" inputmode="numeric"><span style="font-size:12px">円</span><button style="background:var(--accent-deep);color:#fff" onclick="addChore()">追加</button></div>';
     return;
   }
-  el.innerHTML=hd+'<div class="hint" style="margin-top:2px">したお手伝いを押すと、お小遣い（使う）に入るよ</div>'
+  var paidH={}; log.forEach(function(c){ if(c.paid && c.payId) paidH[c.payId]=c.payDate; });
+  var pays=K().entries.filter(function(e){return e.pay;}).sort(function(a,b){return a.date<b.date?1:-1;}).slice(0,2);
+  el.innerHTML=hd+'<div class="hint" style="margin-top:2px">したお手伝いを押すと「まだもらってない」にたまるよ。1日に現金でもらったら「渡した」を押してね</div>'
     +(state.chores.length?'<div class="chores">'+state.chores.map(function(c,i){ return '<button onclick="doChore('+i+')">'+esc(c.name)+'<b>＋'+yen(c.amt)+'円</b></button>'; }).join("")+'</div>':'<div class="hint">「✏️ 項目を決める」から お手伝いを追加してね</div>')
+    +'<div class="unpaid"><div class="ut">まだもらってない お手伝い代</div><div class="ua">'+yen(unSum)+'<small> 円</small></div>'
+    +(un.length?'<div class="ul">'+un.slice().reverse().map(function(c){ return '<div class="ui"><span>'+md(c.date)+' '+esc(c.name)+'</span><span>'+yen(c.amt)+'円 <button onclick="delStamp(&#39;'+c.id+'&#39;)">×</button></span></div>'; }).join("")+'</div>'
+      +'<button class="paybtn" onclick="payChores()">💴 '+yen(unSum)+'円 渡した</button>':'<div class="hint" style="margin-top:0">いまはないよ</div>')
+    +'</div>'
+    +pays.map(function(e){ return '<div class="hint" style="text-align:center">★ '+md(e.date)+'に '+esc(e.memo)+' '+yen(e.amt)+'円 もらったよ</div>'; }).join("")
     +'<div class="hint" style="text-align:center">今月のお手伝い：<b>'+n+'回</b>・<b>'+yen(sm)+'円</b></div>';
+}
+function delStamp(id){
+  var c=K().choreLog.find(function(x){return x.id===id;}); if(!c||c.paid) return;
+  if(!confirm(md(c.date)+"の「"+c.name+"」を消す？")) return;
+  K().choreLog=K().choreLog.filter(function(x){return x.id!==id;}); save(); renderChores();
+}
+function payChores(){
+  var un=K().choreLog.filter(function(c){return !c.paid;}); if(!un.length) return;
+  var tot=un.reduce(function(a,c){return a+c.amt;},0);
+  var ms=[]; un.forEach(function(c){ var m=parseInt(c.date.slice(5,7),10)+"月"; if(ms.indexOf(m)<0) ms.push(m); });
+  var lab=(ms.length>1?ms[0]+"〜"+ms[ms.length-1]:ms[0])+"分（"+un.length+"回）";
+  if(!confirm(KNAME[curKid]+"に お手伝い代 "+yen(tot)+"円 を現金で渡した？")) return;
+  var pid=uid(), t=todayStr();
+  un.forEach(function(c){ c.paid=true; c.payId=pid; c.payDate=t; });
+  addEntry(curKid,{date:t, type:"in", w:"use", cat:"お手伝い", memo:lab, amt:tot, grp:uid(), pay:pid});
+  save(); renderAll(); toast("💴 お手伝い代 "+yen(tot)+"円 渡したよ！「使う」に入れたよ"); party();
 }
 function doChore(i){
   var c=state.chores[i]; if(!c) return;
-  addEntry(curKid,{date:todayStr(), type:"in", w:"use", cat:"お手伝い", memo:c.name, amt:c.amt, grp:uid()});
-  save(); renderAll(); toast("🧹 "+c.name+" ありがとう！ ＋"+yen(c.amt)+"円"); party();
+  K().choreLog.push({id:uid(), date:todayStr(), name:c.name, amt:c.amt, paid:false});
+  save(); renderChores(); toast("🧹 "+c.name+" ありがとう！ ＋"+yen(c.amt)+"円 たまったよ"); party();
 }
 function addChore(){
   var n=document.getElementById("chN").value.trim(), a=parseInt(document.getElementById("chA").value,10)||0;
@@ -701,7 +733,7 @@ function saveEntry(){
 }
 function startEdit(id){
   var e=K().entries.find(function(x){return x.id==id;}); if(!e||e.sys) return;
-  if(e.fx){ toast("お年玉定期は、消してから入れ直してね"); return; }
+  if(e.fx||e.pay){ toast(e.pay?"お手伝い代は、消すと「まだもらってない」にもどるよ":"お年玉定期は、消してから入れ直してね"); return; }
   editId=id;
   if(e.type==="move"){ moveFrom=e.w||"use"; moveTo=e.to||"bank"; setType("move"); }
   else { selW=e.w||"use"; setType(e.type); setSelCat(e.cat); renderCatChips(); }
@@ -722,7 +754,7 @@ function endEdit(msg){
 }
 function delEntry(id){
   var e=K().entries.find(function(x){return x.id==id;}); if(!e||e.sys) return;
-  if(e.fx){ var gi=-1; window.__grs=groupedRows(); window.__grs.forEach(function(g,i){ if(g.items.indexOf(e)>=0) gi=i; }); if(gi>=0) delGrp(gi); return; }
+  if(e.fx||e.pay){ var gi=-1; window.__grs=groupedRows(); window.__grs.forEach(function(g,i){ if(g.items.indexOf(e)>=0) gi=i; }); if(gi>=0) delGrp(gi); return; }
   if(!confirm("この記録を消す？")) return;
   if(editId==id) endEdit(false);
   K().entries=K().entries.filter(function(x){return x.id!=id;});
@@ -780,12 +812,13 @@ function groupedRows(){
     return g;
   });
 }
-function editGrp(i){ var g=window.__grs[i]; if(!g||!g.ids) return; if(g.items.some(function(x){return x.fx;})){ toast("お年玉定期は、消してから入れ直してね"); return; } if(g.ids.length===1) startEdit(g.ids[0]); else toast("分けて入れた記録は「くわしく」で1つずつなおせるよ"); }
+function editGrp(i){ var g=window.__grs[i]; if(!g||!g.ids) return; if(g.items.some(function(x){return x.fx;})){ toast("お年玉定期は、消してから入れ直してね"); return; } if(g.items.some(function(x){return x.pay;})){ toast("お手伝い代は、消すと「まだもらってない」にもどるよ"); return; } if(g.ids.length===1) startEdit(g.ids[0]); else toast("分けて入れた記録は「くわしく」で1つずつなおせるよ"); }
 function delGrp(i){
   var g=window.__grs[i]; if(!g||!g.ids) return;
   var hasFx=g.items.some(function(x){return x.fx;});
-  if(!confirm("この記録を消す？"+(hasFx?"（お年玉定期もいっしょに消えるよ）":(g.items.length>g.ids.length?"（ボーナスもいっしょに消えるよ）":"")))) return;
-  var del={}, fxs={}; g.items.forEach(function(x){ del[x.id]=1; if(x.fx) fxs[x.fx]=1; });
+  var hasPay=g.items.some(function(x){return x.pay;});
+  if(!confirm("この記録を消す？"+(hasPay?"（お手伝いは「まだもらってない」にもどるよ）":"")+(hasFx?"（お年玉定期もいっしょに消えるよ）":(g.items.length>g.ids.length?"（ボーナスもいっしょに消えるよ）":"")))) return;
+  var del={}, fxs={}; g.items.forEach(function(x){ del[x.id]=1; if(x.fx) fxs[x.fx]=1; if(x.pay) K().choreLog.forEach(function(c){ if(c.payId===x.pay){ c.paid=false; delete c.payId; delete c.payDate; } }); });
   K().entries.forEach(function(x){ if(x.fx && fxs[x.fx]) del[x.id]=1; });
   K().fixed=K().fixed.filter(function(f){ return !fxs[f.id]; });
   if(editId && del[editId]) endEdit(false);
