@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="どこ置いた？">
+<meta name="theme-color" content="#6f9c93">
+<title>どこ置いた？</title>
+<style>
+@font-face{font-family:"Azuki";src:url("../azukiP.ttf") format("truetype");font-display:swap;}
+  :root{
+    --bg:#f4f6f1; --card:#ffffff; --text:#4d544f; --sub:#9aa39c; --line:#e3e8e1;
+    --accent:#8fbab0; --accent-dark:#6f9c93; --soft:#e4f0ec;
+    --shadow:0 2px 10px rgba(90,120,110,.12);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{font-family:"Azuki","Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif;background:var(--bg);color:var(--text);max-width:480px;margin:0 auto;min-height:100vh;padding-bottom:96px}
+  header{text-align:center;padding:16px 16px 6px}
+  header h1{font-size:21px;letter-spacing:2px;display:flex;align-items:center;justify-content:center;gap:8px}
+  header h1 svg{width:30px;height:30px}
+  header .deco{font-size:11px;color:var(--sub);letter-spacing:1px}
+
+  .search{display:flex;align-items:center;gap:8px;margin:10px 14px 6px;background:var(--card);border-radius:999px;padding:10px 16px;box-shadow:var(--shadow);border:2px solid var(--soft)}
+  .search svg{width:22px;height:22px;flex:0 0 auto}
+  .search input{flex:1;min-width:0;border:none;outline:none;font-family:inherit;font-size:17px;background:transparent;color:var(--text)}
+  .search input::placeholder{color:#b9c2bb}
+  .search button{border:none;background:none;color:var(--sub);font-size:18px;cursor:pointer;font-family:inherit}
+
+  .sec{font-size:12.5px;color:var(--sub);margin:16px 18px 8px;letter-spacing:1px;display:flex;align-items:center;gap:6px}
+  .sec:after{content:"";flex:1;border-top:1.5px dashed var(--line)}
+  .item{display:flex;gap:12px;align-items:center;background:var(--card);margin:0 14px 10px;border-radius:18px;padding:12px;box-shadow:var(--shadow);cursor:pointer}
+  .item .ph{width:62px;height:62px;border-radius:14px;flex:0 0 auto;background:var(--soft);display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .item .ph img{width:100%;height:100%;object-fit:cover}
+  .item .ph svg{width:30px;height:30px}
+  .item .body{flex:1;min-width:0}
+  .item .nm{font-size:16.5px;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .item .where{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap}
+  .ptag{border-radius:999px;padding:3px 10px;font-size:12.5px}
+  .item .spot{font-size:13px;color:var(--text)}
+  .item .dt{font-size:11px;color:var(--sub);margin-top:3px}
+  mark{background:#fbe9b7;color:inherit;border-radius:3px;padding:0 1px}
+  .empty{text-align:center;color:var(--sub);font-size:14px;padding:36px 20px;line-height:1.9}
+
+  .places{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 14px}
+  .pcard{border-radius:18px;padding:14px 12px;box-shadow:var(--shadow);cursor:pointer;text-align:left;border:none;font-family:inherit;color:var(--text);position:relative}
+  .pcard .pe{font-size:26px;line-height:1}
+  .pcard .pn{font-size:16px;font-weight:bold;margin-top:6px}
+  .pcard .pc{font-size:12px;opacity:.75;margin-top:2px}
+  .pcard.add{background:#fff;border:2px dashed var(--line);color:var(--sub);text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .phead{display:flex;align-items:center;gap:10px;margin:8px 14px 4px;border-radius:18px;padding:14px;box-shadow:var(--shadow)}
+  .phead .pe{font-size:30px}
+  .phead .pn{font-size:18px;font-weight:bold;flex:1}
+  .phead button{border:none;background:rgba(255,255,255,.7);border-radius:999px;padding:7px 12px;font-family:inherit;font-size:12.5px;color:var(--text);cursor:pointer}
+  .back{border:none;background:none;font-family:inherit;font-size:14px;color:var(--accent-dark);margin:6px 14px 0;cursor:pointer}
+
+  .fab{position:fixed;right:max(18px,calc(50% - 222px));bottom:84px;width:62px;height:62px;border-radius:50%;border:none;background:var(--accent-dark);color:#fff;font-size:34px;line-height:1;box-shadow:0 4px 14px rgba(70,110,100,.35);cursor:pointer;font-family:inherit;z-index:20}
+  .tabbar{position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:15}
+  .tabbar button{flex:1;border:none;background:none;padding:9px 0 10px;font-family:inherit;font-size:12px;color:var(--sub);cursor:pointer}
+  .tabbar button svg{display:block;width:26px;height:26px;margin:0 auto 2px}
+  .tabbar button.on{color:var(--accent-dark)}
+
+  .sheet-bg{position:fixed;inset:0;background:rgba(50,60,55,.35);display:none;z-index:50;align-items:flex-end;justify-content:center}
+  .sheet-bg.on{display:flex}
+  .sheet{background:var(--bg);width:100%;max-width:480px;border-radius:22px 22px 0 0;padding:16px 16px 30px;max-height:90vh;overflow-y:auto}
+  .sheet h2{font-size:16px;text-align:center;margin-bottom:10px}
+  .lbl{font-size:13px;color:var(--sub);margin:12px 2px 6px}
+  .inp{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;font-family:inherit;font-size:16px;color:var(--text);background:#fff;outline:none}
+  .inp:focus{border-color:var(--accent)}
+  textarea.inp{resize:vertical;min-height:60px;line-height:1.5}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{border:2px solid transparent;border-radius:999px;padding:6px 12px;font-family:inherit;font-size:14px;color:var(--text);cursor:pointer}
+  .chip.sel{border-color:currentColor;font-weight:bold}
+  .chip.add{background:#fff;border:1.5px dashed var(--line);color:var(--sub)}
+  .phbox{display:flex;align-items:center;gap:10px}
+  .phbox img{max-height:120px;max-width:170px;border-radius:12px;display:block}
+  .phbtn{border:1.5px dashed var(--accent);background:#fff;border-radius:14px;padding:12px 16px;font-family:inherit;font-size:14px;color:var(--accent-dark);cursor:pointer;display:flex;align-items:center;gap:6px}
+  .phbtn svg{width:22px;height:22px}
+  .rmph{border:none;background:#eadfdc;color:#9c6e66;border-radius:10px;padding:7px 10px;font-family:inherit;font-size:13px;cursor:pointer}
+  .btns{display:flex;gap:8px;margin-top:16px}
+  .btn{flex:1;border:none;border-radius:14px;padding:12px;font-family:inherit;font-size:15.5px;cursor:pointer}
+  .btn.main{background:var(--accent-dark);color:#fff;font-weight:bold}
+  .btn.sub{background:#fff;color:var(--text)}
+  .btn.del{flex:0 0 auto;background:#f1e4e1;color:#a5746c;padding:12px 16px}
+
+  .detail img.big{display:block;width:100%;max-height:340px;object-fit:contain;border-radius:16px;background:#fff;margin-bottom:10px;cursor:pointer}
+  .detail .nm{font-size:20px;font-weight:bold;text-align:center}
+  .detail .where{text-align:center;margin:10px 0 4px;font-size:15px}
+  .detail .where .ptag{font-size:14px;padding:5px 12px}
+  .detail .memo{background:#fff;border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.6;white-space:pre-wrap;margin-top:10px}
+  .detail .dt{text-align:center;font-size:12px;color:var(--sub);margin-top:6px}
+  .emojis{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+  .emojis span{width:40px;height:40px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;border:2px solid transparent}
+  .emojis span.sel{border-color:var(--accent-dark)}
+  .cols{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+  .cols span{width:34px;height:34px;border-radius:50%;cursor:pointer;border:3px solid #fff;box-shadow:0 0 0 1.5px var(--line)}
+  .cols span.sel{box-shadow:0 0 0 3px var(--accent-dark)}
+  .viewer{position:fixed;inset:0;background:rgba(25,30,28,.88);display:none;z-index:60;align-items:center;justify-content:center;padding:16px}
+  .viewer.on{display:flex}
+  .viewer img{max-width:100%;max-height:100%;border-radius:12px}
+
+  #toast{position:fixed;left:50%;bottom:150px;transform:translateX(-50%) translateY(20px);background:rgba(70,85,80,.92);color:#fff;padding:10px 18px;border-radius:999px;font-size:13.5px;opacity:0;transition:.25s;pointer-events:none;z-index:70;white-space:nowrap}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  .bkx{margin:26px 14px 20px;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow);font-size:12px;color:#8f9a93;line-height:1.7}
+  .bkx h3{font-size:13.5px;color:#5c6660;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+  .bkx h3 svg{width:18px;height:18px}
+  .bkx .bkx-btn{border:none;border-radius:12px;padding:9px 16px;font-family:inherit;font-weight:700;font-size:12.5px;color:#fff;background:#9dbdb5;margin:8px 8px 0 0;cursor:pointer}
+  .bkx .bkx-btn.sub{background:#c3d6d0}
+</style>
+</head>
+<body>
+<header>
+  <div class="deco">＼ しまった場所を わすれない ／</div>
+  <h1><svg viewBox="0 0 48 48" fill="none" stroke="#5f8a81" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20 L24 11 L41 20 V38 Q41 40 39 40 H9 Q7 40 7 38 Z" fill="#dcebe6"/><circle cx="25" cy="27" r="6" fill="#fff"/><path d="M29.5 31.5 L34 36"/></svg>どこ置いた？</h1>
+</header>
+
+<div id="pgFind">
+  <div class="search"><svg viewBox="0 0 48 48" fill="none" stroke="#8fbab0" stroke-width="4" stroke-linecap="round"><circle cx="21" cy="21" r="12"/><path d="M30 30 L40 40"/></svg><input type="search" id="q" placeholder="何をさがす？" oninput="renderFind()"><button id="qx" style="display:none" onclick="document.getElementById('q').value='';renderFind()">×</button></div>
+  <div id="findList"></div>
+</div>
+
+<div id="pgPlace" style="display:none">
+  <div id="placeView"></div>
+</div>
+
+<div class="bkx">
+  <h3><svg viewBox="0 0 48 48" fill="none" stroke="#5c6660" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M24 7 V25 M17 19 L24 26 L31 19"/><path d="M8 29 V35 Q8 40 13 40 H35 Q40 40 40 35 V29"/></svg> データのバックアップ</h3>
+  記録はこの端末のブラウザ内に保存されています。ときどきファイルに書き出しておくと、機種変更やお引っ越しでも安心です。<br>
+  <button class="bkx-btn" id="bkxExp">書き出す</button><button class="bkx-btn sub" id="bkxImpBtn">読み込む</button>
+  <input type="file" id="bkxImp" accept=".json" style="display:none">
+</div>
+
+<button class="fab" onclick="openEdit(null)">＋</button>
+<nav class="tabbar">
+  <button id="tbFind" class="on" onclick="showPage('find')"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"><circle cx="21" cy="21" r="12"/><path d="M30 30 L40 40"/></svg>さがす</button>
+  <button id="tbPlace" onclick="showPage('place')"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 21 L24 9 L41 21"/><path d="M11 18 V39 H37 V18"/><path d="M20 39 V28 H28 V39"/></svg>場所</button>
+</nav>
+
+<div class="sheet-bg" id="editSheet" onclick="if(event.target===this)closeSheet('editSheet')"><div class="sheet" id="editBody"></div></div>
+<div class="sheet-bg" id="detailSheet" onclick="if(event.target===this)closeSheet('detailSheet')"><div class="sheet detail" id="detailBody"></div></div>
+<div class="sheet-bg" id="placeSheet" onclick="if(event.target===this)closeSheet('placeSheet')"><div class="sheet" id="placeBody"></div></div>
+<div class="viewer" id="viewer" onclick="this.classList.remove('on')"><img id="vimg" alt=""></div>
+<input type="file" id="photoIn" accept="image/*" style="display:none" onchange="pickPhoto(this)">
+<div id="toast"></div>
+
+<script>
+var KEY="dokooita_v1";
+var PAL=[
+  {bg:"#e4f0ec",deep:"#5f8a81"},{bg:"#f3e6dc",deep:"#a57a5c"},{bg:"#e3eaf3",deep:"#6c86a6"},
+  {bg:"#f4eed9",deep:"#9c8a4c"},{bg:"#ece4f0",deep:"#8a74a0"},{bg:"#f4e2e4",deep:"#a86f78"},
+  {bg:"#e6efdc",deep:"#748f5c"},{bg:"#ebe7e2",deep:"#857a6e"}
+];
+var EMOJI=["🛋️","🍳","🛏️","🚪","🧺","🚿","🚗","📦","👕","📚","🧸","🗄️","🏠","🎒","🧰","🪴"];
+var state={items:[], places:[]};
+var page="find", curPlace=null, ed=null, edPhoto="";
+
+function load(){
+  try{ var v=localStorage.getItem(KEY); if(v){ var s=JSON.parse(v); for(var k in s) state[k]=s[k]; } }catch(e){}
+  if(!Array.isArray(state.items)) state.items=[];
+  if(!Array.isArray(state.places)||!state.places.length){
+    state.places=[
+      {id:"p1",name:"リビング",e:"🛋️",c:0},{id:"p2",name:"キッチン",e:"🍳",c:1},{id:"p3",name:"寝室",e:"🛏️",c:4},
+      {id:"p4",name:"押し入れ",e:"🗄️",c:7},{id:"p5",name:"洗面所",e:"🚿",c:2},{id:"p6",name:"玄関",e:"🚪",c:3},
+      {id:"p7",name:"子ども部屋",e:"🧸",c:5},{id:"p8",name:"車",e:"🚗",c:6}
+    ];
+  }
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); return true; }catch(e){ toast("保存できませんでした（容量がいっぱいかも）"); return false; } }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function esc(s){ return (""+(s==null?"":s)).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+var toastT; function toast(m){ var t=document.getElementById("toast"); t.textContent=m; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(function(){t.classList.remove("show");},2200); }
+function pById(id){ for(var i=0;i<state.places.length;i++){ if(state.places[i].id===id) return state.places[i]; } return null; }
+function iById(id){ for(var i=0;i<state.items.length;i++){ if(state.items[i].id===id) return state.items[i]; } return null; }
+function pcol(p){ return p?PAL[p.c%PAL.length]:{bg:"#eceeea",deep:"#8a928c"}; }
+function fmtDate(ts){ var d=new Date(ts), n=new Date(); return (d.getFullYear()!==n.getFullYear()?d.getFullYear()+"年":"")+(d.getMonth()+1)+"月"+d.getDate()+"日"; }
+function closeSheet(id){ document.getElementById(id).classList.remove("on"); }
+function openSheet(id){ document.getElementById(id).classList.add("on"); }
+
+/* カタカナ→ひらがな・小文字にして検索 */
+function norm(s){
+  s=(""+(s||"")).toLowerCase(); var o="";
+  for(var i=0;i<s.length;i++){ var c=s.charCodeAt(i); if(c>=0x30A1&&c<=0x30F6) c-=0x60; if(c>=0xFF01&&c<=0xFF5E) c-=0xFEE0; o+=String.fromCharCode(c); }
+  return o;
+}
+function hl(text, q){
+  text=""+(text||""); if(!q) return esc(text);
+  var nt=norm(text), i=nt.indexOf(q); if(i<0) return esc(text);
+  return esc(text.slice(0,i))+"<mark>"+esc(text.slice(i,i+q.length))+"</mark>"+esc(text.slice(i+q.length));
+}
+var BOX='<svg viewBox="0 0 48 48" fill="none" stroke="#8fbab0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 17 L24 9 L40 17 L24 25 Z" fill="#fff"/><path d="M8 17 V32 L24 40 V25"/><path d="M40 17 V32 L24 40"/></svg>';
+
+function itemHtml(it, q){
+  var p=pById(it.p), c=pcol(p);
+  return '<div class="item" onclick="openDetail(&#39;'+it.id+'&#39;)">'
+    +'<div class="ph">'+(it.photo?'<img src="'+it.photo+'" alt="">':BOX)+'</div>'
+    +'<div class="body"><div class="nm">'+hl(it.name,q)+'</div>'
+    +'<div class="where"><span class="ptag" style="background:'+c.bg+';color:'+c.deep+'">'+(p?p.e+' '+hl(p.name,q):'場所なし')+'</span>'+(it.spot?'<span class="spot">'+hl(it.spot,q)+'</span>':'')+'</div>'
+    +'<div class="dt">'+fmtDate(it.ts)+'に記録</div></div></div>';
+}
+
+/* ===== さがす ===== */
+function renderFind(){
+  var raw=document.getElementById("q").value.trim(), q=norm(raw);
+  window.__qraw=raw;
+  document.getElementById("qx").style.display=raw?"":"none";
+  var el=document.getElementById("findList");
+  if(!state.items.length){ el.innerHTML='<div class="empty">まだ何も記録してないよ。<br>右下の ＋ から、しまった物と場所を記録してね</div>'; return; }
+  var arr=state.items.slice().sort(function(a,b){return b.ts-a.ts;});
+  if(q){
+    arr=arr.filter(function(it){ var p=pById(it.p); return norm(it.name+" "+(it.spot||"")+" "+(it.memo||"")+" "+(p?p.name:"")).indexOf(q)>=0; });
+    el.innerHTML='<div class="sec">'+(arr.length?arr.length+'件 見つかったよ':'')+'</div>'+(arr.length?arr.map(function(it){return itemHtml(it,q);}).join(""):'<div class="empty">「'+esc(raw)+'」は見つからなかったよ<br><button class="phbtn" style="margin:12px auto 0" onclick="openEdit(null,window.__qraw)">＋ 「'+esc(raw)+'」を記録する</button></div>');
+    return;
+  }
+  el.innerHTML='<div class="sec">最近記録したもの</div>'+arr.slice(0,30).map(function(it){return itemHtml(it,"");}).join("")
+    +(arr.length>30?'<div class="empty" style="padding:10px">ほかの物は上の検索か「場所」から探してね</div>':'');
+}
+
+/* ===== 場所 ===== */
+function renderPlace(){
+  var el=document.getElementById("placeView");
+  if(curPlace){
+    var p=pById(curPlace); if(!p){ curPlace=null; return renderPlace(); }
+    var c=pcol(p), arr=state.items.filter(function(it){return it.p===p.id;});
+    arr.sort(function(a,b){ return (a.spot||"").localeCompare(b.spot||"","ja") || b.ts-a.ts; });
+    var h='<button class="back" onclick="curPlace=null;renderPlace()">＜ 場所の一覧</button>'
+      +'<div class="phead" style="background:'+c.bg+';color:'+c.deep+'"><span class="pe">'+p.e+'</span><span class="pn">'+esc(p.name)+'<br><span style="font-size:12px;font-weight:normal">'+arr.length+'こ</span></span><button onclick="openPlaceEdit(&#39;'+p.id+'&#39;)">✏️ 編集</button></div>';
+    if(!arr.length) h+='<div class="empty">ここに記録した物はまだないよ</div>';
+    else{
+      var last=null;
+      arr.forEach(function(it){ var sp=it.spot||"（細かい場所なし）"; if(sp!==last){ h+='<div class="sec">'+esc(sp)+'</div>'; last=sp; } h+=itemHtml(it,""); });
+    }
+    h+='<div style="text-align:center;margin-top:8px"><button class="phbtn" style="display:inline-flex" onclick="openEdit(null,&#39;&#39;,&#39;'+p.id+'&#39;)">＋ ここに記録する</button></div>';
+    el.innerHTML=h; return;
+  }
+  var h2='<div class="sec">場所をえらんでね</div><div class="places">';
+  state.places.forEach(function(p){ var c=pcol(p), n=state.items.filter(function(it){return it.p===p.id;}).length;
+    h2+='<button class="pcard" style="background:'+c.bg+';color:'+c.deep+'" onclick="curPlace=&#39;'+p.id+'&#39;;renderPlace();window.scrollTo(0,0)"><div class="pe">'+p.e+'</div><div class="pn">'+esc(p.name)+'</div><div class="pc">'+n+'こ</div></button>'; });
+  var none=state.items.filter(function(it){return !pById(it.p);}).length;
+  h2+='<button class="pcard add" onclick="openPlaceEdit(null)"><div class="pe">＋</div><div class="pn" style="font-size:14px">場所を追加</div></button></div>';
+  if(none) h2+='<div class="sec">場所なし</div>'+state.items.filter(function(it){return !pById(it.p);}).map(function(it){return itemHtml(it,"");}).join("");
+  el.innerHTML=h2;
+}
+function showPage(p){
+  page=p;
+  document.getElementById("pgFind").style.display=p==="find"?"":"none";
+  document.getElementById("pgPlace").style.display=p==="place"?"":"none";
+  document.getElementById("tbFind").classList.toggle("on",p==="find");
+  document.getElementById("tbPlace").classList.toggle("on",p==="place");
+  renderAll(); try{ window.scrollTo(0,0); }catch(e){}
+}
+function renderAll(){ if(page==="find") renderFind(); else renderPlace(); }
+
+/* ===== 記録・編集 ===== */
+function openEdit(id, presetName, presetPlace){
+  var it=id?iById(id):null;
+  ed={id:id, name:it?it.name:(presetName||""), p:it?it.p:(presetPlace||(curPlace&&page==="place"?curPlace:(state.places[0]?state.places[0].id:""))), spot:it?(it.spot||""):"", memo:it?(it.memo||""):""};
+  edPhoto=it?(it.photo||""):"";
+  closeSheet("detailSheet");
+  renderEdit(); openSheet("editSheet");
+  if(!id) setTimeout(function(){ var n=document.getElementById("eName"); if(n&&!n.value) n.focus(); },200);
+}
+function keepEd(){ var n=document.getElementById("eName"); if(!n) return; ed.name=n.value; ed.spot=document.getElementById("eSpot").value; ed.memo=document.getElementById("eMemo").value; }
+function renderEdit(){
+  var spots={}; state.items.forEach(function(it){ if(it.p===ed.p && it.spot) spots[it.spot]=1; });
+  var sl=Object.keys(spots).slice(0,8);
+  var h='<h2>'+(ed.id?'記録をなおす':'しまった物を記録')+'</h2>'
+    +'<div class="lbl">何を？</div><input class="inp" id="eName" maxlength="30" placeholder="例：保険証のコピー" value="'+esc(ed.name)+'">'
+    +'<div class="lbl">どこに？</div><div class="chips">'+state.places.map(function(p){ var c=pcol(p); return '<button class="chip'+(p.id===ed.p?' sel':'')+'" style="background:'+c.bg+';color:'+c.deep+'" onclick="keepEd();ed.p=&#39;'+p.id+'&#39;;renderEdit()">'+p.e+' '+esc(p.name)+'</button>'; }).join("")
+    +'<button class="chip add" onclick="keepEd();openPlaceEdit(null,true)">＋ 場所</button></div>'
+    +'<div class="lbl">細かい場所（なくてもOK）</div><input class="inp" id="eSpot" maxlength="30" placeholder="例：テレビ台の引き出し 2段目" value="'+esc(ed.spot)+'">'
+    +(sl.length?'<div class="chips" style="margin-top:6px">'+sl.map(function(s){ return '<button class="chip" style="background:#fff;font-size:12.5px;padding:4px 10px" onclick="document.getElementById(&#39;eSpot&#39;).value=this.textContent">'+esc(s)+'</button>'; }).join("")+'</div>':'')
+    +'<div class="lbl">写真（なくてもOK）</div><div class="phbox">'+(edPhoto?'<img src="'+edPhoto+'" alt=""><button class="rmph" onclick="keepEd();edPhoto=&#39;&#39;;renderEdit()">写真を消す</button>':'')
+    +'<button class="phbtn" onclick="keepEd();document.getElementById(&#39;photoIn&#39;).click()"><svg viewBox="0 0 48 48" fill="none" stroke="#6f9c93" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16 Q7 12 11 12 H16 L19 8 H29 L32 12 H37 Q41 12 41 16 V35 Q41 39 37 39 H11 Q7 39 7 35 Z"/><circle cx="24" cy="25" r="7"/></svg>'+(edPhoto?'撮りなおす':'写真を撮る')+'</button></div>'
+    +'<div class="lbl">メモ（なくてもOK）</div><textarea class="inp" id="eMemo" maxlength="200" placeholder="例：青いファイルに入れた">'+esc(ed.memo)+'</textarea>'
+    +'<div class="btns">'+(ed.id?'<button class="btn del" onclick="delItem()">消す</button>':'')+'<button class="btn sub" onclick="closeSheet(&#39;editSheet&#39;)">やめる</button><button class="btn main" onclick="saveItem()">保存</button></div>';
+  document.getElementById("editBody").innerHTML=h;
+}
+function saveItem(){
+  keepEd();
+  var name=ed.name.trim(); if(!name){ toast("何をしまったか書いてね"); return; }
+  var it=ed.id?iById(ed.id):null, isNew=!it, bk=it?JSON.stringify(it):null;
+  if(!it){ it={id:uid()}; state.items.push(it); }
+  it.name=name; it.p=ed.p; it.spot=ed.spot.trim(); it.memo=ed.memo.trim(); it.photo=edPhoto||""; it.ts=Date.now();
+  if(!save()){ if(isNew) state.items.pop(); else { var o=JSON.parse(bk); for(var k in o) it[k]=o[k]; } return; }
+  closeSheet("editSheet"); renderAll(); var p=pById(it.p);
+  toast((p?p.name:"")+(it.spot?"の"+it.spot:"")+"に記録したよ");
+}
+function delItem(){
+  var it=iById(ed.id); if(!it) return; if(!confirm("「"+it.name+"」の記録を消す？")) return;
+  state.items=state.items.filter(function(x){return x.id!==ed.id;}); save(); closeSheet("editSheet"); renderAll(); toast("消したよ");
+}
+function pickPhoto(inp){
+  var f=inp.files&&inp.files[0]; inp.value=""; if(!f) return;
+  var r=new FileReader();
+  r.onload=function(){
+    var im=new Image();
+    im.onload=function(){
+      var mx=900, w=im.width, h=im.height, sc=Math.min(1,mx/Math.max(w,h));
+      var c=document.createElement("canvas"); c.width=Math.round(w*sc); c.height=Math.round(h*sc);
+      c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+      edPhoto=c.toDataURL("image/jpeg",0.7); renderEdit();
+    };
+    im.onerror=function(){ toast("この写真は読み込めませんでした"); };
+    im.src=r.result;
+  };
+  r.readAsDataURL(f);
+}
+
+/* ===== くわしく ===== */
+function openDetail(id){
+  var it=iById(id); if(!it) return; var p=pById(it.p), c=pcol(p);
+  document.getElementById("detailBody").innerHTML=(it.photo?'<img class="big" src="'+it.photo+'" alt="" onclick="viewPhoto(&#39;'+it.id+'&#39;)">':'')
+    +'<div class="nm">'+esc(it.name)+'</div>'
+    +'<div class="where"><span class="ptag" style="background:'+c.bg+';color:'+c.deep+'">'+(p?p.e+' '+esc(p.name):'場所なし')+'</span>'+(it.spot?' の <b>'+esc(it.spot)+'</b>':'')+'</div>'
+    +(it.memo?'<div class="memo">'+esc(it.memo)+'</div>':'')
+    +'<div class="dt">'+fmtDate(it.ts)+'に記録</div>'
+    +'<div class="btns"><button class="btn sub" onclick="closeSheet(&#39;detailSheet&#39;)">閉じる</button><button class="btn main" onclick="openEdit(&#39;'+it.id+'&#39;)">場所を変えた・なおす</button></div>';
+  openSheet("detailSheet");
+}
+function viewPhoto(id){ var it=iById(id); if(!it||!it.photo) return; document.getElementById("vimg").src=it.photo; document.getElementById("viewer").classList.add("on"); }
+
+/* ===== 場所の編集 ===== */
+var pe=null;
+function openPlaceEdit(id, fromEdit){
+  var p=id?pById(id):null;
+  pe={id:id, name:p?p.name:"", e:p?p.e:EMOJI[12], c:p?p.c:(state.places.length%PAL.length), fromEdit:!!fromEdit};
+  renderPlaceEdit(); openSheet("placeSheet");
+}
+function keepPe(){ var n=document.getElementById("pName"); if(n) pe.name=n.value; }
+function renderPlaceEdit(){
+  var h='<h2>'+(pe.id?'場所をなおす':'場所を追加')+'</h2>'
+    +'<div class="lbl">名前</div><input class="inp" id="pName" maxlength="12" placeholder="例：物置" value="'+esc(pe.name)+'">'
+    +'<div class="lbl">マーク</div><div class="emojis">'+EMOJI.map(function(e){ return '<span class="'+(e===pe.e?'sel':'')+'" onclick="keepPe();pe.e=this.textContent;renderPlaceEdit()">'+e+'</span>'; }).join("")+'</div>'
+    +'<div class="lbl">色</div><div class="cols">'+PAL.map(function(c,i){ return '<span class="'+(i===pe.c?'sel':'')+'" style="background:linear-gradient(135deg,'+c.bg+' 50%,'+c.deep+' 50%)" onclick="keepPe();pe.c='+i+';renderPlaceEdit()"></span>'; }).join("")+'</div>'
+    +'<div class="btns">'+(pe.id?'<button class="btn del" onclick="delPlace()">消す</button>':'')+'<button class="btn sub" onclick="closeSheet(&#39;placeSheet&#39;)">やめる</button><button class="btn main" onclick="savePlace()">保存</button></div>';
+  document.getElementById("placeBody").innerHTML=h;
+}
+function savePlace(){
+  keepPe(); var n=pe.name.trim(); if(!n){ toast("場所の名前を入れてね"); return; }
+  var p=pe.id?pById(pe.id):null;
+  if(!p){ p={id:"p"+uid()}; state.places.push(p); }
+  p.name=n; p.e=pe.e; p.c=pe.c; save(); closeSheet("placeSheet");
+  if(pe.fromEdit && ed){ ed.p=p.id; renderEdit(); }
+  renderAll(); toast("「"+n+"」を保存したよ");
+}
+function delPlace(){
+  var p=pById(pe.id); if(!p) return; var n=state.items.filter(function(it){return it.p===p.id;}).length;
+  if(!confirm("「"+p.name+"」を消す？"+(n?"（ここにある"+n+"こは「場所なし」になるよ）":""))) return;
+  state.places=state.places.filter(function(x){return x.id!==p.id;}); if(curPlace===p.id) curPlace=null;
+  save(); closeSheet("placeSheet"); renderAll();
+}
+
+load(); renderFind();
+</script>
+
+<script>
+(function(){
+  try{
+    var deep="#6f9c93", bg="#dcebe6", ink="#4f746c";
+    var svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+      +'<rect x="0" y="0" width="100" height="100" rx="23" fill="'+bg+'"/>'
+      +'<rect x="6" y="6" width="88" height="88" rx="19" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.55"/>'
+      +'<path d="M18 42 L50 24 L82 42 V78 Q82 82 78 82 H22 Q18 82 18 78 Z" fill="#fffaf2" stroke="'+ink+'" stroke-width="3.5" stroke-linejoin="round"/>'
+      +'<rect x="30" y="52" width="16" height="14" rx="2" fill="#f2d7b8" stroke="'+ink+'" stroke-width="2.5"/>'
+      +'<circle cx="57" cy="57" r="10" fill="#ffffff" stroke="'+ink+'" stroke-width="3.5"/>'
+      +'<path d="M64 64 L72 72" stroke="'+ink+'" stroke-width="4" stroke-linecap="round"/>'
+      +'</svg>';
+    var uri="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg);
+    var im=new Image();
+    im.onload=function(){
+      var png; try{ var c=document.createElement("canvas"); c.width=192; c.height=192; c.getContext("2d").drawImage(im,0,0,192,192); png=c.toDataURL("image/png"); }catch(e){ png=uri; }
+      function aL(rel,href,attrs){ var l=document.createElement("link"); l.setAttribute("rel",rel); l.setAttribute("href",href); if(attrs)for(var a in attrs)l.setAttribute(a,attrs[a]); document.head.appendChild(l); }
+      aL("apple-touch-icon",png);
+      aL("icon",png,{sizes:"192x192",type:"image/png"});
+      var m={name:"どこ置いた？",short_name:"どこ置いた？",start_url:"./",scope:"./",display:"standalone",background_color:"#f4f6f1",theme_color:deep,icons:[{src:png,sizes:"192x192",type:"image/png",purpose:"any maskable"}]};
+      aL("manifest",URL.createObjectURL(new Blob([JSON.stringify(m)],{type:"application/manifest+json"})));
+    };
+    im.src=uri;
+  }catch(e){}
+})();
+</script>
+
+<script>
+(function(){
+  var APP="dokooita";
+  document.getElementById("bkxExp").addEventListener("click",function(){
+    var data={};
+    for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); data[k]=localStorage.getItem(k); }
+    var blob=new Blob([JSON.stringify({__bkx:APP,data:data},null,2)],{type:"application/json"});
+    var a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+    var d=new Date();
+    a.download=APP+"-backup-"+d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")+".json";
+    a.click(); URL.revokeObjectURL(a.href);
+  });
+  document.getElementById("bkxImpBtn").addEventListener("click",function(){ document.getElementById("bkxImp").click(); });
+  document.getElementById("bkxImp").addEventListener("change",function(ev){
+    var f=ev.target.files[0]; if(!f) return;
+    var r=new FileReader();
+    r.onload=function(){
+      try{
+        var j=JSON.parse(r.result);
+        var data=j.__bkx?j.data:j;
+        if(typeof data!=="object"||!data) throw 0;
+        if(!confirm("今の記録を読み込んだ内容で置き換えます。よろしいですか？")) return;
+        Object.keys(data).forEach(function(k){ localStorage.setItem(k,data[k]); });
+        alert("読み込みました。画面を更新します。"); location.reload();
+      }catch(e){ alert("このファイルは読み込めませんでした"); }
+    };
+    r.readAsText(f); ev.target.value="";
+  });
+})();
+</script>
+</body>
+</html>
